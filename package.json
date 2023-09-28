@@ -1,0 +1,13 @@
+{
+  "name": "@orbs-network/liquidity-hub",
+  "description": "Liquidity Hub",
+  "authors": "danielz@orbs.com",
+  "version": "0.0.0",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test -vvv",
+    "watch": "forge test -vvv --watch"
+  }
+}
