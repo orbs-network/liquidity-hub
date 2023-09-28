@@ -5,8 +5,6 @@ import "@forge-std/Test.sol";
 
 import "./Workbench.sol";
 
-import {Counter} from "src/Counter.sol";
-
 contract BaseTest is Test {
     using StdStyle for string;
     using Workbench for Vm;
@@ -22,20 +20,7 @@ contract BaseTest is Test {
         }
     }
 
-    Counter counter;
+    function setUp() public chains {}
 
-    function setUp() public chains {
-        counter = new Counter();
-        counter.setNumber(0);
-    }
-
-    function test_Increment() public {
-        counter.increment();
-        assertEq(counter.number(), 1);
-    }
-
-    function testFuzz_SetNumber(uint256 x) public {
-        counter.setNumber(x);
-        assertEq(counter.number(), x);
-    }
+    function test_Increment() public {}
 }

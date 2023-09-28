@@ -26,9 +26,3 @@ optimizer_runs = 1000000
 # avax = { key = "${SCANNER_API_KEY_AVAX}" }
 # 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
-
-
-#	forge-gas-snapshot/=lib/forge-gas-snapshot/src/,
-#	openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/,
-#	permit2/=lib/permit2/,
-#	solmate/=lib/solmate/,
