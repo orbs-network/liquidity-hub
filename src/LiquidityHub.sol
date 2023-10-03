@@ -5,18 +5,17 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-import {IWETH} from "./external/IWETH.sol";
-import {IReactor} from "./external/uniswapx/IReactor.sol";
-import {ResolvedOrder, SignedOrder, OutputToken} from "./external/uniswapx/ReactorStructs.sol";
-import {IReactorCallback} from "./external/uniswapx/IReactorCallback.sol";
-import {IValidationCallback} from "./external/uniswapx/IValidationCallback.sol";
-import {SignedOrder} from "./external/uniswapx/ReactorStructs.sol";
-import {IProtocolFeeController} from "./external/uniswapx/IProtocolFeeController.sol";
+import {IReactor} from "uniswapx/src/interfaces/IReactor.sol";
+import {IReactorCallback} from "uniswapx/src/interfaces/IReactorCallback.sol";
+import {IValidationCallback} from "uniswapx/src/interfaces/IValidationCallback.sol";
+import {IProtocolFeeController} from "uniswapx/src/interfaces/IProtocolFeeController.sol";
+import {ResolvedOrder, SignedOrder, OutputToken} from "uniswapx/src/base/ReactorStructs.sol";
 
+import {IWETH} from "./external/IWETH.sol";
 import {IExchange} from "./exchange/IExchange.sol";
 
 /**
- * LiquidityHub Exclusive Filler
+ * LiquidityHub Executor
  */
 contract LiquidityHub is IReactorCallback, IValidationCallback, IProtocolFeeController, Ownable {
     using SafeERC20 for IERC20;
@@ -61,7 +60,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback, IProtocolFeeCont
     }
 
     function withdraw(IExchange.Swap[] calldata swaps, address[] calldata tokens, uint256 nativeAmountMin)
-        external
+        public
         onlyOwner
     {
         for (uint256 i = 0; i < swaps.length; i++) {

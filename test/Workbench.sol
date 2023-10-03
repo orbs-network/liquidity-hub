@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.x;
 
-import "@forge-std/Test.sol";
+import "forge-std/Test.sol";
 
 library Workbench {
     function fmtDate(Vm vm, uint256 timestamp) public returns (string memory) {
