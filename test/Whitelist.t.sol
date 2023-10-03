@@ -12,7 +12,7 @@ contract WhitelistTest is BaseTest {
     Whitelist public whitelist;
     address public owner;
 
-    function setUp() public virtual override withMockConfig {
+    function setUp() public virtual override {
         super.setUp();
         owner = makeAddr("owner");
         whitelist = new Whitelist(owner);
@@ -20,5 +20,16 @@ contract WhitelistTest is BaseTest {
 
     function testOwned() public {
         assertEq(whitelist.owner(), owner);
+        assertEq(whitelist.allowed(owner), true);
+        assertEq(whitelist.allowed(address(0)), false);
+        assertEq(whitelist.allowed(address(1)), false);
+    }
+
+    function testAllowed() public {
+        address[] memory addresses = new address[](1);
+        addresses[0] = address(1);
+        hoax(owner);
+        whitelist.set(addresses, true);
+        assertEq(whitelist.allowed(address(1)), true);
     }
 }
