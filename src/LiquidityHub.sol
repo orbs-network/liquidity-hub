@@ -11,6 +11,7 @@ import {IValidationCallback} from "uniswapx/src/interfaces/IValidationCallback.s
 import {IProtocolFeeController} from "uniswapx/src/interfaces/IProtocolFeeController.sol";
 import {ResolvedOrder, SignedOrder, OutputToken} from "uniswapx/src/base/ReactorStructs.sol";
 
+import {Treasury} from "./Treasury.sol";
 import {IWETH} from "./external/IWETH.sol";
 import {IExchange} from "./exchange/IExchange.sol";
 
@@ -20,23 +21,21 @@ import {IExchange} from "./exchange/IExchange.sol";
 contract LiquidityHub is IReactorCallback, IValidationCallback, IProtocolFeeController, Ownable {
     using SafeERC20 for IERC20;
 
-    uint8 public constant VERSION = 0;
+    uint8 public constant VERSION = 1;
 
     IReactor public immutable reactor;
-    IWETH public immutable weth;
-    mapping(address => bool) public fillers;
+    Treasury public immutable treasury;
 
-    constructor(IReactor _reactor, IWETH _weth, address _owner) Ownable() {
+    constructor(IReactor _reactor, address _treasury) Ownable() {
         reactor = _reactor;
-        weth = _weth;
-        transferOwnership(_owner);
+        treasury = Treasury(payable(_treasury));
+        transferOwnership(_treasury);
     }
 
     error InvalidSender(address sender);
-    error InsufficientNativeAmount(uint256 amount);
 
-    modifier onlyFillers() {
-        if (msg.sender != owner() && !fillers[msg.sender]) revert InvalidSender(msg.sender);
+    modifier onlyAllowed() {
+        if (msg.sender != owner() && !treasury.allowed(msg.sender)) revert InvalidSender(msg.sender);
         _;
     }
 
@@ -45,41 +44,12 @@ contract LiquidityHub is IReactorCallback, IValidationCallback, IProtocolFeeCont
         _;
     }
 
-    function execute(SignedOrder calldata order, IExchange.Swap[] calldata swaps) external onlyFillers {
+    function execute(SignedOrder calldata order, IExchange.Swap[] calldata swaps) external onlyAllowed {
         reactor.executeWithCallback(order, abi.encode(swaps));
     }
 
-    function executeBatch(SignedOrder[] calldata orders, IExchange.Swap[] calldata swaps) external onlyFillers {
+    function executeBatch(SignedOrder[] calldata orders, IExchange.Swap[] calldata swaps) external onlyAllowed {
         reactor.executeBatchWithCallback(orders, abi.encode(swaps));
-    }
-
-    function setFillers(address[] calldata _fillers, bool enabled) external onlyOwner {
-        for (uint256 i = 0; i < _fillers.length; i++) {
-            fillers[_fillers[i]] = enabled;
-        }
-    }
-
-    function withdraw(IExchange.Swap[] calldata swaps, address[] calldata tokens, uint256 nativeAmountMin)
-        public
-        onlyOwner
-    {
-        for (uint256 i = 0; i < swaps.length; i++) {
-            IExchange.Swap memory s = swaps[i];
-            Address.functionDelegateCall(
-                address(s.exchange), abi.encodeWithSelector(IExchange.delegateSwap.selector, s)
-            );
-        }
-
-        if (IERC20(address(weth)).balanceOf(address(this)) > 0) {
-            weth.withdraw(IERC20(address(weth)).balanceOf(address(this)));
-        }
-
-        for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).safeTransfer(msg.sender, IERC20(tokens[i]).balanceOf(address(this)));
-        }
-
-        if (address(this).balance < nativeAmountMin) revert InsufficientNativeAmount(address(this).balance);
-        Address.sendValue(payable(msg.sender), address(this).balance);
     }
 
     /**
@@ -97,7 +67,11 @@ contract LiquidityHub is IReactorCallback, IValidationCallback, IProtocolFeeCont
         for (uint256 i = 0; i < orders.length; i++) {
             ResolvedOrder memory order = orders[i];
             for (uint256 j = 0; j < order.outputs.length; j++) {
+                // if (order.outputs[j].token == address(0)) {
+                // Address.sendValue(payable(msg.sender), order.outputs[j].amount); // native output
+                // } else {
                 IERC20(order.outputs[j].token).safeIncreaseAllowance(msg.sender, order.outputs[j].amount); // output.amount to swap recipients, enforced by reactor. anything above remains here.
+                    // }
             }
         }
     }
@@ -118,6 +92,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback, IProtocolFeeCont
         fees[0] = abi.decode(order.info.additionalValidationData, (OutputToken));
     }
 
-    // solhint-disable-next-line no-empty-blocks
-    receive() external payable {}
+    receive() external payable {
+        // accept ETH
+    }
 }

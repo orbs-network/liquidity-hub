@@ -7,7 +7,7 @@ import {WETH} from "solmate/src/tokens/WETH.sol";
 
 import "./Workbench.sol";
 
-contract BaseTest is Test {
+abstract contract BaseTest is Test {
     using StdStyle for string;
     using Workbench for Vm;
 

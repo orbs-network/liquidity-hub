@@ -17,13 +17,20 @@ contract Treasury is Ownable {
         allowed[_owner] = true;
     }
 
-    function set(address[] calldata _addrs, bool _allowed) external onlyOwner {
+    error NotAllowed(address sender);
+
+    modifier onlyAllowed() {
+        if (!allowed[msg.sender]) revert NotAllowed(msg.sender);
+        _;
+    }
+
+    function setAllowed(address[] calldata _addrs, bool _allowed) external onlyOwner {
         for (uint256 i = 0; i < _addrs.length; i++) {
             allowed[_addrs[i]] = _allowed;
         }
     }
 
-    function get(address[] calldata _addrs) external view returns (bool[] memory) {
+    function getAllowed(address[] calldata _addrs) external view returns (bool[] memory) {
         bool[] memory results = new bool[](_addrs.length);
         for (uint256 i = 0; i < _addrs.length; i++) {
             results[i] = allowed[_addrs[i]];
@@ -31,21 +38,18 @@ contract Treasury is Ownable {
         return results;
     }
 
-    function withdraw() external onlyOwner {
+    function withdraw() external onlyAllowed {
         withdraw(new IERC20[](0));
     }
 
-    function withdraw(IERC20[] memory tokens) public onlyOwner {
+    function withdraw(IERC20[] memory tokens) public onlyAllowed {
         for (uint256 i = 0; i < tokens.length; i++) {
             tokens[i].transfer(owner(), tokens[i].balanceOf(address(this)));
         }
-        if (weth.balanceOf(address(this)) > 0) {
-            weth.withdraw(weth.balanceOf(address(this)));
-        }
-        Address.sendValue(payable(owner()), address(this).balance);
+        weth.withdraw(weth.balanceOf(address(this)));
     }
 
     receive() external payable {
-        // accept ETH
+        Address.sendValue(payable(owner()), address(this).balance);
     }
 }

@@ -4,6 +4,7 @@ pragma solidity 0.8.x;
 import "src/Treasury.sol";
 
 import "forge-std/Test.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 import "./BaseTest.sol";
 import "./Workbench.sol";
@@ -16,10 +17,22 @@ contract TreasuryWithdrawTest is TreasuryTest {
     }
 
     function testETH() public {
-        deal(address(treasury), 1 ether);
-
         hoax(owner, 0);
         treasury.withdraw();
+
+        deal(address(treasury), 1 ether);
+
+        assertEq(address(owner).balance, 0);
+        hoax(owner, 0);
+        treasury.withdraw();
+
+        assertEq(address(owner).balance, 1 ether);
+    }
+
+    function testRedirectETH() public {
+        hoax(owner, 1 ether);
+        Address.sendValue(payable(treasury), 1 ether);
+        assertEq(address(treasury).balance, 0);
         assertEq(address(owner).balance, 1 ether);
     }
 
@@ -29,8 +42,10 @@ contract TreasuryWithdrawTest is TreasuryTest {
 
         assertEq(IERC20(config.weth).balanceOf(address(treasury)), 1 ether);
         assertEq(IERC20(config.weth).balanceOf(owner), 0);
+
         hoax(owner, 0);
         treasury.withdraw();
+
         assertEq(IERC20(config.weth).balanceOf(owner), 0);
         assertEq(address(owner).balance, 1 ether);
     }
@@ -40,8 +55,10 @@ contract TreasuryWithdrawTest is TreasuryTest {
         token.mint(address(treasury), 1 ether);
 
         assertEq(token.balanceOf(owner), 0);
+
         hoax(owner, 0);
         IERC20[] memory tokens = new IERC20[](1);
+
         tokens[0] = IERC20(token);
         treasury.withdraw(tokens);
         assertEq(token.balanceOf(owner), 1 ether);

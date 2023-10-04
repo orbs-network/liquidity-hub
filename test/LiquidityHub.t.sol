@@ -8,7 +8,7 @@ import "./Workbench.sol";
 
 import "src/LiquidityHub.sol";
 
-abstract contract LiquidityHubTest is BaseTest {
+contract LiquidityHubTest is BaseTest {
     using Workbench for Vm;
 
     address public owner;
@@ -17,7 +17,7 @@ abstract contract LiquidityHubTest is BaseTest {
     function setUp() public virtual override withMockConfig {
         super.setUp();
         owner = makeAddr("owner");
-        liquidityHub = new LiquidityHub(IReactor(config.reactor), IWETH(config.weth), owner);
+        liquidityHub = new LiquidityHub(IReactor(config.reactor), owner);
     }
 
     function testOwned() public {

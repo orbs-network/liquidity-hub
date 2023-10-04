@@ -29,7 +29,7 @@ contract TreasuryTest is BaseTest {
         address[] memory addresses = new address[](1);
         addresses[0] = address(1);
         hoax(owner);
-        treasury.set(addresses, true);
+        treasury.setAllowed(addresses, true);
         assertEq(treasury.allowed(address(1)), true);
     }
 
@@ -37,8 +37,8 @@ contract TreasuryTest is BaseTest {
         address[] memory addresses = new address[](1);
         addresses[0] = address(1);
         hoax(owner);
-        treasury.set(addresses, true);
+        treasury.setAllowed(addresses, true);
 
-        assertEq(treasury.get(addresses)[0], true);
+        assertEq(treasury.getAllowed(addresses)[0], true);
     }
 }
