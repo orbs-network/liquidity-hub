@@ -28,8 +28,9 @@ contract LiquidityHubWithdraw is LiquidityHubTest {
 
     function testWETH() public {
         hoax(address(liquidityHub), 1 ether);
-        WETH(payable(config.weth)).deposit{value: 1 ether}();
+        IWETH(config.weth).deposit{value: 1 ether}();
 
+        assertEq(IERC20(config.weth).balanceOf(address(liquidityHub)), 1 ether);
         assertEq(IERC20(config.weth).balanceOf(owner), 0);
         hoax(owner, 0);
         liquidityHub.withdraw(new IExchange.Swap[](0), new address[](0), 0);
@@ -46,10 +47,5 @@ contract LiquidityHubWithdraw is LiquidityHubTest {
         tokens[0] = address(token);
         liquidityHub.withdraw(new IExchange.Swap[](0), tokens, 0);
         assertEq(token.balanceOf(owner), 1 ether);
-    }
-
-    function testMultiple() public {
-        token.mint(address(liquidityHub), 123 ether);
-        hoax(owner, 456 ether);
     }
 }

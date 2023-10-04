@@ -7,7 +7,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {IWETH} from "./external/IWETH.sol";
 
-contract Manager is Ownable {
+contract Treasury is Ownable {
     mapping(address => bool) public allowed;
     IWETH public weth;
 
@@ -31,7 +31,11 @@ contract Manager is Ownable {
         return results;
     }
 
-    function withdraw(IERC20[] calldata tokens) external onlyOwner {
+    function withdraw() external onlyOwner {
+        withdraw(new IERC20[](0));
+    }
+
+    function withdraw(IERC20[] memory tokens) public onlyOwner {
         for (uint256 i = 0; i < tokens.length; i++) {
             tokens[i].transfer(owner(), tokens[i].balanceOf(address(this)));
         }
