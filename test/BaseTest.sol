@@ -59,9 +59,9 @@ contract BaseTest is Test {
         config = Config({
             chainId: block.chainid,
             chainName: "anvil",
-            executor: makeAddr("executor"),
-            quoter: makeAddr("quoter"),
-            reactor: makeAddr("reactor"),
+            executor: address(0),
+            quoter: address(0),
+            reactor: address(0),
             weth: address(new WETH())
         });
         vm.label(config.weth, "weth");
