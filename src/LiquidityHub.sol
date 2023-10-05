@@ -74,6 +74,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback, IProtocolFeeCont
                     // }
             }
         }
+        // everything above including protocol fees is now enforced by reactor, only slippage left
     }
 
     /**
@@ -86,10 +87,8 @@ contract LiquidityHub is IReactorCallback, IValidationCallback, IProtocolFeeCont
     /**
      * @dev IProtocolFeeController
      */
-    function getFeeOutputs(ResolvedOrder memory order) external pure override returns (OutputToken[] memory fees) {
-        if (order.info.additionalValidationData.length == 0) return fees;
-        fees = new OutputToken[](1);
-        fees[0] = abi.decode(order.info.additionalValidationData, (OutputToken));
+    function getFeeOutputs(ResolvedOrder memory) external pure override returns (OutputToken[] memory fees) {
+        return fees; // no additional fees
     }
 
     receive() external payable {
