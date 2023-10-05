@@ -18,7 +18,7 @@ import {IExchange} from "./exchange/IExchange.sol";
 /**
  * LiquidityHub Executor
  */
-contract LiquidityHub is IReactorCallback, IValidationCallback, IProtocolFeeController, Ownable {
+contract LiquidityHub is IReactorCallback, IValidationCallback {
     using SafeERC20 for IERC20;
 
     uint8 public constant VERSION = 1;
@@ -26,16 +26,15 @@ contract LiquidityHub is IReactorCallback, IValidationCallback, IProtocolFeeCont
     IReactor public immutable reactor;
     Treasury public immutable treasury;
 
-    constructor(IReactor _reactor, Treasury _treasury) Ownable() {
+    constructor(IReactor _reactor, Treasury _treasury) {
         reactor = _reactor;
         treasury = _treasury;
-        transferOwnership(treasury.owner());
     }
 
     error InvalidSender(address sender);
 
     modifier onlyAllowed() {
-        if (msg.sender != owner() && !treasury.allowed(msg.sender)) revert InvalidSender(msg.sender);
+        if (!treasury.allowed(msg.sender)) revert InvalidSender(msg.sender);
         _;
     }
 
@@ -82,13 +81,6 @@ contract LiquidityHub is IReactorCallback, IValidationCallback, IProtocolFeeCont
      */
     function validate(address filler, ResolvedOrder calldata) external view override {
         if (filler != address(this)) revert InvalidSender(filler);
-    }
-
-    /**
-     * @dev IProtocolFeeController
-     */
-    function getFeeOutputs(ResolvedOrder memory) external pure override returns (OutputToken[] memory fees) {
-        return fees; // no additional fees
     }
 
     receive() external payable {

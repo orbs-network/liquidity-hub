@@ -3,23 +3,24 @@ pragma solidity 0.8.x;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {IWETH} from "./external/IWETH.sol";
 import {IExchange} from "./exchange/IExchange.sol";
 
 contract Treasury is Ownable {
+    using SafeERC20 for IERC20;
+
     mapping(address => bool) public allowed;
-    IWETH public weth;
+    IWETH public immutable weth;
 
     constructor(IWETH _weth, address _owner) Ownable() {
         weth = _weth;
-        transferOwnership(_owner);
         allowed[_owner] = true;
+        transferOwnership(_owner);
     }
 
     error NotAllowed(address sender);
-    error InsufficientOutput(uint256 amount);
 
     modifier onlyAllowed() {
         if (!allowed[msg.sender]) revert NotAllowed(msg.sender);
@@ -41,20 +42,14 @@ contract Treasury is Ownable {
     }
 
     function withdraw() external onlyAllowed {
-        withdraw(new IExchange.Swap[](0), 0);
+        withdraw(new IERC20[](0));
     }
 
-    function withdraw(IExchange.Swap[] memory swaps, uint256 minAmount) public onlyAllowed {
-        for (uint256 i = 0; i < swaps.length; i++) {
-            IExchange.Swap memory s = swaps[i];
-            Address.functionDelegateCall(
-                address(s.exchange), abi.encodeWithSelector(IExchange.delegateSwap.selector, s)
-            );
+    function withdraw(IERC20[] memory tokens) public onlyAllowed {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            tokens[i].safeTransfer(owner(), tokens[i].balanceOf(address(this)));
         }
-
         weth.withdraw(weth.balanceOf(address(this)));
-
-        if (address(this).balance < minAmount) revert InsufficientOutput(address(this).balance);
         Address.sendValue(payable(owner()), address(this).balance);
     }
 

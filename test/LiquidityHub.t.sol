@@ -17,8 +17,4 @@ contract LiquidityHubTest is BaseTest {
         super.setUp();
         liquidityHub = new LiquidityHub(config.reactor, config.treasury);
     }
-
-    function testOwned() public {
-        assertEq(liquidityHub.owner(), config.treasury.owner());
-    }
 }
