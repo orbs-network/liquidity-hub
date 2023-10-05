@@ -15,7 +15,7 @@ interface IExchange {
     }
 
     /**
-     * @dev called by Filler using delegatecall.
+     * @dev called by Executor using delegatecall.
      */
     function delegateSwap(Swap calldata s) external;
 }

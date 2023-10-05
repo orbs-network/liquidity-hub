@@ -33,7 +33,7 @@ contract TreasuryTest is BaseTest {
         assertEq(treasury.allowed(address(1)), true);
     }
 
-    function testGet() public {
+    function testGetAllowed() public {
         address[] memory addresses = new address[](1);
         addresses[0] = address(1);
         hoax(owner);

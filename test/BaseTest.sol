@@ -5,6 +5,10 @@ import "forge-std/Test.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
 import {WETH} from "solmate/src/tokens/WETH.sol";
 
+import {Treasury} from "src/Treasury.sol";
+import {IWETH} from "src/external/IWETH.sol";
+import {IReactor} from "src/LiquidityHub.sol";
+
 import "./Workbench.sol";
 
 abstract contract BaseTest is Test {
@@ -19,8 +23,9 @@ abstract contract BaseTest is Test {
         string chainName;
         address executor;
         address quoter;
-        address reactor;
-        address weth;
+        IReactor reactor;
+        Treasury treasury;
+        IWETH weth;
     }
 
     modifier withConfig() {
@@ -56,15 +61,18 @@ abstract contract BaseTest is Test {
     }
 
     modifier withMockConfig() {
+        IWETH weth = IWETH(address(new WETH()));
+        address owner = makeAddr("owner");
+
         config = Config({
             chainId: block.chainid,
             chainName: "anvil",
             executor: address(0),
             quoter: address(0),
-            reactor: address(0),
-            weth: address(new WETH())
+            reactor: IReactor(address(0)),
+            treasury: new Treasury(weth, owner),
+            weth: weth
         });
-        vm.label(config.weth, "weth");
         _;
     }
 

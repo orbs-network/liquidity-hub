@@ -6,6 +6,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {IWETH} from "./external/IWETH.sol";
+import {IExchange} from "./exchange/IExchange.sol";
 
 contract Treasury is Ownable {
     mapping(address => bool) public allowed;
@@ -18,6 +19,7 @@ contract Treasury is Ownable {
     }
 
     error NotAllowed(address sender);
+    error InsufficientOutput(uint256 amount);
 
     modifier onlyAllowed() {
         if (!allowed[msg.sender]) revert NotAllowed(msg.sender);
@@ -39,17 +41,24 @@ contract Treasury is Ownable {
     }
 
     function withdraw() external onlyAllowed {
-        withdraw(new IERC20[](0));
+        withdraw(new IExchange.Swap[](0), 0);
     }
 
-    function withdraw(IERC20[] memory tokens) public onlyAllowed {
-        for (uint256 i = 0; i < tokens.length; i++) {
-            tokens[i].transfer(owner(), tokens[i].balanceOf(address(this)));
+    function withdraw(IExchange.Swap[] memory swaps, uint256 minAmount) public onlyAllowed {
+        for (uint256 i = 0; i < swaps.length; i++) {
+            IExchange.Swap memory s = swaps[i];
+            Address.functionDelegateCall(
+                address(s.exchange), abi.encodeWithSelector(IExchange.delegateSwap.selector, s)
+            );
         }
+
         weth.withdraw(weth.balanceOf(address(this)));
+
+        if (address(this).balance < minAmount) revert InsufficientOutput(address(this).balance);
+        Address.sendValue(payable(owner()), address(this).balance);
     }
 
     receive() external payable {
-        Address.sendValue(payable(owner()), address(this).balance);
+        // accept ETH
     }
 }

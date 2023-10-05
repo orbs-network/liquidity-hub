@@ -11,16 +11,14 @@ import "src/LiquidityHub.sol";
 contract LiquidityHubTest is BaseTest {
     using Workbench for Vm;
 
-    address public owner;
     LiquidityHub public liquidityHub;
 
     function setUp() public virtual override withMockConfig {
         super.setUp();
-        owner = makeAddr("owner");
-        liquidityHub = new LiquidityHub(IReactor(config.reactor), owner);
+        liquidityHub = new LiquidityHub(config.reactor, config.treasury);
     }
 
     function testOwned() public {
-        assertEq(liquidityHub.owner(), owner);
+        assertEq(liquidityHub.owner(), config.treasury.owner());
     }
 }

@@ -26,10 +26,10 @@ contract LiquidityHub is IReactorCallback, IValidationCallback, IProtocolFeeCont
     IReactor public immutable reactor;
     Treasury public immutable treasury;
 
-    constructor(IReactor _reactor, address _treasury) Ownable() {
+    constructor(IReactor _reactor, Treasury _treasury) Ownable() {
         reactor = _reactor;
-        treasury = Treasury(payable(_treasury));
-        transferOwnership(_treasury);
+        treasury = _treasury;
+        transferOwnership(treasury.owner());
     }
 
     error InvalidSender(address sender);

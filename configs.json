@@ -5,6 +5,7 @@
     "executor": "0x64bC3532991D8147167EE028a7adBF01c05594f7",
     "quoter": "0x2BC7Eb3Bee0442f08E0ACf7EdDd63fFBc2bcB1C0",
     "reactor": "0x21Da9737764527e75C17F1AB26Cb668b66dEE0a0",
+    "treasury": "",
     "weth": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"
   }
 ]
