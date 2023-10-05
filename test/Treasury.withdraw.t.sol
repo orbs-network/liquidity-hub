@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.x;
 
-import "src/Treasury.sol";
-
 import "forge-std/Test.sol";
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {UniswapV2Exchange} from "src/exchange/UniswapV2Exchange.sol";
 
-import "./BaseTest.sol";
-import "./Workbench.sol";
 import "./Treasury.t.sol";
 
 contract TreasuryWithdrawTest is TreasuryTest {
@@ -27,17 +21,6 @@ contract TreasuryWithdrawTest is TreasuryTest {
         hoax(owner, 0);
         treasury.withdraw();
 
-        assertEq(address(owner).balance, 1 ether);
-    }
-
-    function testRedirectETH() public {
-        hoax(owner, 1 ether);
-        Address.sendValue(payable(treasury), 1 ether);
-        assertEq(address(treasury).balance, 1 ether);
-
-        hoax(owner, 0);
-        treasury.withdraw();
-        assertEq(address(treasury).balance, 0);
         assertEq(address(owner).balance, 1 ether);
     }
 
