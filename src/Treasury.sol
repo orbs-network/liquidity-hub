@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.x;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {IWETH} from "./external/IWETH.sol";
 import {IExchange} from "./exchange/IExchange.sol";
+import {IWETH} from "./external/IWETH.sol";
 
 contract Treasury is Ownable {
     using SafeERC20 for IERC20;
@@ -27,18 +27,8 @@ contract Treasury is Ownable {
         _;
     }
 
-    function setAllowed(address[] calldata _addrs, bool _allowed) external onlyOwner {
-        for (uint256 i = 0; i < _addrs.length; i++) {
-            allowed[_addrs[i]] = _allowed;
-        }
-    }
-
-    function getAllowed(address[] calldata _addrs) external view returns (bool[] memory) {
-        bool[] memory results = new bool[](_addrs.length);
-        for (uint256 i = 0; i < _addrs.length; i++) {
-            results[i] = allowed[_addrs[i]];
-        }
-        return results;
+    function allow(address addr) external onlyOwner {
+        allowed[addr] = true;
     }
 
     function withdraw() external onlyAllowed {

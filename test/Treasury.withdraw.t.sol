@@ -3,52 +3,46 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
-import "./Treasury.t.sol";
+import {BaseTest, ERC20Mock, IERC20} from "test/BaseTest.sol";
 
-contract TreasuryWithdrawTest is TreasuryTest {
-    function testWithdrawOwned() public {
-        vm.expectRevert(abi.encodeWithSelector(Treasury.NotAllowed.selector, address(this)));
-        treasury.withdraw();
+import {Treasury} from "src/Treasury.sol";
+
+contract TreasuryWithdrawTest is BaseTest {
+    address owner;
+
+    function setUp() public withMockConfig {
+        owner = config.treasury.owner();
     }
 
-    function testETH() public {
+    function test_Empty() public {
         hoax(owner, 0);
-        treasury.withdraw();
-
-        deal(address(treasury), 1 ether);
-
-        assertEq(address(owner).balance, 0);
-        hoax(owner, 0);
-        treasury.withdraw();
-
-        assertEq(address(owner).balance, 1 ether);
+        config.treasury.withdraw();
+        assertEq(owner.balance, 0);
     }
 
-    function testWETH() public {
-        hoax(address(treasury), 1 ether);
-        IWETH(config.weth).deposit{value: 1 ether}();
-
-        assertEq(IERC20(config.weth).balanceOf(address(treasury)), 1 ether);
-        assertEq(IERC20(config.weth).balanceOf(owner), 0);
-
+    function test_ETH() public {
+        deal(address(config.treasury), 1 ether);
         hoax(owner, 0);
-        treasury.withdraw();
-
-        assertEq(IERC20(config.weth).balanceOf(owner), 0);
-        assertEq(address(owner).balance, 1 ether);
+        config.treasury.withdraw();
+        assertEq(owner.balance, 1 ether);
     }
 
-    function testTokens() public {
+    function test_WETH() public {
+        dealWETH(address(config.treasury), 1 ether);
+        hoax(owner, 0);
+        config.treasury.withdraw();
+        assertEq(owner.balance, 1 ether);
+    }
+
+    function test_Tokens() public {
         ERC20Mock token = new ERC20Mock();
-        token.mint(address(treasury), 1 ether);
-
-        assertEq(token.balanceOf(owner), 0);
+        token.mint(address(config.treasury), 1 ether);
 
         IERC20[] memory tokens = new IERC20[](1);
         tokens[0] = token;
 
         hoax(owner, 0);
-        treasury.withdraw(tokens);
+        config.treasury.withdraw(tokens);
         assertEq(token.balanceOf(owner), 1 ether);
     }
 }

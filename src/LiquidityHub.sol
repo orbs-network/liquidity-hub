@@ -8,7 +8,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IReactor} from "uniswapx/src/interfaces/IReactor.sol";
 import {IReactorCallback} from "uniswapx/src/interfaces/IReactorCallback.sol";
 import {IValidationCallback} from "uniswapx/src/interfaces/IValidationCallback.sol";
-import {IProtocolFeeController} from "uniswapx/src/interfaces/IProtocolFeeController.sol";
 import {ResolvedOrder, SignedOrder, OutputToken} from "uniswapx/src/base/ReactorStructs.sol";
 
 import {Treasury} from "./Treasury.sol";
@@ -42,11 +41,17 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         if (msg.sender != address(reactor)) revert InvalidSender(msg.sender);
         _;
     }
+    /**
+     * Entry point for executing a single order
+     */
 
     function execute(SignedOrder calldata order, IExchange.Swap[] calldata swaps) external onlyAllowed {
         reactor.executeWithCallback(order, abi.encode(swaps));
     }
 
+    /**
+     * Entry point for executing a batch of orders
+     */
     function executeBatch(SignedOrder[] calldata orders, IExchange.Swap[] calldata swaps) external onlyAllowed {
         reactor.executeBatchWithCallback(orders, abi.encode(swaps));
     }
