@@ -8,43 +8,40 @@ import {BaseTest} from "test/BaseTest.sol";
 import {LiquidityHub, IReactor, IExchange, ResolvedOrder, SignedOrder} from "src/LiquidityHub.sol";
 
 contract LiquidityHubAccessTest is BaseTest {
-    LiquidityHub public liquidityHub;
+    LiquidityHub public uut;
 
     function setUp() public withMockConfig {
-        liquidityHub = new LiquidityHub(config.reactor, config.treasury);
+        uut = new LiquidityHub(config.reactor, config.treasury);
+        vm.mockCall(
+            address(config.reactor), abi.encodeWithSelector(IReactor.executeWithCallback.selector), new bytes(0)
+        );
     }
 
     function test_Execute_OnlyAllowed() public {
         SignedOrder memory order;
-        vm.mockCall(
-            address(config.reactor), abi.encodeWithSelector(IReactor.executeBatchWithCallback.selector), new bytes(0)
-        );
         hoax(config.treasury.owner());
-        liquidityHub.execute(order, new IExchange.Swap[](0));
+        uut.execute(order, new IExchange.Swap[](0));
     }
 
     function test_Revert_Execute_OnlyAllowed() public {
         SignedOrder memory order;
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, address(this)));
-        liquidityHub.execute(order, new IExchange.Swap[](0));
+        uut.execute(order, new IExchange.Swap[](0));
     }
 
     function test_ExecuteBatch_OnlyAllowed() public {
-        vm.mockCall(
-            address(config.reactor), abi.encodeWithSelector(IReactor.executeBatchWithCallback.selector), new bytes(0)
-        );
         hoax(config.treasury.owner());
-        liquidityHub.executeBatch(new SignedOrder[](0), new IExchange.Swap[](0));
+        uut.executeBatch(new SignedOrder[](0), new IExchange.Swap[](0));
     }
 
     function test_Revert_ExecuteBatch_OnlyAllowed() public {
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, address(this)));
-        liquidityHub.executeBatch(new SignedOrder[](0), new IExchange.Swap[](0));
+        uut.executeBatch(new SignedOrder[](0), new IExchange.Swap[](0));
     }
 
     function test_ValidationCallback_OnlySelf() public {
         ResolvedOrder memory order;
-        liquidityHub.validate(address(liquidityHub), order);
+        uut.validate(address(uut), order);
         assertTrue(true);
     }
 
@@ -52,17 +49,16 @@ contract LiquidityHubAccessTest is BaseTest {
         ResolvedOrder memory order;
         address filler = makeAddr("unknown filler");
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, filler));
-        liquidityHub.validate(filler, order);
+        uut.validate(filler, order);
     }
 
     function test_ReactorCallback_OnlyReactor() public {
         hoax(address(config.reactor));
-        liquidityHub.reactorCallback(new ResolvedOrder[](0), abi.encode(new IExchange.Swap[](0)));
-        assertTrue(true);
+        uut.reactorCallback(new ResolvedOrder[](0), abi.encode(new IExchange.Swap[](0)));
     }
 
     function test_Revert_ReactorCallback_OnlyReactor() public {
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, address(this)));
-        liquidityHub.reactorCallback(new ResolvedOrder[](0), abi.encode(new IExchange.Swap[](0)));
+        uut.reactorCallback(new ResolvedOrder[](0), abi.encode(new IExchange.Swap[](0)));
     }
 }

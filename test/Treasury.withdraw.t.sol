@@ -3,7 +3,7 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
-import {BaseTest, ERC20Mock, IERC20} from "test/BaseTest.sol";
+import {BaseTest, IERC20, ERC20Mock} from "test/BaseTest.sol";
 
 import {Treasury} from "src/Treasury.sol";
 

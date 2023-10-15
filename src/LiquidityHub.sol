@@ -8,7 +8,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IReactor} from "uniswapx/src/interfaces/IReactor.sol";
 import {IReactorCallback} from "uniswapx/src/interfaces/IReactorCallback.sol";
 import {IValidationCallback} from "uniswapx/src/interfaces/IValidationCallback.sol";
-import {ResolvedOrder, SignedOrder, OutputToken} from "uniswapx/src/base/ReactorStructs.sol";
+import {ResolvedOrder, SignedOrder} from "uniswapx/src/base/ReactorStructs.sol";
 
 import {Treasury} from "./Treasury.sol";
 import {IWETH} from "./external/IWETH.sol";

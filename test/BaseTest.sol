@@ -47,33 +47,33 @@ abstract contract BaseTest is Test {
         _;
     }
 
-    // modifier withConfig() {
-    //     // ⛔️ JSON IS PARSED ALPHABETICALLY!
-    //     Config[] memory all = abi.decode(vm.parseJson(vm.readFile("configs.json")), (Config[]));
-    //     for (uint256 i = 0; i < all.length; i++) {
-    //         if (all[i].chainId == block.chainid) {
-    //             config = all[i];
-    //             console2.log("Forking:", config.chainName.bold().green());
-    //             string memory urlEnvKey = string(abi.encodePacked("RPC_URL_", vm.toUpper(config.chainName)));
-    //             vm.createSelectFork(vm.envString(urlEnvKey));
-    //             console2.log(
-    //                 string(
-    //                     abi.encodePacked(
-    //                         "block.chainid:",
-    //                         vm.toString(block.chainid),
-    //                         " block.number:",
-    //                         vm.toString(block.number),
-    //                         " date:",
-    //                         vm.fmtDate(block.timestamp)
-    //                     )
-    //                 )
-    //             );
-    //             _;
-    //             return;
-    //         }
-    //     }
-    //     revert("no config");
-    // }
+    modifier withConfig() {
+        // ⛔️ JSON IS PARSED ALPHABETICALLY!
+        Config[] memory all = abi.decode(vm.parseJson(vm.readFile("configs.json")), (Config[]));
+        for (uint256 i = 0; i < all.length; i++) {
+            if (all[i].chainId == block.chainid) {
+                config = all[i];
+                console2.log("Forking:", config.chainName.bold().green());
+                string memory urlEnvKey = string(abi.encodePacked("RPC_URL_", vm.toUpper(config.chainName)));
+                vm.createSelectFork(vm.envString(urlEnvKey));
+                console2.log(
+                    string(
+                        abi.encodePacked(
+                            "block.chainid:",
+                            vm.toString(block.chainid),
+                            " block.number:",
+                            vm.toString(block.number),
+                            " date:",
+                            vm.fmtDate(block.timestamp)
+                        )
+                    )
+                );
+                _;
+                return;
+            }
+        }
+        revert("no config");
+    }
 
     function dealWETH(address target, uint256 amount) public {
         hoax(target, amount);
