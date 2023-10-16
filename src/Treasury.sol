@@ -5,8 +5,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {IExchange} from "./exchange/IExchange.sol";
-import {IWETH} from "./external/IWETH.sol";
+import {IWETH} from "./IWETH.sol";
 
 contract Treasury is Ownable {
     using SafeERC20 for IERC20;

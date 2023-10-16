@@ -5,3 +5,4 @@ openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/
 permit2/=lib/permit2/
 uniswapx/=lib/UniswapX/
 solmate/=lib/solmate/
+multicall/=lib/multicall/

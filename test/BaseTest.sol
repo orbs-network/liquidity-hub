@@ -9,12 +9,12 @@ import {OutputsBuilder} from "uniswapx/test/util/OutputsBuilder.sol";
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {WETH} from "solmate/src/tokens/WETH.sol";
 
-import {DeployReactor} from "test/DeployReactor.sol";
+import {DeployInfra} from "test/DeployInfra.sol";
 import {Workbench} from "test/Workbench.sol";
 
 import {IReactor, Treasury, IWETH, IERC20, SignedOrder} from "src/LiquidityHub.sol";
 
-abstract contract BaseTest is Test, DeployReactor {
+abstract contract BaseTest is Test, DeployInfra {
     using StdStyle for string;
     using Workbench for Vm;
 
@@ -51,8 +51,8 @@ abstract contract BaseTest is Test, DeployReactor {
         _;
     }
 
-    modifier withExclusiveDutchOrderReactor() {
-        config.reactor = IReactor(deployExclusiveDutchOrderReactor());
+    modifier withDeployedInfra() {
+        config.reactor = IReactor(deployInfra());
         _;
     }
 

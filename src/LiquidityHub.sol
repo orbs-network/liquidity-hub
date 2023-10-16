@@ -11,8 +11,8 @@ import {IValidationCallback} from "uniswapx/src/interfaces/IValidationCallback.s
 import {ResolvedOrder, SignedOrder} from "uniswapx/src/base/ReactorStructs.sol";
 
 import {Treasury} from "./Treasury.sol";
-import {IWETH} from "./external/IWETH.sol";
-import {IExchange} from "./exchange/IExchange.sol";
+import {IWETH} from "./IWETH.sol";
+import {IMulticall, Call3} from "./IMulticall.sol";
 
 /**
  * LiquidityHub Executor
@@ -21,6 +21,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     using SafeERC20 for IERC20;
 
     uint8 public constant VERSION = 1;
+    IMulticall public constant MULTICALL = IMulticall(0xcA11bde05977b3631167028862bE2a173976CA11);
 
     IReactor public immutable reactor;
     Treasury public immutable treasury;
@@ -45,26 +46,25 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
      * Entry point for executing a single order
      */
 
-    function execute(SignedOrder calldata order, IExchange.Swap[] calldata swaps) external onlyAllowed {
-        reactor.executeWithCallback(order, abi.encode(swaps));
+    function execute(SignedOrder calldata order, Call3[] calldata calls) external onlyAllowed {
+        reactor.executeWithCallback(order, abi.encode(calls));
     }
 
     /**
      * Entry point for executing a batch of orders
      */
-    function executeBatch(SignedOrder[] calldata orders, IExchange.Swap[] calldata swaps) external onlyAllowed {
-        reactor.executeBatchWithCallback(orders, abi.encode(swaps));
+    function executeBatch(SignedOrder[] calldata orders, Call3[] calldata calls) external onlyAllowed {
+        reactor.executeBatchWithCallback(orders, abi.encode(calls));
     }
 
     /**
      * @dev IReactorCallback
      */
     function reactorCallback(ResolvedOrder[] memory orders, bytes memory callbackData) external override onlyReactor {
-        IExchange.Swap[] memory swaps = abi.decode(callbackData, (IExchange.Swap[]));
-        for (uint256 i = 0; i < swaps.length; i++) {
-            IExchange.Swap memory s = swaps[i];
+        Call3[] memory calls = abi.decode(callbackData, (Call3[]));
+        if (calls.length > 0) {
             Address.functionDelegateCall(
-                address(s.exchange), abi.encodeWithSelector(IExchange.delegateSwap.selector, s)
+                address(MULTICALL), abi.encodeWithSelector(MULTICALL.aggregate3.selector, calls)
             );
         }
 
