@@ -4,13 +4,17 @@ pragma solidity 0.8.x;
 import "forge-std/Test.sol";
 
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
+import {ExclusiveDutchOrder} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
+import {OutputsBuilder} from "uniswapx/test/util/OutputsBuilder.sol";
+import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {WETH} from "solmate/src/tokens/WETH.sol";
 
+import {DeployReactor} from "test/DeployReactor.sol";
 import {Workbench} from "test/Workbench.sol";
 
-import {IReactor, Treasury, IWETH, IERC20} from "src/LiquidityHub.sol";
+import {IReactor, Treasury, IWETH, IERC20, SignedOrder} from "src/LiquidityHub.sol";
 
-abstract contract BaseTest is Test {
+abstract contract BaseTest is Test, DeployReactor {
     using StdStyle for string;
     using Workbench for Vm;
 
@@ -47,6 +51,11 @@ abstract contract BaseTest is Test {
         _;
     }
 
+    modifier withExclusiveDutchOrderReactor() {
+        config.reactor = IReactor(deployExclusiveDutchOrderReactor());
+        _;
+    }
+
     modifier withConfig() {
         // ⛔️ JSON IS PARSED ALPHABETICALLY!
         Config[] memory all = abi.decode(vm.parseJson(vm.readFile("configs.json")), (Config[]));
@@ -79,5 +88,33 @@ abstract contract BaseTest is Test {
         hoax(target, amount);
         config.weth.deposit{value: amount}();
         assertEq(config.weth.balanceOf(target), amount);
+    }
+
+    function createOrder(
+        address swapper,
+        uint256 privateKey,
+        address inToken,
+        uint256 inAmount,
+        address outToken,
+        uint256 outAmount
+    ) public view returns (SignedOrder memory result) {
+        uint256 deadline = block.timestamp + 10 minutes;
+        ExclusiveDutchOrder memory order;
+        {
+            order.info.reactor = config.reactor;
+            order.info.swapper = swapper;
+            order.info.nonce = block.timestamp;
+            order.info.deadline = deadline;
+            order.decayStartTime = deadline;
+            order.decayEndTime = deadline;
+
+            order.input.token = ERC20(inToken);
+            order.input.startAmount = inAmount;
+            order.input.endAmount = inAmount;
+
+            order.outputs = OutputsBuilder.singleDutch(outToken, outAmount, outAmount, swapper);
+        }
+        bytes memory sig = signOrder(privateKey, PERMIT2_ADDRESS, order);
+        result = SignedOrder({sig: sig, order: abi.encode(order)});
     }
 }

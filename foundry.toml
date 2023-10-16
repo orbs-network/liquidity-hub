@@ -10,6 +10,5 @@ fs_permissions = [
 ]
 optimizer_runs = 1_000_000
 verbosity = 3
-#viaIR = true
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
