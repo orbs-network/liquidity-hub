@@ -71,14 +71,15 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         for (uint256 i = 0; i < orders.length; i++) {
             ResolvedOrder memory order = orders[i];
             for (uint256 j = 0; j < order.outputs.length; j++) {
-                // if (order.outputs[j].token == address(0)) {
-                // Address.sendValue(payable(msg.sender), order.outputs[j].amount); // native output
-                // } else {
-                IERC20(order.outputs[j].token).safeIncreaseAllowance(msg.sender, order.outputs[j].amount); // output.amount to swap recipients, enforced by reactor. anything above remains here.
-                    // }
+                if (order.outputs[j].token == address(0)) {
+                    Address.sendValue(payable(msg.sender), order.outputs[j].amount); // native output
+                } else {
+                    IERC20(order.outputs[j].token).safeIncreaseAllowance(msg.sender, order.outputs[j].amount); // output.amount to swap recipients, enforced by reactor. anything above remains here.
+                }
             }
         }
-        // everything above including protocol fees is now enforced by reactor, only slippage left
+
+        // TODO slippage here
     }
 
     /**

@@ -5,15 +5,15 @@ import "forge-std/Test.sol";
 
 import {BaseTest, ERC20Mock} from "test/BaseTest.sol";
 
-import {LiquidityHub, IValidationCallback, IReactor, IERC20, SignedOrder, Call3} from "src/LiquidityHub.sol";
+import {LiquidityHub, IValidationCallback, IReactor, IERC20, IWETH, SignedOrder, Call3} from "src/LiquidityHub.sol";
 
 contract LiquidityHubExecuteTest is BaseTest {
-    LiquidityHub public liquidityHub;
+    LiquidityHub public uut;
     address public swapper;
     uint256 public swapperPK;
 
     function setUp() public withMockConfig withDeployedInfra {
-        liquidityHub = new LiquidityHub(config.reactor, config.treasury);
+        uut = new LiquidityHub(config.reactor, config.treasury);
         (swapper, swapperPK) = makeAddrAndKey("swapper");
     }
 
@@ -21,17 +21,17 @@ contract LiquidityHubExecuteTest is BaseTest {
         ERC20Mock token = new ERC20Mock();
         uint256 amount = 1 ether;
 
-        token.mint(swapper, amount);
-        assertEq(token.balanceOf(swapper), amount);
-
         hoax(swapper);
         token.approve(PERMIT2_ADDRESS, amount);
 
         SignedOrder[] memory orders = new SignedOrder[](1);
         orders[0] = createOrder(swapper, swapperPK, address(token), amount, address(token), amount);
 
+        token.mint(swapper, amount);
+        assertEq(token.balanceOf(swapper), amount);
+
         hoax(config.treasury.owner());
-        liquidityHub.executeBatch(orders, new Call3[](0));
+        uut.executeBatch(orders, new Call3[](0));
 
         assertEq(token.balanceOf(swapper), amount);
     }
@@ -50,12 +50,6 @@ contract LiquidityHubExecuteTest is BaseTest {
         tokenA.mint(swapper, amountA);
         tokenB.mint(swapper2, amountB);
 
-        assertEq(tokenA.balanceOf(swapper), amountA);
-        assertEq(tokenA.balanceOf(swapper2), 0);
-
-        assertEq(tokenB.balanceOf(swapper), 0);
-        assertEq(tokenB.balanceOf(swapper2), amountB);
-
         hoax(swapper);
         tokenA.approve(PERMIT2_ADDRESS, amountA);
         hoax(swapper2);
@@ -64,8 +58,14 @@ contract LiquidityHubExecuteTest is BaseTest {
         orders[0] = createOrder(swapper, swapperPK, address(tokenA), amountA, address(tokenB), amountB);
         orders[1] = createOrder(swapper2, swapperPK2, address(tokenB), amountB, address(tokenA), amountA);
 
+        assertEq(tokenA.balanceOf(swapper), amountA);
+        assertEq(tokenA.balanceOf(swapper2), 0);
+
+        assertEq(tokenB.balanceOf(swapper), 0);
+        assertEq(tokenB.balanceOf(swapper2), amountB);
+
         hoax(config.treasury.owner());
-        liquidityHub.executeBatch(orders, new Call3[](0));
+        uut.executeBatch(orders, new Call3[](0));
 
         assertEq(tokenA.balanceOf(swapper), 0);
         assertEq(tokenA.balanceOf(swapper2), amountA);
@@ -80,10 +80,6 @@ contract LiquidityHubExecuteTest is BaseTest {
         uint256 inAmount = 1 ether;
         uint256 outAmount = 2 ether;
 
-        inToken.mint(swapper, inAmount);
-        assertEq(inToken.balanceOf(swapper), inAmount);
-        assertEq(outToken.balanceOf(swapper), 0);
-
         hoax(swapper);
         inToken.approve(PERMIT2_ADDRESS, inAmount);
 
@@ -92,12 +88,43 @@ contract LiquidityHubExecuteTest is BaseTest {
 
         Call3[] memory calls = new Call3[](1);
         calls[0].target = address(outToken);
-        calls[0].callData = abi.encodeWithSelector(ERC20Mock.mint.selector, address(liquidityHub), outAmount);
+        calls[0].callData = abi.encodeWithSelector(ERC20Mock.mint.selector, address(uut), outAmount);
+
+        inToken.mint(swapper, inAmount);
+        assertEq(inToken.balanceOf(swapper), inAmount);
+        assertEq(outToken.balanceOf(swapper), 0);
 
         hoax(config.treasury.owner());
-        liquidityHub.executeBatch(orders, calls);
+        uut.executeBatch(orders, calls);
 
         assertEq(inToken.balanceOf(swapper), 0);
         assertEq(outToken.balanceOf(swapper), outAmount);
+    }
+
+    function test_NativeOutput() public {
+        IWETH inToken = config.weth;
+        address outToken = address(0);
+        uint256 inAmount = 1 ether;
+        uint256 outAmount = 1 ether;
+
+        hoax(swapper, 0);
+        inToken.approve(PERMIT2_ADDRESS, inAmount);
+
+        SignedOrder[] memory orders = new SignedOrder[](1);
+        orders[0] = createOrder(swapper, swapperPK, address(inToken), inAmount, outToken, outAmount);
+
+        Call3[] memory calls = new Call3[](1);
+        calls[0].target = address(inToken);
+        calls[0].callData = abi.encodeWithSelector(IWETH.withdraw.selector, outAmount);
+
+        dealWETH(swapper, inAmount);
+        assertEq(inToken.balanceOf(swapper), inAmount);
+        assertEq(swapper.balance, 0);
+
+        hoax(config.treasury.owner());
+        uut.executeBatch(orders, calls);
+
+        assertEq(inToken.balanceOf(swapper), 0);
+        assertEq(swapper.balance, outAmount);
     }
 }
