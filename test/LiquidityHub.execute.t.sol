@@ -127,4 +127,26 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(inToken.balanceOf(swapper), 0);
         assertEq(swapper.balance, outAmount);
     }
+
+    function test_SlippageRemainderToTreasury() public {
+        ERC20Mock inToken = new ERC20Mock();
+        uint256 inAmount = 1 ether;
+        uint256 outAmount = 0.5 ether;
+
+        hoax(swapper, 0);
+        inToken.approve(PERMIT2_ADDRESS, inAmount);
+
+        SignedOrder[] memory orders = new SignedOrder[](1);
+        orders[0] = createOrder(swapper, swapperPK, address(inToken), inAmount, address(inToken), outAmount);
+
+        inToken.mint(swapper, inAmount);
+        assertEq(inToken.balanceOf(swapper), inAmount);
+
+        hoax(config.treasury.owner());
+        uut.executeBatch(orders, new Call[](0));
+
+        assertEq(inToken.balanceOf(swapper), outAmount);
+        assertEq(inToken.balanceOf(address(uut)), 0);
+        assertEq(inToken.balanceOf(address(config.treasury)), inAmount - outAmount);
+    }
 }
