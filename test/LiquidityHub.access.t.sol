@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import {BaseTest} from "test/BaseTest.sol";
 
-import {LiquidityHub, IReactor, ResolvedOrder, SignedOrder, Call3} from "src/LiquidityHub.sol";
+import {LiquidityHub, IReactor, ResolvedOrder, SignedOrder, Call} from "src/LiquidityHub.sol";
 
 contract LiquidityHubAccessTest is BaseTest {
     LiquidityHub public uut;
@@ -20,23 +20,23 @@ contract LiquidityHubAccessTest is BaseTest {
     function test_Execute_OnlyAllowed() public {
         SignedOrder memory order;
         hoax(config.treasury.owner());
-        uut.execute(order, new Call3[](0));
+        uut.execute(order, new Call[](0));
     }
 
     function test_Revert_Execute_OnlyAllowed() public {
         SignedOrder memory order;
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, address(this)));
-        uut.execute(order, new Call3[](0));
+        uut.execute(order, new Call[](0));
     }
 
     function test_ExecuteBatch_OnlyAllowed() public {
         hoax(config.treasury.owner());
-        uut.executeBatch(new SignedOrder[](0), new Call3[](0));
+        uut.executeBatch(new SignedOrder[](0), new Call[](0));
     }
 
     function test_Revert_ExecuteBatch_OnlyAllowed() public {
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, address(this)));
-        uut.executeBatch(new SignedOrder[](0), new Call3[](0));
+        uut.executeBatch(new SignedOrder[](0), new Call[](0));
     }
 
     function test_ValidationCallback_OnlySelf() public {
@@ -54,11 +54,11 @@ contract LiquidityHubAccessTest is BaseTest {
 
     function test_ReactorCallback_OnlyReactor() public {
         hoax(address(config.reactor));
-        uut.reactorCallback(new ResolvedOrder[](0), abi.encode(new Call3[](0)));
+        uut.reactorCallback(new ResolvedOrder[](0), abi.encode(new Call[](0)));
     }
 
     function test_Revert_ReactorCallback_OnlyReactor() public {
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, address(this)));
-        uut.reactorCallback(new ResolvedOrder[](0), abi.encode(new Call3[](0)));
+        uut.reactorCallback(new ResolvedOrder[](0), abi.encode(new Call[](0)));
     }
 }

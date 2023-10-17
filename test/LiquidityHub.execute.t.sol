@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import {BaseTest, ERC20Mock} from "test/BaseTest.sol";
 
-import {LiquidityHub, IValidationCallback, IReactor, IERC20, IWETH, SignedOrder, Call3} from "src/LiquidityHub.sol";
+import {LiquidityHub, IValidationCallback, IReactor, IERC20, IWETH, SignedOrder, Call} from "src/LiquidityHub.sol";
 
 contract LiquidityHubExecuteTest is BaseTest {
     LiquidityHub public uut;
@@ -31,7 +31,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(token.balanceOf(swapper), amount);
 
         hoax(config.treasury.owner());
-        uut.executeBatch(orders, new Call3[](0));
+        uut.executeBatch(orders, new Call[](0));
 
         assertEq(token.balanceOf(swapper), amount);
     }
@@ -65,7 +65,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(tokenB.balanceOf(swapper2), amountB);
 
         hoax(config.treasury.owner());
-        uut.executeBatch(orders, new Call3[](0));
+        uut.executeBatch(orders, new Call[](0));
 
         assertEq(tokenA.balanceOf(swapper), 0);
         assertEq(tokenA.balanceOf(swapper2), amountA);
@@ -86,7 +86,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         SignedOrder[] memory orders = new SignedOrder[](1);
         orders[0] = createOrder(swapper, swapperPK, address(inToken), inAmount, address(outToken), outAmount);
 
-        Call3[] memory calls = new Call3[](1);
+        Call[] memory calls = new Call[](1);
         calls[0].target = address(outToken);
         calls[0].callData = abi.encodeWithSelector(ERC20Mock.mint.selector, address(uut), outAmount);
 
@@ -113,7 +113,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         SignedOrder[] memory orders = new SignedOrder[](1);
         orders[0] = createOrder(swapper, swapperPK, address(inToken), inAmount, outToken, outAmount);
 
-        Call3[] memory calls = new Call3[](1);
+        Call[] memory calls = new Call[](1);
         calls[0].target = address(inToken);
         calls[0].callData = abi.encodeWithSelector(IWETH.withdraw.selector, outAmount);
 

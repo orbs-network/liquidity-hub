@@ -12,7 +12,7 @@ import {ResolvedOrder, SignedOrder} from "uniswapx/src/base/ReactorStructs.sol";
 
 import {Treasury} from "./Treasury.sol";
 import {IWETH} from "./IWETH.sol";
-import {IMulticall, Call3} from "./IMulticall.sol";
+import {IMulticall, Call} from "./IMulticall.sol";
 
 /**
  * LiquidityHub Executor
@@ -46,14 +46,14 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
      * Entry point for executing a single order
      */
 
-    function execute(SignedOrder calldata order, Call3[] calldata calls) external onlyAllowed {
+    function execute(SignedOrder calldata order, Call[] calldata calls) external onlyAllowed {
         reactor.executeWithCallback(order, abi.encode(calls));
     }
 
     /**
      * Entry point for executing a batch of orders
      */
-    function executeBatch(SignedOrder[] calldata orders, Call3[] calldata calls) external onlyAllowed {
+    function executeBatch(SignedOrder[] calldata orders, Call[] calldata calls) external onlyAllowed {
         reactor.executeBatchWithCallback(orders, abi.encode(calls));
     }
 
@@ -61,7 +61,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
      * @dev IReactorCallback
      */
     function reactorCallback(ResolvedOrder[] memory orders, bytes memory callbackData) external override onlyReactor {
-        Call3[] memory calls = abi.decode(callbackData, (Call3[]));
+        Call[] memory calls = abi.decode(callbackData, (Call[]));
         if (calls.length > 0) {
             Address.functionDelegateCall(
                 address(MULTICALL), abi.encodeWithSelector(MULTICALL.aggregate3.selector, calls)

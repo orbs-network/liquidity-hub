@@ -10,7 +10,7 @@ contract DeployInfra is DeployPermit2, PermitSignature {
     address public constant MULTICALL3 = 0xcA11bde05977b3631167028862bE2a173976CA11;
 
     function deployInfra() public returns (address) {
-        vm.chainId(137);
+        vm.chainId(137); // needed for permit2
 
         deployPermit2();
         require(PERMIT2_ADDRESS != address(0), "DeployPermit2 failed");
