@@ -31,7 +31,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(token.balanceOf(swapper), amount);
 
         hoax(config.treasury.owner());
-        uut.executeBatch(orders, new Call[](0));
+        uut.executeBatch(orders, new Call[](0), new address[](0));
 
         assertEq(token.balanceOf(swapper), amount);
     }
@@ -65,7 +65,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(tokenB.balanceOf(swapper2), amountB);
 
         hoax(config.treasury.owner());
-        uut.executeBatch(orders, new Call[](0));
+        uut.executeBatch(orders, new Call[](0), new address[](0));
 
         assertEq(tokenA.balanceOf(swapper), 0);
         assertEq(tokenA.balanceOf(swapper2), amountA);
@@ -95,7 +95,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(outToken.balanceOf(swapper), 0);
 
         hoax(config.treasury.owner());
-        uut.executeBatch(orders, calls);
+        uut.executeBatch(orders, calls, new address[](0));
 
         assertEq(inToken.balanceOf(swapper), 0);
         assertEq(outToken.balanceOf(swapper), outAmount);
@@ -122,13 +122,13 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(swapper.balance, 0);
 
         hoax(config.treasury.owner());
-        uut.executeBatch(orders, calls);
+        uut.executeBatch(orders, calls, new address[](0));
 
         assertEq(inToken.balanceOf(swapper), 0);
         assertEq(swapper.balance, outAmount);
     }
 
-    function test_SlippageRemainderToTreasury() public {
+    function test_SlippageToTreasury() public {
         ERC20Mock inToken = new ERC20Mock();
         uint256 inAmount = 1 ether;
         uint256 outAmount = 0.5 ether;
@@ -140,13 +140,39 @@ contract LiquidityHubExecuteTest is BaseTest {
         orders[0] = createOrder(swapper, swapperPK, address(inToken), inAmount, address(inToken), outAmount);
 
         inToken.mint(swapper, inAmount);
-        assertEq(inToken.balanceOf(swapper), inAmount);
 
         hoax(config.treasury.owner());
-        uut.executeBatch(orders, new Call[](0));
+        address[] memory outTokens = new address[](1);
+        outTokens[0] = address(inToken);
+        uut.executeBatch(orders, new Call[](0), outTokens);
 
         assertEq(inToken.balanceOf(swapper), outAmount);
         assertEq(inToken.balanceOf(address(uut)), 0);
         assertEq(inToken.balanceOf(address(config.treasury)), inAmount - outAmount);
+    }
+
+    function test_NativeToTreasury() public {
+        IWETH inToken = config.weth;
+        address outToken = address(0);
+        uint256 inAmount = 1 ether;
+        uint256 outAmount = 0.5 ether;
+
+        hoax(swapper, 0);
+        inToken.approve(PERMIT2_ADDRESS, inAmount);
+
+        SignedOrder[] memory orders = new SignedOrder[](1);
+        orders[0] = createOrder(swapper, swapperPK, address(inToken), inAmount, address(outToken), outAmount);
+
+        Call[] memory calls = new Call[](1);
+        calls[0].target = address(inToken);
+        calls[0].callData = abi.encodeWithSelector(IWETH.withdraw.selector, inAmount);
+
+        dealWETH(swapper, inAmount);
+        hoax(config.treasury.owner());
+        uut.executeBatch(orders, calls, new address[](0));
+
+        assertEq(swapper.balance, outAmount);
+        assertEq(address(uut).balance, 0);
+        assertEq(address(config.treasury).balance, inAmount - outAmount);
     }
 }

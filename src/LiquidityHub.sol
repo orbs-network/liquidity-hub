@@ -42,19 +42,19 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         if (msg.sender != address(reactor)) revert InvalidSender(msg.sender);
         _;
     }
-    /**
-     * Entry point for executing a single order
-     */
-
-    function execute(SignedOrder calldata order, Call[] calldata calls) external onlyAllowed {
-        reactor.executeWithCallback(order, abi.encode(calls));
-    }
 
     /**
-     * Entry point for executing a batch of orders
+     * Entry point
      */
-    function executeBatch(SignedOrder[] calldata orders, Call[] calldata calls) external onlyAllowed {
+    function executeBatch(SignedOrder[] calldata orders, Call[] calldata calls, address[] calldata outTokens)
+        external
+        onlyAllowed
+    {
         reactor.executeBatchWithCallback(orders, abi.encode(calls));
+        for (uint256 i = 0; i < outTokens.length; i++) {
+            IERC20(outTokens[i]).safeTransfer(address(treasury), IERC20(outTokens[i]).balanceOf(address(this)));
+        }
+        Address.sendValue(payable(address(treasury)), address(this).balance);
     }
 
     /**
@@ -62,33 +62,23 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
      */
     function reactorCallback(ResolvedOrder[] memory orders, bytes memory callbackData) external override onlyReactor {
         Call[] memory calls = abi.decode(callbackData, (Call[]));
+
         if (calls.length > 0) {
             Address.functionDelegateCall(
                 address(MULTICALL), abi.encodeWithSelector(MULTICALL.aggregate3.selector, calls)
             );
         }
 
-        uint256 count = 0;
-        address[] memory tokens = new address[](orders.length * 2);
         for (uint256 i = 0; i < orders.length; i++) {
             ResolvedOrder memory order = orders[i];
             for (uint256 j = 0; j < order.outputs.length; j++) {
-                if (order.outputs[j].token != address(0)) {
-                    tokens[count++] = order.outputs[j].token;
-                    IERC20(order.outputs[j].token).safeIncreaseAllowance(msg.sender, order.outputs[j].amount); // output.amount to swap recipients, enforced by reactor. anything above remains here.
+                if (order.outputs[j].token == address(0)) {
+                    Address.sendValue(payable(msg.sender), order.outputs[j].amount);
+                } else {
+                    IERC20(order.outputs[j].token).safeIncreaseAllowance(msg.sender, order.outputs[j].amount); // output.amount to swap recipients, enforced by reactor
                 }
             }
         }
-
-        for (uint256 i = 0; i < count; i++) {
-            uint256 balance = IERC20(tokens[i]).balanceOf(address(this));
-            uint256 allowance = IERC20(tokens[i]).allowance(address(this), msg.sender);
-            if (balance > allowance) {
-                IERC20(tokens[i]).safeTransfer(address(treasury), balance - allowance);
-            }
-        }
-
-        Address.sendValue(payable(msg.sender), address(this).balance);
     }
 
     /**

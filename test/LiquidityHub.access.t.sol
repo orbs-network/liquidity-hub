@@ -17,26 +17,14 @@ contract LiquidityHubAccessTest is BaseTest {
         );
     }
 
-    function test_Execute_OnlyAllowed() public {
-        SignedOrder memory order;
-        hoax(config.treasury.owner());
-        uut.execute(order, new Call[](0));
-    }
-
-    function test_Revert_Execute_OnlyAllowed() public {
-        SignedOrder memory order;
-        vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, address(this)));
-        uut.execute(order, new Call[](0));
-    }
-
     function test_ExecuteBatch_OnlyAllowed() public {
         hoax(config.treasury.owner());
-        uut.executeBatch(new SignedOrder[](0), new Call[](0));
+        uut.executeBatch(new SignedOrder[](0), new Call[](0), new address[](0));
     }
 
     function test_Revert_ExecuteBatch_OnlyAllowed() public {
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, address(this)));
-        uut.executeBatch(new SignedOrder[](0), new Call[](0));
+        uut.executeBatch(new SignedOrder[](0), new Call[](0), new address[](0));
     }
 
     function test_ValidationCallback_OnlySelf() public {
