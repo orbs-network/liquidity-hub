@@ -12,7 +12,8 @@ import {WETH} from "solmate/src/tokens/WETH.sol";
 import {DeployInfra} from "test/DeployInfra.sol";
 import {Workbench} from "test/Workbench.sol";
 
-import {IReactor, Treasury, IWETH, IERC20, SignedOrder} from "src/LiquidityHub.sol";
+import {LiquidityHub, IMulticall, IReactor, IERC20, SignedOrder} from "src/LiquidityHub.sol";
+import {Treasury, IWETH} from "src/Treasury.sol";
 
 abstract contract BaseTest is Test, DeployInfra {
     using StdStyle for string;
@@ -24,7 +25,7 @@ abstract contract BaseTest is Test, DeployInfra {
     struct Config {
         uint256 chainId;
         string chainName;
-        address executor;
+        LiquidityHub executor;
         address quoter;
         IReactor reactor;
         Treasury treasury;
@@ -34,9 +35,9 @@ abstract contract BaseTest is Test, DeployInfra {
     modifier withMockConfig() {
         address owner = makeAddr("owner");
         IWETH weth = IWETH(address(new WETH()));
-        Treasury treasury = new Treasury(weth, owner);
-        IReactor reactor = IReactor(makeAddr("reactor"));
-        address executor = makeAddr("executor");
+        Treasury treasury = new Treasury(IMulticall(MULTICALL_ADDRESS), weth, owner);
+        IReactor reactor = IReactor(deployInfra());
+        LiquidityHub executor = new LiquidityHub(reactor, treasury);
         address quoter = makeAddr("quoter");
 
         config = Config({
@@ -48,11 +49,6 @@ abstract contract BaseTest is Test, DeployInfra {
             treasury: treasury,
             weth: weth
         });
-        _;
-    }
-
-    modifier withDeployedInfra() {
-        config.reactor = IReactor(deployInfra());
         _;
     }
 

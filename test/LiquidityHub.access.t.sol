@@ -8,28 +8,25 @@ import {BaseTest} from "test/BaseTest.sol";
 import {LiquidityHub, IReactor, ResolvedOrder, SignedOrder, Call} from "src/LiquidityHub.sol";
 
 contract LiquidityHubAccessTest is BaseTest {
-    LiquidityHub public uut;
-
     function setUp() public withMockConfig {
-        uut = new LiquidityHub(config.reactor, config.treasury);
         vm.mockCall(
             address(config.reactor), abi.encodeWithSelector(IReactor.executeWithCallback.selector), new bytes(0)
         );
     }
 
-    function test_ExecuteBatch_OnlyAllowed() public {
+    function test_Execute_OnlyAllowed() public {
         hoax(config.treasury.owner());
-        uut.executeBatch(new SignedOrder[](0), new Call[](0), new address[](0));
+        config.executor.execute(new SignedOrder[](0), new Call[](0), new address[](0));
     }
 
-    function test_Revert_ExecuteBatch_OnlyAllowed() public {
+    function test_Revert_Execute_OnlyAllowed() public {
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, address(this)));
-        uut.executeBatch(new SignedOrder[](0), new Call[](0), new address[](0));
+        config.executor.execute(new SignedOrder[](0), new Call[](0), new address[](0));
     }
 
     function test_ValidationCallback_OnlySelf() public {
         ResolvedOrder memory order;
-        uut.validate(address(uut), order);
+        config.executor.validate(address(config.executor), order);
         assertTrue(true);
     }
 
@@ -37,16 +34,16 @@ contract LiquidityHubAccessTest is BaseTest {
         ResolvedOrder memory order;
         address filler = makeAddr("unknown filler");
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, filler));
-        uut.validate(filler, order);
+        config.executor.validate(filler, order);
     }
 
     function test_ReactorCallback_OnlyReactor() public {
         hoax(address(config.reactor));
-        uut.reactorCallback(new ResolvedOrder[](0), abi.encode(new Call[](0)));
+        config.executor.reactorCallback(new ResolvedOrder[](0), abi.encode(new Call[](0)));
     }
 
     function test_Revert_ReactorCallback_OnlyReactor() public {
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, address(this)));
-        uut.reactorCallback(new ResolvedOrder[](0), abi.encode(new Call[](0)));
+        config.executor.reactorCallback(new ResolvedOrder[](0), abi.encode(new Call[](0)));
     }
 }

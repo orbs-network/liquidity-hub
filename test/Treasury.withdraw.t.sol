@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import {BaseTest, IERC20, ERC20Mock} from "test/BaseTest.sol";
 
-import {Treasury} from "src/Treasury.sol";
+import {Treasury, Call} from "src/Treasury.sol";
 
 contract TreasuryWithdrawTest is BaseTest {
     address owner;
@@ -43,6 +43,19 @@ contract TreasuryWithdrawTest is BaseTest {
 
         hoax(owner, 0);
         config.treasury.withdraw(tokens);
+        assertEq(token.balanceOf(owner), 1 ether);
+    }
+
+    function test_ExecuteMulticall() public {
+        ERC20Mock token = new ERC20Mock();
+        token.mint(address(config.treasury), 1 ether);
+
+        Call[] memory calls = new Call[](1);
+        calls[0].target = address(token);
+        calls[0].callData = abi.encodeWithSelector(token.transfer.selector, owner, 1 ether);
+
+        hoax(owner, 0);
+        config.treasury.execute(calls);
         assertEq(token.balanceOf(owner), 1 ether);
     }
 }

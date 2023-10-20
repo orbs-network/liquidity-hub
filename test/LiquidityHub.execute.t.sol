@@ -3,17 +3,15 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
-import {BaseTest, ERC20Mock} from "test/BaseTest.sol";
+import {BaseTest, ERC20Mock, IERC20, IWETH} from "test/BaseTest.sol";
 
-import {LiquidityHub, IValidationCallback, IReactor, IERC20, IWETH, SignedOrder, Call} from "src/LiquidityHub.sol";
+import {LiquidityHub, SignedOrder, Call} from "src/LiquidityHub.sol";
 
 contract LiquidityHubExecuteTest is BaseTest {
-    LiquidityHub public uut;
     address public swapper;
     uint256 public swapperPK;
 
-    function setUp() public withMockConfig withDeployedInfra {
-        uut = new LiquidityHub(config.reactor, config.treasury);
+    function setUp() public withMockConfig {
         (swapper, swapperPK) = makeAddrAndKey("swapper");
     }
 
@@ -31,7 +29,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(token.balanceOf(swapper), amount);
 
         hoax(config.treasury.owner());
-        uut.executeBatch(orders, new Call[](0), new address[](0));
+        config.executor.execute(orders, new Call[](0), new address[](0));
 
         assertEq(token.balanceOf(swapper), amount);
     }
@@ -65,7 +63,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(tokenB.balanceOf(swapper2), amountB);
 
         hoax(config.treasury.owner());
-        uut.executeBatch(orders, new Call[](0), new address[](0));
+        config.executor.execute(orders, new Call[](0), new address[](0));
 
         assertEq(tokenA.balanceOf(swapper), 0);
         assertEq(tokenA.balanceOf(swapper2), amountA);
@@ -88,14 +86,14 @@ contract LiquidityHubExecuteTest is BaseTest {
 
         Call[] memory calls = new Call[](1);
         calls[0].target = address(outToken);
-        calls[0].callData = abi.encodeWithSelector(ERC20Mock.mint.selector, address(uut), outAmount);
+        calls[0].callData = abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount);
 
         inToken.mint(swapper, inAmount);
         assertEq(inToken.balanceOf(swapper), inAmount);
         assertEq(outToken.balanceOf(swapper), 0);
 
         hoax(config.treasury.owner());
-        uut.executeBatch(orders, calls, new address[](0));
+        config.executor.execute(orders, calls, new address[](0));
 
         assertEq(inToken.balanceOf(swapper), 0);
         assertEq(outToken.balanceOf(swapper), outAmount);
@@ -122,7 +120,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(swapper.balance, 0);
 
         hoax(config.treasury.owner());
-        uut.executeBatch(orders, calls, new address[](0));
+        config.executor.execute(orders, calls, new address[](0));
 
         assertEq(inToken.balanceOf(swapper), 0);
         assertEq(swapper.balance, outAmount);
@@ -144,10 +142,10 @@ contract LiquidityHubExecuteTest is BaseTest {
         hoax(config.treasury.owner());
         address[] memory outTokens = new address[](1);
         outTokens[0] = address(inToken);
-        uut.executeBatch(orders, new Call[](0), outTokens);
+        config.executor.execute(orders, new Call[](0), outTokens);
 
         assertEq(inToken.balanceOf(swapper), outAmount);
-        assertEq(inToken.balanceOf(address(uut)), 0);
+        assertEq(inToken.balanceOf(address(config.executor)), 0);
         assertEq(inToken.balanceOf(address(config.treasury)), inAmount - outAmount);
     }
 
@@ -169,10 +167,10 @@ contract LiquidityHubExecuteTest is BaseTest {
 
         dealWETH(swapper, inAmount);
         hoax(config.treasury.owner());
-        uut.executeBatch(orders, calls, new address[](0));
+        config.executor.execute(orders, calls, new address[](0));
 
         assertEq(swapper.balance, outAmount);
-        assertEq(address(uut).balance, 0);
+        assertEq(address(config.executor).balance, 0);
         assertEq(address(config.treasury).balance, inAmount - outAmount);
     }
 }
