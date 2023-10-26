@@ -14,7 +14,6 @@ contract LiquidityHubForkTest is BaseTest {
     function setUp() public override {
         super.setUp();
         config = readConfig();
-        vm.createSelectFork("***REMOVED***", 49186840);
         swapperPK = vm.envUint("DEPLOYER_PK");
         swapper = vm.rememberKey(swapperPK);
         config.treasury = new Treasury(config.weth, swapper);
