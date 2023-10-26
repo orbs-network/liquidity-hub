@@ -3,41 +3,68 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
-import {BaseTest, ERC20Mock, IERC20, IWETH} from "test/base/BaseTest.sol";
+import {BaseTest, ERC20Mock, ERC20, IWETH} from "test/base/BaseTest.sol";
 
-import {LiquidityHub, SignedOrder, Call} from "src/LiquidityHub.sol";
+import {LiquidityHub, Treasury, SignedOrder, Call, Consts} from "src/LiquidityHub.sol";
 
 contract LiquidityHubForkTest is BaseTest {
-    address public swapper;
     uint256 public swapperPK;
+    address public swapper;
 
     function setUp() public override {
         super.setUp();
-        (swapper, swapperPK) = makeAddrAndKey("swapper");
+        config = readConfig();
+        vm.createSelectFork("***REMOVED***", 49186840);
+        swapperPK = vm.envUint("DEPLOYER_PK");
+        swapper = vm.rememberKey(swapperPK);
+        config.treasury = new Treasury(config.weth, swapper);
+    }
+
+    function readConfig() internal view returns (Config memory) {
+        string memory inputDir = string.concat(vm.projectRoot(), "/script/input/");
+        string memory chainDir = string.concat(vm.toString(block.chainid), "/");
+        string memory configFile = string.concat(inputDir, chainDir, "config.json");
+        return abi.decode(vm.parseJson(vm.readFile(configFile)), (Config));
     }
 
     function testFork_Paraswap() public {
-        IWETH inToken = config.weth;
-        address outToken = address(0);
-        uint256 inAmount = 1 ether;
-        uint256 outAmount = 0.5 ether;
+        address paraswap = 0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57;
+        address paraswapTokenProxy = 0x216B4B4Ba9F3e719726886d34a177484278Bfcae;
+
+        ERC20 inToken = ERC20(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174); // USDC
+        ERC20 outToken = ERC20(0xc2132D05D31c914a87C6611C10748AEb04B58e8F); // USDT
+        vm.label(address(inToken), "inToken");
+        vm.label(address(outToken), "outToken");
+
+        uint256 inAmount = 1000 * (10 ** inToken.decimals());
+        uint256 outAmount = 900 * (10 ** outToken.decimals());
 
         hoax(swapper, 0);
-        inToken.approve(PERMIT2_ADDRESS, inAmount);
+        inToken.approve(Consts.PERMIT2_ADDRESS, inAmount);
 
         SignedOrder[] memory orders = new SignedOrder[](1);
         orders[0] = createOrder(swapper, swapperPK, address(inToken), inAmount, address(outToken), outAmount);
 
-        Call[] memory calls = new Call[](1);
+        Call[] memory calls = new Call[](2);
         calls[0].target = address(inToken);
-        calls[0].callData = abi.encodeWithSelector(IWETH.withdraw.selector, inAmount);
+        calls[0].callData = abi.encodeWithSelector(inToken.approve.selector, paraswapTokenProxy, type(uint256).max);
 
-        dealWETH(swapper, inAmount);
+        calls[1].target = paraswap;
+        calls[1].callData = bytes(
+            hex"54e3f31b00000000000000000000000000000000000000000000000000000000000000200000000000000000000000002791bca1f2de4661ed88a30c99a7a9449aa84174000000000000000000000000c2132d05d31c914a87c6611c10748aeb04b58e8f000000000000000000000000000000000000000000000000000000003b9aca000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000003b9ae63700000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000000000000000000000000000000000000000220000000000000000000000000000000000000000000000000000000000000038000000000000000000000000000000000000000000000000000000000000003e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000042000000000000000000000000000000000000000000000000000000000653b181d372a5cf9fbed4f4199817b3b2b9ef161000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000f5b509bb0909a69b1c207e495f687a596c168e120000000000000000000000000000000000000000000000000000000000000124c04b8d59000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000def171fe48cf0115b1d80b88dc8eab59176fee57000000000000000000000000000000000000000000000000000000006543fe3d000000000000000000000000000000000000000000000000000000003b9aca00000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000282791bca1f2de4661ed88a30c99a7a9449aa84174c2132d05d31c914a87c6611c10748aeb04b58e8f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000124000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        );
+
+        deal(address(inToken), swapper, inAmount);
+        assertEq(inToken.balanceOf(swapper), inAmount);
+
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(outToken);
+
         hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, new address[](0));
+        config.executor.execute(orders, calls, tokens);
 
-        assertEq(swapper.balance, outAmount);
-        assertEq(address(config.executor).balance, 0);
-        assertEq(address(config.treasury).balance, inAmount - outAmount);
+        assertEq(outToken.balanceOf(swapper), outAmount);
+        assertEq(outToken.balanceOf(address(config.executor)), 0);
+        assertGt(outToken.balanceOf(address(config.treasury)), 1);
     }
 }

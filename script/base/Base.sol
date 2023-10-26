@@ -25,6 +25,9 @@ abstract contract Base is Script {
         vm.chainId(137); // needed for config and permit2
         config = readConfig();
 
+        string memory urlEnvKey = string.concat("RPC_URL_", toUpper(config.chainName));
+        vm.createSelectFork(vm.envOr(urlEnvKey, vm.envString("ETH_RPC_URL")));
+
         deployer = vm.rememberKey(vm.envUint("DEPLOYER_PK"));
         vm.label(deployer, "deployer");
     }
@@ -34,5 +37,19 @@ abstract contract Base is Script {
         string memory chainDir = string.concat(vm.toString(block.chainid), "/");
         string memory configFile = string.concat(inputDir, chainDir, "config.json");
         return abi.decode(vm.parseJson(vm.readFile(configFile)), (Config));
+    }
+
+    function toUpper(string memory str) internal pure returns (string memory) {
+        bytes memory strb = bytes(str);
+        bytes memory copy = new bytes(strb.length);
+        for (uint256 i = 0; i < strb.length; i++) {
+            bytes1 b = strb[i];
+            if (b >= 0x61 && b <= 0x7A) {
+                copy[i] = bytes1(uint8(b) - 32);
+            } else {
+                copy[i] = b;
+            }
+        }
+        return string(copy);
     }
 }
