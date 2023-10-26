@@ -3,14 +3,15 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
-import {BaseTest, IERC20, ERC20Mock} from "test/BaseTest.sol";
+import {BaseTest, IERC20, ERC20Mock} from "test/base/BaseTest.sol";
 
 import {Treasury, Call} from "src/Treasury.sol";
 
 contract TreasuryWithdrawTest is BaseTest {
     address owner;
 
-    function setUp() public withMockConfig {
+    function setUp() public override {
+        super.setUp();
         owner = config.treasury.owner();
     }
 

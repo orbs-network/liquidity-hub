@@ -5,6 +5,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import {Consts} from "./Consts.sol";
 import {IWETH} from "./IWETH.sol";
 import {IMulticall, Call} from "./IMulticall.sol";
 
@@ -12,12 +13,10 @@ contract Treasury is Ownable {
     using SafeERC20 for IERC20;
 
     mapping(address => bool) public allowed;
-    IMulticall public immutable multicall;
     IWETH public immutable weth;
 
-    constructor(IMulticall _multicall, IWETH _weth, address _owner) Ownable() {
+    constructor(IWETH _weth, address _owner) Ownable() {
         weth = _weth;
-        multicall = _multicall;
         allowed[_owner] = true;
         transferOwnership(_owner);
     }
@@ -29,12 +28,16 @@ contract Treasury is Ownable {
         _;
     }
 
-    function allow(address addr) external onlyOwner {
-        allowed[addr] = true;
+    function set(address[] calldata addr, bool value) external onlyOwner {
+        for (uint256 i = 0; i < addr.length; i++) {
+            allowed[addr[i]] = value;
+        }
     }
 
     function execute(Call[] calldata calls) external onlyAllowed {
-        Address.functionDelegateCall(address(multicall), abi.encodeWithSelector(multicall.aggregate.selector, calls));
+        Address.functionDelegateCall(
+            Consts.MULTICALL_ADDRESS, abi.encodeWithSelector(IMulticall.aggregate.selector, calls)
+        );
         withdraw(new IERC20[](0));
     }
 

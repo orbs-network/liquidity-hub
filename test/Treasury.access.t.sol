@@ -3,13 +3,11 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
-import {BaseTest} from "test/BaseTest.sol";
+import {BaseTest} from "test/base/BaseTest.sol";
 
 import {Treasury} from "src/Treasury.sol";
 
 contract TreasuryAccessTest is BaseTest {
-    function setUp() public withMockConfig {}
-
     function test_Owned() public {
         assertNotEq(config.treasury.owner(), address(0));
     }
@@ -22,13 +20,15 @@ contract TreasuryAccessTest is BaseTest {
 
     function test_Allow_OnlyOwner() public {
         hoax(config.treasury.owner());
-        config.treasury.allow(address(1));
+        address[] memory addrs = new address[](1);
+        addrs[0] = address(1);
+        config.treasury.set(addrs, true);
         assertEq(config.treasury.allowed(address(1)), true);
     }
 
     function test_Revert_Allow_OnlyOwner() public {
         vm.expectRevert("Ownable: caller is not the owner");
-        config.treasury.allow(address(1));
+        config.treasury.set(new address[](0), true);
     }
 
     function test_Withdraw_OnlyAllowed() public {

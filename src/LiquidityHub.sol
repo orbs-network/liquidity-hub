@@ -9,6 +9,7 @@ import {IReactorCallback} from "uniswapx/src/interfaces/IReactorCallback.sol";
 import {IValidationCallback} from "uniswapx/src/interfaces/IValidationCallback.sol";
 import {ResolvedOrder, SignedOrder} from "uniswapx/src/base/ReactorStructs.sol";
 
+import {Consts} from "./Consts.sol";
 import {Treasury} from "./Treasury.sol";
 import {IMulticall, Call} from "./IMulticall.sol";
 
@@ -51,7 +52,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         for (uint256 i = 0; i < outTokens.length; i++) {
             IERC20(outTokens[i]).safeTransfer(address(treasury), IERC20(outTokens[i]).balanceOf(address(this)));
         }
-        Address.sendValue(payable(address(treasury)), address(this).balance);
+        Address.sendValue(payable(treasury), address(this).balance);
     }
 
     /**
@@ -59,10 +60,9 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
      */
     function reactorCallback(ResolvedOrder[] memory orders, bytes memory callbackData) external override onlyReactor {
         Call[] memory calls = abi.decode(callbackData, (Call[]));
-        IMulticall multicall = treasury.multicall();
         if (calls.length > 0) {
             Address.functionDelegateCall(
-                address(multicall), abi.encodeWithSelector(multicall.aggregate.selector, calls)
+                address(Consts.MULTICALL_ADDRESS), abi.encodeWithSelector(IMulticall.aggregate.selector, calls)
             );
         }
 

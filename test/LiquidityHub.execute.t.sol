@@ -3,7 +3,7 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
-import {BaseTest, ERC20Mock, IERC20, IWETH} from "test/BaseTest.sol";
+import {BaseTest, ERC20Mock, IERC20, IWETH} from "test/base/BaseTest.sol";
 
 import {LiquidityHub, SignedOrder, Call} from "src/LiquidityHub.sol";
 
@@ -11,7 +11,8 @@ contract LiquidityHubExecuteTest is BaseTest {
     address public swapper;
     uint256 public swapperPK;
 
-    function setUp() public withMockConfig {
+    function setUp() public override {
+        super.setUp();
         (swapper, swapperPK) = makeAddrAndKey("swapper");
     }
 

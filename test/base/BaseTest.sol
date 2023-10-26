@@ -6,19 +6,16 @@ import "forge-std/Test.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
 import {ExclusiveDutchOrder} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
 import {OutputsBuilder} from "uniswapx/test/util/OutputsBuilder.sol";
+import {PermitSignature} from "uniswapx/test/util/PermitSignature.sol";
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {WETH} from "solmate/src/tokens/WETH.sol";
 
-import {DeployInfra} from "test/DeployInfra.sol";
-import {Workbench} from "test/Workbench.sol";
+import {DeployTestInfra} from "test/base/DeployTestInfra.sol";
 
 import {LiquidityHub, IMulticall, IReactor, IERC20, SignedOrder} from "src/LiquidityHub.sol";
 import {Treasury, IWETH} from "src/Treasury.sol";
 
-abstract contract BaseTest is Test, DeployInfra {
-    using StdStyle for string;
-    using Workbench for Vm;
-
+abstract contract BaseTest is Test, PermitSignature, DeployTestInfra {
     Config public config;
 
     // ⛔️ JSON IS PARSED ALPHABETICALLY!
@@ -32,11 +29,11 @@ abstract contract BaseTest is Test, DeployInfra {
         IWETH weth;
     }
 
-    modifier withMockConfig() {
+    function setUp() public virtual {
+        IReactor reactor = IReactor(deployTestInfra());
         address owner = makeAddr("owner");
         IWETH weth = IWETH(address(new WETH()));
-        Treasury treasury = new Treasury(IMulticall(MULTICALL_ADDRESS), weth, owner);
-        IReactor reactor = IReactor(deployInfra());
+        Treasury treasury = new Treasury(weth, owner);
         LiquidityHub executor = new LiquidityHub(reactor, treasury);
         address quoter = makeAddr("quoter");
 
@@ -49,35 +46,6 @@ abstract contract BaseTest is Test, DeployInfra {
             treasury: treasury,
             weth: weth
         });
-        _;
-    }
-
-    modifier withConfig() {
-        // ⛔️ JSON IS PARSED ALPHABETICALLY!
-        Config[] memory all = abi.decode(vm.parseJson(vm.readFile("configs.json")), (Config[]));
-        for (uint256 i = 0; i < all.length; i++) {
-            if (all[i].chainId == block.chainid) {
-                config = all[i];
-                console2.log("Forking:", config.chainName.bold().green());
-                string memory urlEnvKey = string(abi.encodePacked("RPC_URL_", vm.toUpper(config.chainName)));
-                vm.createSelectFork(vm.envString(urlEnvKey));
-                console2.log(
-                    string(
-                        abi.encodePacked(
-                            "block.chainid:",
-                            vm.toString(block.chainid),
-                            " block.number:",
-                            vm.toString(block.number),
-                            " date:",
-                            vm.fmtDate(block.timestamp)
-                        )
-                    )
-                );
-                _;
-                return;
-            }
-        }
-        revert("no config");
     }
 
     function dealWETH(address target, uint256 amount) public {

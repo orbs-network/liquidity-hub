@@ -3,12 +3,13 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
-import {BaseTest} from "test/BaseTest.sol";
+import {BaseTest} from "test/base/BaseTest.sol";
 
 import {LiquidityHub, IReactor, ResolvedOrder, SignedOrder, Call} from "src/LiquidityHub.sol";
 
 contract LiquidityHubAccessTest is BaseTest {
-    function setUp() public withMockConfig {
+    function setUp() public override {
+        super.setUp();
         vm.mockCall(
             address(config.reactor), abi.encodeWithSelector(IReactor.executeWithCallback.selector), new bytes(0)
         );
