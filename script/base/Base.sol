@@ -32,6 +32,7 @@ abstract contract Base is Script, DeployTestInfra {
     function initMainnetFork() public {
         vm.chainId(137); // needed for config and permit2
         config = _readConfig();
+
         vm.label(address(config.treasury), "treasury");
         vm.label(address(config.executor), "executor");
         vm.label(address(config.reactor), "reactor");

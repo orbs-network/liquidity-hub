@@ -11,7 +11,6 @@ contract UpdateWhitelistTest is BaseTest {
     function test_UpdateBatched() public {
         UpdateWhitelist script = new UpdateWhitelist();
         script.initTestConfig();
-        script.setUp();
         script.run();
         (,,,,, Treasury treasury,) = script.config();
         assertTrue(treasury.allowed(0x5bCF21C33a7DFC6e5ed26f7439eF065075EA61cf));

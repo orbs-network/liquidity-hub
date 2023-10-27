@@ -3,11 +3,11 @@ pragma solidity 0.8.x;
 
 import "forge-std/Script.sol";
 
-import {Base} from "script/base/Base.sol";
+import {BaseScript} from "script/base/BaseScript.sol";
 
 import {Treasury} from "src/Treasury.sol";
 
-contract DeployTreasury is Base {
+contract DeployTreasury is BaseScript {
     function run() public returns (address result) {
         vm.broadcast(deployer);
         result = address(new Treasury{salt: 0x00}(config.weth, deployer));
