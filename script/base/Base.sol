@@ -27,7 +27,11 @@ abstract contract Base is Script, DeployTestInfra {
     using Workbench for Vm;
 
     Config public config;
-    address public deployer = msg.sender;
+    address public deployer = msg.sender; // the default foundry deployer
+
+    function setUp() public virtual {
+        initMainnetFork();
+    }
 
     function initMainnetFork() public {
         vm.chainId(137); // needed for config and permit2

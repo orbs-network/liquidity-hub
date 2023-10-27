@@ -15,7 +15,7 @@ import {Treasury, IWETH} from "src/Treasury.sol";
 abstract contract BaseTest is Base, PermitSignature {
     using OrderLib for Config;
 
-    function setUp() public virtual {
+    function setUp() public virtual override {
         initTestConfig();
     }
 

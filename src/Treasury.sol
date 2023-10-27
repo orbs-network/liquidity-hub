@@ -12,8 +12,8 @@ import {IMulticall, Call} from "./IMulticall.sol";
 contract Treasury is Ownable {
     using SafeERC20 for IERC20;
 
-    mapping(address => bool) public allowed;
     IWETH public immutable weth;
+    mapping(address => bool) public allowed;
 
     constructor(IWETH _weth, address _owner) Ownable() {
         weth = _weth;

@@ -1,5 +1,6 @@
 .env
 cache/
+broadcast/
 
 # Created by https://www.toptal.com/developers/gitignore/api/node,macos,react,sublimetext,intellij+all,visualstudiocode,solidity,soliditytruffle
 # Edit at https://www.toptal.com/developers/gitignore?templates=node,macos,react,sublimetext,intellij+all,visualstudiocode,solidity,soliditytruffle

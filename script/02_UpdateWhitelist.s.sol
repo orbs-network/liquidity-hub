@@ -3,9 +3,9 @@ pragma solidity 0.8.x;
 
 import "forge-std/Script.sol";
 
-import {BaseScript} from "script/base/BaseScript.sol";
+import {Base} from "script/base/Base.sol";
 
-contract UpdateWhitelist is BaseScript {
+contract UpdateWhitelist is Base {
     uint256 public constant BATCH_SIZE = 300;
 
     function run() public {
