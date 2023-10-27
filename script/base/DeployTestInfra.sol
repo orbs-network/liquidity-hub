@@ -3,14 +3,13 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
-import {DeployPermit2} from "permit2/test/utils/DeployPermit2.sol";
-import {IPermit2} from "permit2/src/interfaces/IPermit2.sol";
+import {DeployPermit2} from "uniswapx/test/util/DeployPermit2.sol";
 
 import {Consts} from "src/Consts.sol";
 import {IReactor, IMulticall} from "src/LiquidityHub.sol";
 
 contract DeployTestInfra is DeployPermit2 {
-    function deployTestInfra() public returns (address reactor) {
+    function deployTestInfra() public returns (IReactor reactor) {
         vm.chainId(137); // needed for permit2
         deployPermit2();
         require(Consts.PERMIT2_ADDRESS != address(0), "DeployPermit2 failed");
@@ -18,8 +17,9 @@ contract DeployTestInfra is DeployPermit2 {
         _deployMulticall3();
         require(Consts.MULTICALL_ADDRESS != address(0), "DeployMulticall3 failed");
 
-        reactor = _deployReactor();
-        require(reactor != address(0), "DeployReactor failed");
+        address _reactor = _deployReactor();
+        require(_reactor != address(0), "DeployReactor failed");
+        reactor = IReactor(_reactor);
     }
 
     function _deployReactor() private returns (address reactor) {

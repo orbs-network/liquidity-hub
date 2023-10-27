@@ -6,11 +6,10 @@ import "forge-std/Script.sol";
 import {Base} from "script/base/Base.sol";
 
 contract UpdateWhitelist is Base {
-    uint256 BATCH_SIZE = 300;
+    uint256 public constant BATCH_SIZE = 300;
     address[] public list;
 
-    function setUp() public override {
-        super.setUp();
+    function setUp() public {
         list = readList();
     }
 
@@ -20,7 +19,6 @@ contract UpdateWhitelist is Base {
     }
 
     function run() public {
-        if (list.length == 0) revert("empty list");
         for (uint256 i = 0; i < list.length; i += BATCH_SIZE) {
             uint256 size = i + BATCH_SIZE < list.length ? BATCH_SIZE : list.length - i;
             address[] memory batch = new address[](size);

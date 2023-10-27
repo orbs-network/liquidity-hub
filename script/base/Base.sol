@@ -1,55 +1,73 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.x;
 
+import "forge-std/Test.sol";
 import "forge-std/Script.sol";
+
+import {WETH} from "solmate/src/tokens/WETH.sol";
+
+import {Workbench} from "script/base/Workbench.sol";
+import {DeployTestInfra} from "script/base/DeployTestInfra.sol";
 
 import {LiquidityHub, IReactor} from "src/LiquidityHub.sol";
 import {Treasury, IWETH, Consts, IMulticall, IERC20} from "src/Treasury.sol";
 
-abstract contract Base is Script {
+// ⛔️ JSON IS PARSED ALPHABETICALLY!
+struct Config {
+    uint256 chainId;
+    string chainName;
+    LiquidityHub executor;
+    address quoter;
+    IReactor reactor;
+    Treasury treasury;
+    IWETH weth;
+}
+
+abstract contract Base is Script, DeployTestInfra {
+    using Workbench for Vm;
+
     Config public config;
-    address public deployer;
+    address public deployer = msg.sender;
 
-    // ⛔️ JSON IS PARSED ALPHABETICALLY!
-    struct Config {
-        uint256 chainId;
-        string chainName;
-        LiquidityHub executor;
-        address quoter;
-        IReactor reactor;
-        Treasury treasury;
-        IWETH weth;
-    }
-
-    function setUp() public virtual {
+    function initMainnetFork() public {
         vm.chainId(137); // needed for config and permit2
-        config = readConfig();
+        config = _readConfig();
+        vm.label(address(config.treasury), "treasury");
+        vm.label(address(config.executor), "executor");
+        vm.label(address(config.reactor), "reactor");
+        vm.label(address(config.weth), "weth");
 
-        string memory urlEnvKey = string.concat("RPC_URL_", toUpper(config.chainName));
+        string memory urlEnvKey = string.concat("RPC_URL_", vm.toUpper(config.chainName));
         vm.createSelectFork(vm.envOr(urlEnvKey, vm.envString("ETH_RPC_URL")));
 
         deployer = vm.rememberKey(vm.envUint("DEPLOYER_PK"));
         vm.label(deployer, "deployer");
     }
 
-    function readConfig() internal view returns (Config memory) {
-        string memory inputDir = string.concat(vm.projectRoot(), "/script/input/");
-        string memory chainDir = string.concat(vm.toString(block.chainid), "/");
-        string memory configFile = string.concat(inputDir, chainDir, "config.json");
-        return abi.decode(vm.parseJson(vm.readFile(configFile)), (Config));
+    function initTestConfig() public {
+        IReactor reactor = deployTestInfra();
+
+        IWETH weth = IWETH(address(new WETH()));
+
+        Treasury treasury = new Treasury(weth, deployer);
+        LiquidityHub executor = new LiquidityHub(reactor, treasury);
+
+        address quoter = makeAddr("quoter");
+
+        config = Config({
+            chainId: block.chainid,
+            chainName: "anvil",
+            executor: executor,
+            quoter: quoter,
+            reactor: reactor,
+            treasury: treasury,
+            weth: weth
+        });
     }
 
-    function toUpper(string memory str) internal pure returns (string memory) {
-        bytes memory strb = bytes(str);
-        bytes memory copy = new bytes(strb.length);
-        for (uint256 i = 0; i < strb.length; i++) {
-            bytes1 b = strb[i];
-            if (b >= 0x61 && b <= 0x7A) {
-                copy[i] = bytes1(uint8(b) - 32);
-            } else {
-                copy[i] = b;
-            }
-        }
-        return string(copy);
+    function _readConfig() private view returns (Config memory) {
+        string memory path =
+            string.concat(vm.projectRoot(), "/script/input/", vm.toString(block.chainid), "/config.json");
+        return abi.decode(vm.parseJson(vm.readFile(path)), (Config));
     }
 }

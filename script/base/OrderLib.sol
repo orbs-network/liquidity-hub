@@ -1,39 +1,36 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.x;
 
-import "forge-std/Test.sol";
 import "forge-std/Script.sol";
-
-import {ExclusiveDutchOrder} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
-import {OutputsBuilder} from "uniswapx/test/util/OutputsBuilder.sol";
-import {ERC20} from "solmate/src/tokens/ERC20.sol";
-import {WETH} from "solmate/src/tokens/WETH.sol";
 
 import {EIP712} from "openzeppelin-contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 
-import {Base} from "script/base/Base.sol";
+import {ERC20} from "solmate/src/tokens/ERC20.sol";
+
+import {ExclusiveDutchOrder, DutchInput} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
+import {OutputsBuilder} from "uniswapx/test/util/OutputsBuilder.sol";
+
+import {Config} from "script/base/Base.sol";
 
 import {LiquidityHub, IMulticall, IReactor, IERC20, SignedOrder} from "src/LiquidityHub.sol";
 import {Treasury, IWETH} from "src/Treasury.sol";
 
-contract Api is Base {
-    function run() public {}
+struct RFQ {
+    address swapper;
+    address inToken;
+    address outToken;
+    uint256 inAmount;
+    uint256 outAmount;
+}
 
-    struct RFQ {
-        address swapper;
-        address inToken;
-        address outToken;
-        uint256 inAmount;
-        uint256 outAmount;
-    }
+struct Order {
+    bytes abiEncoded;
+    ExclusiveDutchOrder order;
+}
 
-    struct Order {
-        bytes abiEncoded;
-        ExclusiveDutchOrder order;
-    }
-
-    function createOrder(RFQ memory rfq) public view returns (Order memory result) {
+library OrderLib {
+    function createOrder(Config memory config, RFQ memory rfq) public view returns (Order memory result) {
         ExclusiveDutchOrder memory order;
         {
             order.info.reactor = config.reactor;

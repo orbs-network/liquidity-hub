@@ -8,9 +8,10 @@ import {Base} from "script/base/Base.sol";
 import {LiquidityHub} from "src/LiquidityHub.sol";
 
 contract DeployLiquidityHub is Base {
-    function run() public {
+    function run() public returns (address result) {
         vm.broadcast(deployer);
-        address result = address(new LiquidityHub{salt: 0x00}(config.reactor, config.treasury));
+        result = address(new LiquidityHub{salt: 0x00}(config.reactor, config.treasury));
         vm.label(result, "LiquidityHub");
+        console2.log("LiquidityHub deployed:", result);
     }
 }

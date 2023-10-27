@@ -44,39 +44,55 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     /**
      * Entry point
      */
-    function execute(SignedOrder[] calldata orders, Call[] calldata calls, address[] calldata outTokens)
-        external
-        onlyAllowed
-    {
+    function execute(SignedOrder[] calldata orders, Call[] calldata calls) external onlyAllowed {
         reactor.executeBatchWithCallback(orders, abi.encode(calls));
-        for (uint256 i = 0; i < outTokens.length; i++) {
-            IERC20(outTokens[i]).safeTransfer(address(treasury), IERC20(outTokens[i]).balanceOf(address(this)));
-        }
-        Address.sendValue(payable(treasury), address(this).balance);
     }
 
     /**
      * @dev IReactorCallback
      */
     function reactorCallback(ResolvedOrder[] memory orders, bytes memory callbackData) external override onlyReactor {
-        Call[] memory calls = abi.decode(callbackData, (Call[]));
-        if (calls.length > 0) {
-            Address.functionDelegateCall(
-                address(Consts.MULTICALL_ADDRESS), abi.encodeWithSelector(IMulticall.aggregate.selector, calls)
-            );
-        }
+        _executeMulticall(abi.decode(callbackData, (Call[])));
+        _approveReactorOutputs(orders);
+        _refundGas(orders);
+    }
 
-        // output.amount to swap recipients, enforced by reactor:
+    function _executeMulticall(Call[] memory calls) private {
+        Address.functionDelegateCall(
+            Consts.MULTICALL_ADDRESS, abi.encodeWithSelector(IMulticall.aggregate.selector, calls)
+        );
+    }
+
+    function _approveReactorOutputs(ResolvedOrder[] memory orders) private {
         for (uint256 i = 0; i < orders.length; i++) {
             ResolvedOrder memory order = orders[i];
             for (uint256 j = 0; j < order.outputs.length; j++) {
-                if (order.outputs[j].token == address(0)) {
-                    Address.sendValue(payable(msg.sender), order.outputs[j].amount);
+                address token = order.outputs[j].token;
+                uint256 amount = order.outputs[j].amount;
+                if (token == address(0)) {
+                    Address.sendValue(payable(address(reactor)), amount);
                 } else {
-                    IERC20(order.outputs[j].token).safeIncreaseAllowance(msg.sender, order.outputs[j].amount);
+                    IERC20(token).safeIncreaseAllowance(address(reactor), amount);
                 }
             }
         }
+    }
+
+    function _refundGas(ResolvedOrder[] memory orders) private {
+        for (uint256 i = 0; i < orders.length; i++) {
+            ResolvedOrder memory order = orders[i];
+            for (uint256 j = 0; j < order.outputs.length; j++) {
+                address token = order.outputs[j].token;
+                if (token != address(0)) {
+                    uint256 balance = IERC20(token).balanceOf(address(this));
+                    uint256 allowance = IERC20(token).allowance(address(this), address(reactor));
+                    if (balance > allowance) {
+                        IERC20(token).safeTransfer(address(treasury), balance - allowance);
+                    }
+                }
+            }
+        }
+        Address.sendValue(payable(treasury), address(this).balance);
     }
 
     /**

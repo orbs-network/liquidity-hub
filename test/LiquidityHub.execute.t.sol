@@ -24,13 +24,13 @@ contract LiquidityHubExecuteTest is BaseTest {
         token.approve(PERMIT2_ADDRESS, amount);
 
         SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createOrder(swapper, swapperPK, address(token), amount, address(token), amount);
+        orders[0] = createAndSignOrder(swapper, swapperPK, address(token), address(token), amount, amount);
 
         token.mint(swapper, amount);
         assertEq(token.balanceOf(swapper), amount);
 
         hoax(config.treasury.owner());
-        config.executor.execute(orders, new Call[](0), new address[](0));
+        config.executor.execute(orders, new Call[](0));
 
         assertEq(token.balanceOf(swapper), amount);
     }
@@ -54,8 +54,8 @@ contract LiquidityHubExecuteTest is BaseTest {
         hoax(swapper2);
         tokenB.approve(PERMIT2_ADDRESS, amountB);
 
-        orders[0] = createOrder(swapper, swapperPK, address(tokenA), amountA, address(tokenB), amountB);
-        orders[1] = createOrder(swapper2, swapperPK2, address(tokenB), amountB, address(tokenA), amountA);
+        orders[0] = createAndSignOrder(swapper, swapperPK, address(tokenA), address(tokenB), amountA, amountB);
+        orders[1] = createAndSignOrder(swapper2, swapperPK2, address(tokenB), address(tokenA), amountB, amountA);
 
         assertEq(tokenA.balanceOf(swapper), amountA);
         assertEq(tokenA.balanceOf(swapper2), 0);
@@ -64,7 +64,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(tokenB.balanceOf(swapper2), amountB);
 
         hoax(config.treasury.owner());
-        config.executor.execute(orders, new Call[](0), new address[](0));
+        config.executor.execute(orders, new Call[](0));
 
         assertEq(tokenA.balanceOf(swapper), 0);
         assertEq(tokenA.balanceOf(swapper2), amountA);
@@ -83,7 +83,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         inToken.approve(PERMIT2_ADDRESS, inAmount);
 
         SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createOrder(swapper, swapperPK, address(inToken), inAmount, address(outToken), outAmount);
+        orders[0] = createAndSignOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount);
 
         Call[] memory calls = new Call[](1);
         calls[0].target = address(outToken);
@@ -94,7 +94,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(outToken.balanceOf(swapper), 0);
 
         hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, new address[](0));
+        config.executor.execute(orders, calls);
 
         assertEq(inToken.balanceOf(swapper), 0);
         assertEq(outToken.balanceOf(swapper), outAmount);
@@ -110,7 +110,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         inToken.approve(PERMIT2_ADDRESS, inAmount);
 
         SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createOrder(swapper, swapperPK, address(inToken), inAmount, outToken, outAmount);
+        orders[0] = createAndSignOrder(swapper, swapperPK, address(inToken), outToken, inAmount, outAmount);
 
         Call[] memory calls = new Call[](1);
         calls[0].target = address(inToken);
@@ -121,7 +121,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(swapper.balance, 0);
 
         hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, new address[](0));
+        config.executor.execute(orders, calls);
 
         assertEq(inToken.balanceOf(swapper), 0);
         assertEq(swapper.balance, outAmount);
@@ -136,14 +136,12 @@ contract LiquidityHubExecuteTest is BaseTest {
         inToken.approve(PERMIT2_ADDRESS, inAmount);
 
         SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createOrder(swapper, swapperPK, address(inToken), inAmount, address(inToken), outAmount);
+        orders[0] = createAndSignOrder(swapper, swapperPK, address(inToken), address(inToken), inAmount, outAmount);
 
         inToken.mint(swapper, inAmount);
 
         hoax(config.treasury.owner());
-        address[] memory outTokens = new address[](1);
-        outTokens[0] = address(inToken);
-        config.executor.execute(orders, new Call[](0), outTokens);
+        config.executor.execute(orders, new Call[](0));
 
         assertEq(inToken.balanceOf(swapper), outAmount);
         assertEq(inToken.balanceOf(address(config.executor)), 0);
@@ -160,7 +158,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         inToken.approve(PERMIT2_ADDRESS, inAmount);
 
         SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createOrder(swapper, swapperPK, address(inToken), inAmount, address(outToken), outAmount);
+        orders[0] = createAndSignOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount);
 
         Call[] memory calls = new Call[](1);
         calls[0].target = address(inToken);
@@ -168,7 +166,7 @@ contract LiquidityHubExecuteTest is BaseTest {
 
         dealWETH(swapper, inAmount);
         hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, new address[](0));
+        config.executor.execute(orders, calls);
 
         assertEq(swapper.balance, outAmount);
         assertEq(address(config.executor).balance, 0);

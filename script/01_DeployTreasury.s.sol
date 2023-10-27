@@ -8,9 +8,10 @@ import {Base} from "script/base/Base.sol";
 import {Treasury} from "src/Treasury.sol";
 
 contract DeployTreasury is Base {
-    function run() public {
+    function run() public returns (address result) {
         vm.broadcast(deployer);
-        address result = address(new Treasury{salt: 0x00}(config.weth, deployer));
+        result = address(new Treasury{salt: 0x00}(config.weth, deployer));
         vm.label(result, "Treasury");
+        console2.log("Treasury deployed:", result);
     }
 }
