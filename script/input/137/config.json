@@ -1,9 +1,9 @@
 {
   "chainId": 137,
   "chainName": "matic",
-  "executor": "0x08f003d38Ee5F695fb901Df7CB214969502F2A22",
+  "executor": "0x4D9FAbb111Fd4d8BfF8CA3e9ccc85aa47396F6BC",
   "quoter": "0x2BC7Eb3Bee0442f08E0ACf7EdDd63fFBc2bcB1C0",
   "reactor": "0x21Da9737764527e75C17F1AB26Cb668b66dEE0a0",
-  "treasury": "0x238FFcFed63787432Ac119275E456E6194BBd4A9",
+  "treasury": "0x363ef0342883eea012f59815d47c148597b315c2",
   "weth": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"
 }
