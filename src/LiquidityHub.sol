@@ -3,6 +3,7 @@ pragma solidity 0.8.x;
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {IReactor} from "uniswapx/src/interfaces/IReactor.sol";
 import {IReactorCallback} from "uniswapx/src/interfaces/IReactorCallback.sol";
@@ -16,23 +17,22 @@ import {IMulticall, Call} from "./IMulticall.sol";
 /**
  * LiquidityHub Executor
  */
-contract LiquidityHub is IReactorCallback, IValidationCallback {
+contract LiquidityHub is IReactorCallback, IValidationCallback, Ownable {
     using SafeERC20 for IERC20;
 
     uint8 public constant VERSION = 1;
 
     IReactor public immutable reactor;
-    Treasury public immutable treasury;
 
-    constructor(IReactor _reactor, Treasury _treasury) {
+    constructor(IReactor _reactor, Treasury _treasury) Ownable() {
         reactor = _reactor;
-        treasury = _treasury;
+        transferOwnership(address(_treasury));
     }
 
     error InvalidSender(address sender);
 
     modifier onlyAllowed() {
-        if (!treasury.allowed(msg.sender)) revert InvalidSender(msg.sender);
+        if (!(Treasury(payable(owner())).allowed(msg.sender))) revert InvalidSender(msg.sender);
         _;
     }
 
@@ -54,7 +54,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     function reactorCallback(ResolvedOrder[] memory orders, bytes memory callbackData) external override onlyReactor {
         _executeMulticall(abi.decode(callbackData, (Call[])));
         _approveReactorOutputs(orders);
-        _refundGas(orders);
+        _withdrawSlippage(orders);
     }
 
     function _executeMulticall(Call[] memory calls) private {
@@ -78,7 +78,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         }
     }
 
-    function _refundGas(ResolvedOrder[] memory orders) private {
+    function _withdrawSlippage(ResolvedOrder[] memory orders) private {
         for (uint256 i = 0; i < orders.length; i++) {
             ResolvedOrder memory order = orders[i];
             for (uint256 j = 0; j < order.outputs.length; j++) {
@@ -87,12 +87,12 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
                     uint256 balance = IERC20(token).balanceOf(address(this));
                     uint256 allowance = IERC20(token).allowance(address(this), address(reactor));
                     if (balance > allowance) {
-                        IERC20(token).safeTransfer(address(treasury), balance - allowance);
+                        IERC20(token).safeTransfer(owner(), balance - allowance);
                     }
                 }
             }
         }
-        Address.sendValue(payable(treasury), address(this).balance);
+        Address.sendValue(payable(owner()), address(this).balance);
     }
 
     /**

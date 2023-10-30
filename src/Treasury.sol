@@ -41,10 +41,6 @@ contract Treasury is Ownable {
         withdraw(new IERC20[](0));
     }
 
-    function withdraw() external onlyAllowed {
-        withdraw(new IERC20[](0));
-    }
-
     function withdraw(IERC20[] memory tokens) public onlyAllowed {
         for (uint256 i = 0; i < tokens.length; i++) {
             tokens[i].safeTransfer(owner(), tokens[i].balanceOf(address(this)));

@@ -17,21 +17,21 @@ contract TreasuryWithdrawTest is BaseTest {
 
     function test_Empty() public {
         hoax(owner, 0);
-        config.treasury.withdraw();
+        config.treasury.withdraw(new IERC20[](0));
         assertEq(owner.balance, 0);
     }
 
     function test_ETH() public {
         deal(address(config.treasury), 1 ether);
         hoax(owner, 0);
-        config.treasury.withdraw();
+        config.treasury.withdraw(new IERC20[](0));
         assertEq(owner.balance, 1 ether);
     }
 
     function test_WETH() public {
         dealWETH(address(config.treasury), 1 ether);
         hoax(owner, 0);
-        config.treasury.withdraw();
+        config.treasury.withdraw(new IERC20[](0));
         assertEq(owner.balance, 1 ether);
     }
 

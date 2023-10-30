@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import {BaseTest} from "test/base/BaseTest.sol";
 
-import {Treasury} from "src/Treasury.sol";
+import {Treasury, IERC20} from "src/Treasury.sol";
 
 contract TreasuryAccessTest is BaseTest {
     function test_Owned() public {
@@ -33,11 +33,11 @@ contract TreasuryAccessTest is BaseTest {
 
     function test_Withdraw_OnlyAllowed() public {
         hoax(config.treasury.owner());
-        config.treasury.withdraw();
+        config.treasury.withdraw(new IERC20[](0));
     }
 
     function test_Revert_Withdraw_OnlyAllowed() public {
         vm.expectRevert(abi.encodeWithSelector(Treasury.NotAllowed.selector, address(this)));
-        config.treasury.withdraw();
+        config.treasury.withdraw(new IERC20[](0));
     }
 }
