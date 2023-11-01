@@ -6,13 +6,12 @@ import "forge-std/Test.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
 import {PermitSignature} from "uniswapx/test/util/PermitSignature.sol";
 
-import {Orders, RFQ, Order} from "script/base/Orders.sol";
-import {Base, Config} from "script/base/Base.sol";
+import {Base, Config, RFQ, Order} from "script/base/Base.sol";
 
 import {LiquidityHub, IMulticall, IReactor, IERC20, SignedOrder} from "src/LiquidityHub.sol";
 import {Treasury, IWETH} from "src/Treasury.sol";
 
-abstract contract BaseTest is Base, Orders, PermitSignature {
+abstract contract BaseTest is Base, PermitSignature {
     function setUp() public virtual override {
         // no call to super.setUp()
         initTestConfig();
