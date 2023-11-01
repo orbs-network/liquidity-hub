@@ -13,7 +13,7 @@ contract CreateExecutionTest is BaseTest {
         script.initTestConfig();
 
         (address to, bytes memory data) = script.run();
-        assertGt(data.length, 0);
+        assertGt(data.length, 100);
         (,, LiquidityHub executor,,,,) = script.config();
         assertEq(to, address(executor));
     }
