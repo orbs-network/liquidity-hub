@@ -13,14 +13,20 @@ contract CreateOrderTest is BaseTest {
         rfq.swapper = makeAddr("swapper");
         rfq.inToken = makeAddr("inToken");
         rfq.outToken = makeAddr("outToken");
-        rfq.inAmount = 123456789;
-        rfq.outAmount = 987654321;
+        rfq.inAmount = 1000;
+        rfq.outAmount = 900;
 
-        vm.setEnv("LH_RFQ", vm.toString(abi.encode(rfq)));
+        vm.setEnv("LH_SWAPPER", vm.toString(rfq.swapper));
+        vm.setEnv("LH_INTOKEN", vm.toString(rfq.inToken));
+        vm.setEnv("LH_OUTTOKEN", vm.toString(rfq.outToken));
+        vm.setEnv("LH_INAMOUNT", vm.toString(rfq.inAmount));
+        vm.setEnv("LH_OUTAMOUNT", vm.toString(rfq.outAmount));
+
         CreateOrder script = new CreateOrder();
         script.initTestConfig();
 
         Order memory result = script.run();
+
         assertEq(result.encoded, abi.encode(result.order));
         assertEq(result.order.info.swapper, rfq.swapper);
         assertEq(address(result.order.input.token), rfq.inToken);

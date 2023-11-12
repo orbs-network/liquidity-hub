@@ -9,7 +9,14 @@ import {LiquidityHub} from "src/LiquidityHub.sol";
 
 contract CreateOrder is Base {
     function run() public returns (Order memory) {
-        RFQ memory rfq = abi.decode(vm.envBytes("LH_RFQ"), (RFQ));
+        RFQ memory rfq = RFQ({
+            swapper: vm.envAddress("LH_SWAPPER"),
+            inToken: vm.envAddress("LH_INTOKEN"),
+            outToken: vm.envAddress("LH_OUTTOKEN"),
+            inAmount: vm.envUint("LH_INAMOUNT"),
+            outAmount: vm.envUint("LH_OUTAMOUNT")
+        });
+
         return createOrder(rfq);
     }
 }

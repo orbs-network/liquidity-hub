@@ -1,0 +1,9 @@
+{
+  "chainId": 1284,
+  "chainName": "moonbeam",
+  "executor": "",
+  "quoter": "",
+  "reactor": "",
+  "treasury": "0xf8105F11D917eB386Ddf7C447Aba1eC67Dd0684F",
+  "weth": "0xAcc15dC74880C9944775448304B263D191c6077F"
+}

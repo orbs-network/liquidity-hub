@@ -48,20 +48,18 @@ abstract contract Base is Script, DeployTestInfra {
     address public deployer = msg.sender; // the default foundry deployer
 
     function setUp() public virtual {
-        initMainnetFork();
+        initProductionConfig();
     }
 
-    function initMainnetFork() public {
-        vm.chainId(137); // needed for config and permit2
+    function initProductionConfig() public {
+        uint256 chainId = vm.envOr("CHAIN", block.chainid);
+        if (chainId != block.chainid) vm.chainId(chainId);
         config = _readConfig();
 
         vm.label(address(config.treasury), "treasury");
         vm.label(address(config.executor), "executor");
         vm.label(address(config.reactor), "reactor");
         vm.label(address(config.weth), "weth");
-
-        string memory urlEnvKey = string.concat("RPC_URL_", vm.toUpper(config.chainName));
-        vm.createSelectFork(vm.envOr(urlEnvKey, vm.envString("ETH_RPC_URL")));
 
         deployer = vm.rememberKey(vm.envUint("DEPLOYER_PK"));
         vm.label(deployer, "deployer");
