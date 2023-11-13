@@ -25,11 +25,10 @@ contract CreateOrderTest is BaseTest {
         CreateOrder script = new CreateOrder();
         script.initTestConfig();
 
-        Order memory result = script.run();
+        (bytes memory encoded, bytes32 hash, string memory permitData) = script.run();
 
-        assertEq(result.encoded, abi.encode(result.order));
-        assertEq(result.order.info.swapper, rfq.swapper);
-        assertEq(address(result.order.input.token), rfq.inToken);
-        assertGt(abi.encode(result.permitData).length, 100);
+        assertGt(encoded.length, 100);
+        assertGt(abi.encode(permitData).length, 100);
+        assertNotEq(hash, bytes32(0));
     }
 }

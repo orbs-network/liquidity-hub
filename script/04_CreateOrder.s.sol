@@ -8,7 +8,7 @@ import {Base, Config, Order, RFQ} from "script/base/Base.sol";
 import {LiquidityHub} from "src/LiquidityHub.sol";
 
 contract CreateOrder is Base {
-    function run() public returns (Order memory) {
+    function run() public returns (bytes memory encoded, bytes32 hash, string memory permitData) {
         RFQ memory rfq = RFQ({
             swapper: vm.envAddress("LH_SWAPPER"),
             inToken: vm.envAddress("LH_INTOKEN"),
@@ -17,6 +17,9 @@ contract CreateOrder is Base {
             outAmount: vm.envUint("LH_OUTAMOUNT")
         });
 
-        return createOrder(rfq);
+        Order memory o = createOrder(rfq);
+        encoded = o.encoded;
+        hash = o.hash;
+        permitData = o.permitData;
     }
 }
