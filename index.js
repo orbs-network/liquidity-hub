@@ -18,8 +18,8 @@ async function main() {
   forge script CreateOrder --silent --json`)
     .toString()
     .trim();
-
-  return result;
+  const order = JSON.parse(result).returns;
+  return order?.encoded.value;
 }
 
 main().then(console.log);

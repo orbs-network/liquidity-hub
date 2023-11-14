@@ -61,7 +61,7 @@ abstract contract Base is Script, DeployTestInfra {
         vm.label(address(config.reactor), "reactor");
         vm.label(address(config.weth), "weth");
 
-        deployer = vm.rememberKey(vm.envUint("DEPLOYER_PK"));
+        deployer = vm.rememberKey(vm.envOr("DEPLOYER_PK", uint256(1)));
         vm.label(deployer, "deployer");
     }
 
