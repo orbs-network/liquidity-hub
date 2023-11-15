@@ -1,7 +1,8 @@
 const { execSync } = require("child_process");
+const path = require("path");
 
 export async function createOrder(chainId, rfq) {
-  const result = execSync(`CHAIN=${chainId} \
+  const result = execSync(`cd ${path.dirname(__filename)} && CHAIN=${chainId} \
   LH_SWAPPER=${rfq.swapper} \
   LH_INTOKEN=${rfq.inToken} \
   LH_OUTTOKEN=${rfq.outToken} \
