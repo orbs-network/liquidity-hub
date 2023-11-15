@@ -1,15 +1,7 @@
 const { execSync } = require("child_process");
 
-async function main() {
-  const CHAIN = process.env.CHAIN || 137;
-  const rfq = {
-    swapper: "0x0000000000000000000000000000000000000000",
-    inToken: "0x0000000000000000000000000000000000000000",
-    outToken: "0x0000000000000000000000000000000000000000",
-    inAmount: 0,
-    outAmount: 0,
-  };
-  const result = execSync(`CHAIN=${CHAIN} \
+export async function createOrder(chainId, rfq) {
+  const result = execSync(`CHAIN=${chainId} \
   LH_SWAPPER=${rfq.swapper} \
   LH_INTOKEN=${rfq.inToken} \
   LH_OUTTOKEN=${rfq.outToken} \
@@ -19,7 +11,9 @@ async function main() {
     .toString()
     .trim();
   const order = JSON.parse(result).returns;
-  return order?.encoded.value;
+  return {
+    encoded: order?.encoded.value,
+    hash: order?.hash.value,
+    permitData: JSON.parse(order?.permitData.value),
+  };
 }
-
-main().then(console.log);
