@@ -26,6 +26,7 @@ contract CreateOrderTest is BaseTest {
         script.initTestConfig();
 
         (bytes memory encoded, bytes32 hash, string memory permitData) = script.run();
+        console.log(permitData);
 
         assertGt(encoded.length, 100);
         assertGt(abi.encode(permitData).length, 100);

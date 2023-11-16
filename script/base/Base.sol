@@ -118,11 +118,11 @@ abstract contract Base is Script, DeployTestInfra {
         cmd[2] = string.concat("-e s@<PERMIT2>@", vm.toString(Consts.PERMIT2_ADDRESS), "@g");
         cmd[3] = string.concat("-e s@<SWAPPER>@", vm.toString(rfq.swapper), "@g");
         cmd[4] = string.concat("-e s@<INTOKEN>@", vm.toString(rfq.inToken), "@g");
-        cmd[5] = string.concat("-e s@<INAMOUNT>@", vm.toString(rfq.inAmount), "@g");
+        cmd[5] = string.concat("-e s@<INAMOUNT>@", vm.toString(abi.encode(rfq.inAmount)), "@g");
         cmd[6] = string.concat("-e s@<OUTTOKEN>@", vm.toString(rfq.outToken), "@g");
-        cmd[7] = string.concat("-e s@<OUTAMOUNT>@", vm.toString(rfq.outAmount), "@g");
-        cmd[8] = string.concat("-e s@<DEADLINE>@", vm.toString(order.info.deadline), "@g");
-        cmd[9] = string.concat("-e s@<NONCE>@", vm.toString(order.info.nonce), "@g");
+        cmd[7] = string.concat("-e s@<OUTAMOUNT>@", vm.toString(abi.encode(rfq.outAmount)), "@g");
+        cmd[8] = string.concat("-e s@<DEADLINE>@", vm.toString(abi.encode(order.info.deadline)), "@g");
+        cmd[9] = string.concat("-e s@<NONCE>@", vm.toString(abi.encode(order.info.nonce)), "@g");
         cmd[10] = string.concat("-e s@<REACTOR>@", vm.toString(address(order.info.reactor)), "@g");
         cmd[11] = string.concat("-e s@<EXECUTOR>@", vm.toString(address(config.executor)), "@g");
         cmd[12] = "script/input/permit.skeleton.json";
