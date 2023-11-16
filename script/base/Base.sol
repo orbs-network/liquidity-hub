@@ -114,7 +114,7 @@ abstract contract Base is Script, DeployTestInfra {
 
         string[] memory cmd = new string[](13);
         cmd[0] = "sed";
-        cmd[1] = string.concat("-e s@<CHAINID>@", vm.toString(block.chainid), "@g");
+        cmd[1] = string.concat("-e s@<CHAINID>@", vm.toString(abi.encode(block.chainid)), "@g");
         cmd[2] = string.concat("-e s@<PERMIT2>@", vm.toString(Consts.PERMIT2_ADDRESS), "@g");
         cmd[3] = string.concat("-e s@<SWAPPER>@", vm.toString(rfq.swapper), "@g");
         cmd[4] = string.concat("-e s@<INTOKEN>@", vm.toString(rfq.inToken), "@g");
