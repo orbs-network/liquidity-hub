@@ -12,7 +12,7 @@ import {OutputsBuilder} from "uniswapx/test/util/OutputsBuilder.sol";
 import {Workbench} from "script/base/Workbench.sol";
 import {DeployTestInfra} from "script/base/DeployTestInfra.sol";
 
-import {LiquidityHub, IReactor} from "src/LiquidityHub.sol";
+import {LiquidityHub, IReactor, IValidationCallback} from "src/LiquidityHub.sol";
 import {Treasury, IWETH, Consts, IMulticall, IERC20} from "src/Treasury.sol";
 
 // ⛔️ JSON IS PARSED ALPHABETICALLY!
@@ -102,6 +102,9 @@ abstract contract Base is Script, DeployTestInfra {
             order.decayStartTime = order.info.deadline;
             order.decayEndTime = order.info.deadline;
 
+            order.exclusiveFiller = address(config.executor);
+            order.info.additionalValidationContract = IValidationCallback(config.executor);
+
             order.input.token = ERC20(rfq.inToken);
             order.input.startAmount = rfq.inAmount;
             order.input.endAmount = rfq.inAmount;
@@ -114,15 +117,17 @@ abstract contract Base is Script, DeployTestInfra {
 
         string[] memory cmd = new string[](13);
         cmd[0] = "sed";
-        cmd[1] = string.concat("-e s@<CHAINID>@", vm.toString(abi.encode(block.chainid)), "@g");
+        cmd[1] = string.concat("-e s@<CHAINID>@", vm.toString(block.chainid), "@g");
         cmd[2] = string.concat("-e s@<PERMIT2>@", vm.toString(Consts.PERMIT2_ADDRESS), "@g");
         cmd[3] = string.concat("-e s@<SWAPPER>@", vm.toString(rfq.swapper), "@g");
         cmd[4] = string.concat("-e s@<INTOKEN>@", vm.toString(rfq.inToken), "@g");
-        cmd[5] = string.concat("-e s@<INAMOUNT>@", vm.toString(abi.encode(rfq.inAmount)), "@g");
-        cmd[6] = string.concat("-e s@<OUTTOKEN>@", vm.toString(rfq.outToken), "@g");
-        cmd[7] = string.concat("-e s@<OUTAMOUNT>@", vm.toString(abi.encode(rfq.outAmount)), "@g");
-        cmd[8] = string.concat("-e s@<DEADLINE>@", vm.toString(abi.encode(order.info.deadline)), "@g");
-        cmd[9] = string.concat("-e s@<NONCE>@", vm.toString(abi.encode(order.info.nonce)), "@g");
+        cmd[5] = string.concat("-e s@<OUTTOKEN>@", vm.toString(rfq.outToken), "@g");
+        cmd[6] = string.concat("-e s@<INAMOUNT>@", vm.toString(rfq.inAmount), "@g");
+        cmd[7] = string.concat("-e s@<OUTAMOUNTSWAPPER>@", vm.toString(rfq.outAmount), "@g");
+        // cmd[7] = string.concat("-e s@<OUTAMOUNTFEE>@", vm.toString(rfq.outAmount), "@g");
+        // cmd[7] = string.concat("-e s@<OUTAMOUNTGAS>@", vm.toString(rfq.outAmount), "@g");
+        cmd[8] = string.concat("-e s@<DEADLINE>@", vm.toString(order.info.deadline), "@g");
+        cmd[9] = string.concat("-e s@<NONCE>@", vm.toString(order.info.nonce), "@g");
         cmd[10] = string.concat("-e s@<REACTOR>@", vm.toString(address(order.info.reactor)), "@g");
         cmd[11] = string.concat("-e s@<EXECUTOR>@", vm.toString(address(config.executor)), "@g");
         cmd[12] = "script/input/permit.skeleton.json";

@@ -123,25 +123,16 @@
   "values": {
     "permitted": {
       "token": "<INTOKEN>",
-      "amount": {
-        "type": "BigNumber",
-        "hex": "<INAMOUNT>"
-      }
+      "amount": "<INAMOUNT>"
     },
     "spender": "<REACTOR>",
-    "nonce": {
-      "type": "BigNumber",
-      "hex": "<NONCE>"
-    },
+    "nonce": "<NONCE>",
     "deadline": "<DEADLINE>",
     "witness": {
       "info": {
         "reactor": "<REACTOR>",
         "swapper": "<SWAPPER>",
-        "nonce": {
-          "type": "BigNumber",
-          "hex": "<NONCE>"
-        },
+        "nonce": "<NONCE>",
         "deadline": "<DEADLINE>",
         "additionalValidationContract": "<EXECUTOR>",
         "additionalValidationData": "0x"
@@ -149,30 +140,15 @@
       "decayStartTime": "<DEADLINE>",
       "decayEndTime": "<DEADLINE>",
       "exclusiveFiller": "<EXECUTOR>",
-      "exclusivityOverrideBps": {
-        "type": "BigNumber",
-        "hex": "0x00"
-      },
+      "exclusivityOverrideBps": "0",
       "inputToken": "<INTOKEN>",
-      "inputStartAmount": {
-        "type": "BigNumber",
-        "hex": "<INAMOUNT>"
-      },
-      "inputEndAmount": {
-        "type": "BigNumber",
-        "hex": "<INAMOUNT>"
-      },
+      "inputStartAmount": "<INAMOUNT>",
+      "inputEndAmount": "<INAMOUNT>",
       "outputs": [
         {
           "token": "<OUTTOKEN>",
-          "startAmount": {
-            "type": "BigNumber",
-            "hex": "<OUTAMOUNT>"
-          },
-          "endAmount": {
-            "type": "BigNumber",
-            "hex": "<OUTAMOUNT>"
-          },
+          "startAmount": "<OUTAMOUNTSWAPPER>",
+          "endAmount": "<OUTAMOUNTSWAPPER>",
           "recipient": "<SWAPPER>"
         }
       ]

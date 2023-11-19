@@ -26,10 +26,36 @@ contract CreateOrderTest is BaseTest {
         script.initTestConfig();
 
         (bytes memory encoded, bytes32 hash, string memory permitData) = script.run();
-        console.log(permitData);
+
+        // TODO test for invalid permitData
+        // console.log(permitData);
+        // keccak256(
+        //     abi.encodePacked(
+        //         "\x19\x01",
+        //         IPermit2(Consts.PERMIT2_ADDRESS).DOMAIN_SEPARATOR(),
+        //         keccak256(
+        //             abi.encode(
+        //                 keccak256(ExclusiveDutchOrderLib.ORDER_TYPE),
+        //                 order.info.hash(),
+        //                 order.decayStartTime,
+        //                 order.decayEndTime,
+        //                 order.exclusiveFiller,
+        //                 order.exclusivityOverrideBps,
+        //                 order.input.token,
+        //                 order.input.startAmount,
+        //                 order.input.endAmount,
+        //                 order.outputs.hash()
+        //             )
+        //         )
+        //     )
+        // );
 
         assertGt(encoded.length, 100);
         assertGt(abi.encode(permitData).length, 100);
         assertNotEq(hash, bytes32(0));
     }
+}
+
+interface IPermit2 {
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
 }
