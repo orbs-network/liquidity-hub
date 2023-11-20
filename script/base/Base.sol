@@ -9,7 +9,6 @@ import {WETH} from "solmate/src/tokens/WETH.sol";
 import {ExclusiveDutchOrderLib, ExclusiveDutchOrder, DutchInput} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
 import {OutputsBuilder} from "uniswapx/test/util/OutputsBuilder.sol";
 
-import {Workbench} from "script/base/Workbench.sol";
 import {DeployTestInfra} from "script/base/DeployTestInfra.sol";
 
 import {LiquidityHub, IReactor, IValidationCallback} from "src/LiquidityHub.sol";
@@ -20,7 +19,6 @@ struct Config {
     uint256 chainId;
     string chainName;
     LiquidityHub executor;
-    address quoter;
     IReactor reactor;
     Treasury treasury;
     IWETH weth;
@@ -42,8 +40,6 @@ struct Order {
 }
 
 abstract contract Base is Script, DeployTestInfra {
-    using Workbench for Vm;
-
     Config public config;
     address public deployer = msg.sender; // the default foundry deployer
 
@@ -73,13 +69,10 @@ abstract contract Base is Script, DeployTestInfra {
         Treasury treasury = new Treasury(weth, deployer);
         LiquidityHub executor = new LiquidityHub(reactor, treasury);
 
-        address quoter = makeAddr("quoter");
-
         config = Config({
             chainId: block.chainid,
             chainName: "anvil",
             executor: executor,
-            quoter: quoter,
             reactor: reactor,
             treasury: treasury,
             weth: weth

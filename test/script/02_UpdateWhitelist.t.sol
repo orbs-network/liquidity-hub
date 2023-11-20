@@ -12,7 +12,7 @@ contract UpdateWhitelistTest is BaseTest {
         UpdateWhitelist script = new UpdateWhitelist();
         script.initTestConfig();
         script.run();
-        (,,,,, Treasury treasury,) = script.config();
+        (,,,, Treasury treasury,) = script.config();
         assertTrue(treasury.allowed(0x5bCF21C33a7DFC6e5ed26f7439eF065075EA61cf));
     }
 }
