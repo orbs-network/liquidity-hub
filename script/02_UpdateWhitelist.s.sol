@@ -10,15 +10,19 @@ contract UpdateWhitelist is Base {
 
     function run() public {
         address[] memory list = _readList();
+
+        vm.startBroadcast(deployer);
+
         for (uint256 i = 0; i < list.length; i += BATCH_SIZE) {
             uint256 size = i + BATCH_SIZE < list.length ? BATCH_SIZE : list.length - i;
             address[] memory batch = new address[](size);
             for (uint256 j = 0; j < size; j++) {
                 batch[j] = list[i + j];
             }
-            vm.broadcast(deployer);
             config.treasury.set(batch, true);
         }
+
+        vm.stopBroadcast();
     }
 
     function _readList() private view returns (address[] memory) {
