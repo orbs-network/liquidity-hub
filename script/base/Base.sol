@@ -57,8 +57,11 @@ abstract contract Base is Script, DeployTestInfra {
         vm.label(address(config.reactor), "reactor");
         vm.label(address(config.weth), "weth");
 
-        deployer = vm.rememberKey(vm.envOr("DEPLOYER_PK", uint256(1)));
-        vm.label(deployer, "deployer");
+        uint256 pk = vm.envOr("DEPLOYER_PK", uint256(0));
+        if (pk != 0) {
+            deployer = vm.rememberKey(pk);
+            vm.label(deployer, "deployer");
+        }
     }
 
     function initTestConfig() public {
@@ -107,18 +110,5 @@ abstract contract Base is Script, DeployTestInfra {
         result.order = order;
         result.encoded = abi.encode(order);
         result.hash = ExclusiveDutchOrderLib.hash(order);
-    }
-
-    error AlreadyDeployed(address);
-
-    function requireFreshAddress(bytes memory creationCode, bytes memory abiEncodedArgs)
-        public
-        view
-        returns (address result)
-    {
-        result = computeCreate2Address(0, hashInitCode(creationCode, abiEncodedArgs));
-        if (result.code.length != 0) {
-            revert AlreadyDeployed(result);
-        }
     }
 }

@@ -9,6 +9,8 @@ contract UpdateWhitelist is Base {
     uint256 public constant BATCH_SIZE = 300;
 
     function run() public {
+        if (address(config.treasury).code.length == 0) return;
+
         address[] memory list = _readList();
 
         vm.startBroadcast(deployer);

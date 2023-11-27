@@ -9,7 +9,17 @@ import {Base, Consts} from "script/base/Base.sol";
 
 contract DeployReactor is Base {
     function run() public returns (address reactor) {
-        vm.broadcast(deployer);
-        reactor = address(new ExclusiveDutchOrderReactor{salt: 0}(IPermit2(Consts.PERMIT2_ADDRESS), address(0)));
+        reactor = computeCreate2Address(
+            0,
+            hashInitCode(type(ExclusiveDutchOrderReactor).creationCode, abi.encode(Consts.PERMIT2_ADDRESS, address(0)))
+        );
+
+        if (reactor.code.length == 0) {
+            vm.broadcast(deployer);
+            require(
+                reactor
+                    == address(new ExclusiveDutchOrderReactor{salt: 0}(IPermit2(Consts.PERMIT2_ADDRESS), address(0)))
+            );
+        }
     }
 }
