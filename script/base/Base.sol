@@ -41,7 +41,7 @@ struct Order {
 
 abstract contract Base is Script, DeployTestInfra {
     Config public config;
-    address public deployer = msg.sender; // the default foundry deployer
+    address public deployer = msg.sender;
 
     function setUp() public virtual {
         initProductionConfig();
@@ -85,7 +85,7 @@ abstract contract Base is Script, DeployTestInfra {
         return abi.decode(vm.parseJson(vm.readFile(path)), (Config));
     }
 
-    function createOrder(RFQ memory rfq) public returns (Order memory result) {
+    function createOrder(RFQ memory rfq) public view returns (Order memory result) {
         ExclusiveDutchOrder memory order;
         {
             order.info.reactor = config.reactor;
@@ -107,24 +107,18 @@ abstract contract Base is Script, DeployTestInfra {
         result.order = order;
         result.encoded = abi.encode(order);
         result.hash = ExclusiveDutchOrderLib.hash(order);
+    }
 
-        string[] memory cmd = new string[](13);
-        cmd[0] = "sed";
-        cmd[1] = string.concat("-e s@<CHAINID>@", vm.toString(block.chainid), "@g");
-        cmd[2] = string.concat("-e s@<PERMIT2>@", vm.toString(Consts.PERMIT2_ADDRESS), "@g");
-        cmd[3] = string.concat("-e s@<SWAPPER>@", vm.toString(rfq.swapper), "@g");
-        cmd[4] = string.concat("-e s@<INTOKEN>@", vm.toString(rfq.inToken), "@g");
-        cmd[5] = string.concat("-e s@<OUTTOKEN>@", vm.toString(rfq.outToken), "@g");
-        cmd[6] = string.concat("-e s@<INAMOUNT>@", vm.toString(rfq.inAmount), "@g");
-        cmd[7] = string.concat("-e s@<OUTAMOUNTSWAPPER>@", vm.toString(rfq.outAmount), "@g");
-        // cmd[7] = string.concat("-e s@<OUTAMOUNTFEE>@", vm.toString(rfq.outAmount), "@g");
-        // cmd[7] = string.concat("-e s@<OUTAMOUNTGAS>@", vm.toString(rfq.outAmount), "@g");
-        cmd[8] = string.concat("-e s@<DEADLINE>@", vm.toString(order.info.deadline), "@g");
-        cmd[9] = string.concat("-e s@<NONCE>@", vm.toString(order.info.nonce), "@g");
-        cmd[10] = string.concat("-e s@<REACTOR>@", vm.toString(address(order.info.reactor)), "@g");
-        cmd[11] = string.concat("-e s@<EXECUTOR>@", vm.toString(address(config.executor)), "@g");
-        cmd[12] = "script/input/permit.skeleton.json";
+    error AlreadyDeployed(address);
 
-        result.permitData = string(vm.ffi(cmd));
+    function requireFreshAddress(bytes memory creationCode, bytes memory abiEncodedArgs)
+        public
+        view
+        returns (address result)
+    {
+        result = computeCreate2Address(0, hashInitCode(creationCode, abiEncodedArgs));
+        if (result.code.length != 0) {
+            revert AlreadyDeployed(result);
+        }
     }
 }

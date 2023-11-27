@@ -30,7 +30,7 @@ abstract contract BaseTest is Base, PermitSignature {
         address outToken,
         uint256 inAmount,
         uint256 outAmount
-    ) internal returns (SignedOrder memory result) {
+    ) internal view returns (SignedOrder memory result) {
         Order memory order = createOrder(RFQ(swapper, inToken, outToken, inAmount, outAmount));
         result.sig = signOrder(privateKey, PERMIT2_ADDRESS, order.order);
         result.order = order.encoded;
