@@ -127,7 +127,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(swapper.balance, outAmount);
     }
 
-    function test_SlippageToTreasury() public {
+    function test_SlippageToFeeRecipient() public {
         ERC20Mock inToken = new ERC20Mock();
         uint256 inAmount = 1 ether;
         uint256 outAmount = 0.5 ether;
@@ -145,10 +145,10 @@ contract LiquidityHubExecuteTest is BaseTest {
 
         assertEq(inToken.balanceOf(swapper), outAmount);
         assertEq(inToken.balanceOf(address(config.executor)), 0);
-        assertEq(inToken.balanceOf(address(config.treasury)), inAmount - outAmount);
+        assertEq(inToken.balanceOf(config.feeRecipient), inAmount - outAmount);
     }
 
-    function test_NativeToTreasury() public {
+    function test_NativeSlippageToFeeRecipient() public {
         IWETH inToken = config.weth;
         address outToken = address(0);
         uint256 inAmount = 1 ether;
@@ -170,6 +170,6 @@ contract LiquidityHubExecuteTest is BaseTest {
 
         assertEq(swapper.balance, outAmount);
         assertEq(address(config.executor).balance, 0);
-        assertEq(address(config.treasury).balance, inAmount - outAmount);
+        assertEq(config.feeRecipient.balance, inAmount - outAmount);
     }
 }

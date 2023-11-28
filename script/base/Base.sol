@@ -19,6 +19,7 @@ struct Config {
     uint256 chainId;
     string chainName;
     LiquidityHub executor;
+    address payable feeRecipient;
     IReactor reactor;
     Treasury treasury;
     IWETH weth;
@@ -54,6 +55,7 @@ abstract contract Base is Script, DeployTestInfra {
 
         vm.label(address(config.treasury), "treasury");
         vm.label(address(config.executor), "executor");
+        vm.label(address(config.feeRecipient), "feeRecipient");
         vm.label(address(config.reactor), "reactor");
         vm.label(address(config.weth), "weth");
 
@@ -70,12 +72,13 @@ abstract contract Base is Script, DeployTestInfra {
         IWETH weth = IWETH(address(new WETH()));
 
         Treasury treasury = new Treasury(weth, deployer);
-        LiquidityHub executor = new LiquidityHub(reactor, treasury);
+        LiquidityHub executor = new LiquidityHub(reactor, treasury, payable(makeAddr("feeRecipient")));
 
         config = Config({
             chainId: block.chainid,
             chainName: "anvil",
             executor: executor,
+            feeRecipient: executor.feeRecipient(),
             reactor: reactor,
             treasury: treasury,
             weth: weth

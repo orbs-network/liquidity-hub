@@ -2,6 +2,7 @@
   "chainId": 1284,
   "chainName": "moonbeam",
   "executor": "0x025E8dC289741a1e2E5237A5ca44230F17ec7D5F",
+  "feeRecipient": "0xf8105F11D917eB386Ddf7C447Aba1eC67Dd0684F",
   "reactor": "0xe9E78109c89162cEF32Bfe7cBCEe1f31312fc1F6",
   "treasury": "0xf8105F11D917eB386Ddf7C447Aba1eC67Dd0684F",
   "weth": "0xAcc15dC74880C9944775448304B263D191c6077F"

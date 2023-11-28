@@ -3,7 +3,6 @@ pragma solidity 0.8.x;
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {IReactor} from "uniswapx/src/interfaces/IReactor.sol";
 import {IReactorCallback} from "uniswapx/src/interfaces/IReactorCallback.sol";
@@ -17,22 +16,25 @@ import {IMulticall, Call} from "./IMulticall.sol";
 /**
  * LiquidityHub Executor
  */
-contract LiquidityHub is IReactorCallback, IValidationCallback, Ownable {
+contract LiquidityHub is IReactorCallback, IValidationCallback {
     using SafeERC20 for IERC20;
 
     uint8 public constant VERSION = 1;
 
     IReactor public immutable reactor;
+    Treasury public immutable treasury;
+    address payable public immutable feeRecipient;
 
-    constructor(IReactor _reactor, Treasury _treasury) Ownable() {
+    constructor(IReactor _reactor, Treasury _treasury, address payable _feeRecipient) {
         reactor = _reactor;
-        transferOwnership(address(_treasury));
+        treasury = _treasury;
+        feeRecipient = _feeRecipient;
     }
 
     error InvalidSender(address sender);
 
     modifier onlyAllowed() {
-        if (!(Treasury(payable(owner())).allowed(msg.sender))) revert InvalidSender(msg.sender);
+        if (!treasury.allowed(msg.sender)) revert InvalidSender(msg.sender);
         _;
     }
 
@@ -87,12 +89,12 @@ contract LiquidityHub is IReactorCallback, IValidationCallback, Ownable {
                     uint256 balance = IERC20(token).balanceOf(address(this));
                     uint256 allowance = IERC20(token).allowance(address(this), address(reactor));
                     if (balance > allowance) {
-                        IERC20(token).safeTransfer(owner(), balance - allowance);
+                        IERC20(token).safeTransfer(feeRecipient, balance - allowance);
                     }
                 }
             }
         }
-        Address.sendValue(payable(owner()), address(this).balance);
+        Address.sendValue(feeRecipient, address(this).balance);
     }
 
     /**
