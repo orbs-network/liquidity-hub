@@ -21,6 +21,8 @@ contract DeployExecutor is Base {
             require(
                 executor == address(new LiquidityHub{salt: 0}(config.reactor, config.treasury, config.feeRecipient))
             );
+        } else {
+            console.log("already deployed");
         }
     }
 }

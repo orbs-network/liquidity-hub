@@ -9,7 +9,10 @@ contract UpdateWhitelist is Base {
     uint256 public constant BATCH_SIZE = 300;
 
     function run() public {
-        if (address(config.treasury).code.length == 0) return;
+        if (address(config.treasury).code.length == 0) {
+            console.log("treasury not deployed");
+            return;
+        }
 
         address[] memory list = _readList();
 

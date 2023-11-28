@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
 import {PermitSignature} from "uniswapx/test/util/PermitSignature.sol";
 
-import {Base, Config, RFQ, Order} from "script/base/Base.sol";
+import {Base, Config, Order} from "script/base/Base.sol";
 
 import {LiquidityHub, IMulticall, IReactor, IERC20, SignedOrder} from "src/LiquidityHub.sol";
 import {Treasury, IWETH} from "src/Treasury.sol";
@@ -20,7 +20,7 @@ abstract contract BaseTest is Base, PermitSignature {
     function dealWETH(address target, uint256 amount) internal {
         hoax(target, amount);
         config.weth.deposit{value: amount}();
-        assertEq(config.weth.balanceOf(target), amount);
+        assertEq(config.weth.balanceOf(target), amount, "weth balance");
     }
 
     function createAndSignOrder(
@@ -29,9 +29,10 @@ abstract contract BaseTest is Base, PermitSignature {
         address inToken,
         address outToken,
         uint256 inAmount,
-        uint256 outAmount
+        uint256 outAmount,
+        uint256 outAmountGas
     ) internal view returns (SignedOrder memory result) {
-        Order memory order = createOrder(RFQ(swapper, inToken, outToken, inAmount, outAmount));
+        Order memory order = createOrder(swapper, inToken, outToken, inAmount, outAmount, outAmountGas);
         result.sig = signOrder(privateKey, PERMIT2_ADDRESS, order.order);
         result.order = order.encoded;
     }

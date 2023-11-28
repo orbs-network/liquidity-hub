@@ -16,6 +16,8 @@ contract DeployTreasury is Base {
         if (treasury.code.length == 0) {
             vm.broadcast(deployer);
             require(treasury == address(new Treasury{salt: 0}(config.weth, OWNER)));
+        } else {
+            console.log("already deployed");
         }
     }
 }

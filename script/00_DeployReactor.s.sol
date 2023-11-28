@@ -20,6 +20,8 @@ contract DeployReactor is Base {
                 reactor
                     == address(new ExclusiveDutchOrderReactor{salt: 0}(IPermit2(Consts.PERMIT2_ADDRESS), address(0)))
             );
+        } else {
+            console.log("already deployed");
         }
     }
 }

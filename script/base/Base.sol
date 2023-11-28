@@ -6,8 +6,12 @@ import "forge-std/Script.sol";
 
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {WETH} from "solmate/src/tokens/WETH.sol";
-import {ExclusiveDutchOrderLib, ExclusiveDutchOrder, DutchInput} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
-import {OutputsBuilder} from "uniswapx/test/util/OutputsBuilder.sol";
+import {
+    ExclusiveDutchOrderLib,
+    ExclusiveDutchOrder,
+    DutchInput,
+    DutchOutput
+} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
 
 import {DeployTestInfra} from "script/base/DeployTestInfra.sol";
 
@@ -23,14 +27,6 @@ struct Config {
     IReactor reactor;
     Treasury treasury;
     IWETH weth;
-}
-
-struct RFQ {
-    address swapper;
-    address inToken;
-    address outToken;
-    uint256 inAmount;
-    uint256 outAmount;
 }
 
 struct Order {
@@ -91,11 +87,18 @@ abstract contract Base is Script, DeployTestInfra {
         return abi.decode(vm.parseJson(vm.readFile(path)), (Config));
     }
 
-    function createOrder(RFQ memory rfq) public view returns (Order memory result) {
+    function createOrder(
+        address swapper,
+        address inToken,
+        address outToken,
+        uint256 inAmount,
+        uint256 outAmount,
+        uint256 outAmountGas
+    ) public view returns (Order memory result) {
         ExclusiveDutchOrder memory order;
         {
             order.info.reactor = config.reactor;
-            order.info.swapper = rfq.swapper;
+            order.info.swapper = swapper;
             order.info.nonce = block.timestamp;
             order.info.deadline = block.timestamp + 10 minutes;
             order.decayStartTime = order.info.deadline;
@@ -104,11 +107,13 @@ abstract contract Base is Script, DeployTestInfra {
             order.exclusiveFiller = address(config.executor);
             order.info.additionalValidationContract = IValidationCallback(config.executor);
 
-            order.input.token = ERC20(rfq.inToken);
-            order.input.startAmount = rfq.inAmount;
-            order.input.endAmount = rfq.inAmount;
+            order.input.token = ERC20(inToken);
+            order.input.startAmount = inAmount;
+            order.input.endAmount = inAmount;
 
-            order.outputs = OutputsBuilder.singleDutch(rfq.outToken, rfq.outAmount, rfq.outAmount, rfq.swapper);
+            order.outputs = new DutchOutput[](2);
+            order.outputs[0] = DutchOutput(outToken, outAmount, outAmount, swapper);
+            order.outputs[1] = DutchOutput(outToken, outAmountGas, outAmountGas, address(config.treasury));
         }
         result.order = order;
         result.encoded = abi.encode(order);
