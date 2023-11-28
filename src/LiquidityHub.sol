@@ -19,7 +19,7 @@ import {IMulticall, Call} from "./IMulticall.sol";
 contract LiquidityHub is IReactorCallback, IValidationCallback {
     using SafeERC20 for IERC20;
 
-    uint8 public constant VERSION = 1;
+    uint8 public constant VERSION = 2;
 
     IReactor public immutable reactor;
     Treasury public immutable treasury;
