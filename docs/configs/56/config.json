@@ -1,7 +1,8 @@
 {
   "chainId": 56,
   "chainName": "bnb",
-  "executor": "0x08B08c7E56d73Bb66b089d96D45Da78E572a02A7",
+  "executor": "0x0BE5101AB8e4E3664a86a83bD8568dbE8ab374Fc",
+  "feeRecipient": "0xb1BaF397B3946a81c7f5C54807474ECF194dc446",
   "reactor": "0xe9E78109c89162cEF32Bfe7cBCEe1f31312fc1F6",
   "treasury": "0xb1BaF397B3946a81c7f5C54807474ECF194dc446",
   "weth": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
