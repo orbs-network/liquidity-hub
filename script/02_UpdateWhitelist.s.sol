@@ -6,7 +6,7 @@ import "forge-std/Script.sol";
 import {Base} from "script/base/Base.sol";
 
 contract UpdateWhitelist is Base {
-    uint256 public constant BATCH_SIZE = 300;
+    uint256 public constant BATCH_SIZE = 200;
 
     function run() public {
         if (address(config.treasury).code.length == 0) {
