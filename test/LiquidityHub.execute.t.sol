@@ -172,4 +172,29 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(address(config.executor).balance, 0);
         assertEq(config.feeRecipient.balance, inAmount - outAmount);
     }
+
+    function test_GasToTreasury() public {
+        ERC20Mock inToken = new ERC20Mock();
+        uint256 inAmount = 1 ether;
+        uint256 outAmount = 0.5 ether;
+        uint256 outAmountGas = 0.25 ether;
+
+        hoax(swapper, 0);
+        inToken.approve(PERMIT2_ADDRESS, inAmount);
+
+        SignedOrder[] memory orders = new SignedOrder[](1);
+        orders[0] = createAndSignOrder(
+            swapper, swapperPK, address(inToken), address(inToken), inAmount, outAmount, outAmountGas
+        );
+
+        inToken.mint(swapper, inAmount);
+
+        hoax(config.treasury.owner());
+        config.executor.execute(orders, new Call[](0));
+
+        assertEq(inToken.balanceOf(swapper), outAmount);
+        assertEq(inToken.balanceOf(address(config.executor)), 0);
+        assertEq(inToken.balanceOf(address(config.treasury)), outAmountGas);
+        assertEq(inToken.balanceOf(config.feeRecipient), inAmount - outAmount - outAmountGas);
+    }
 }

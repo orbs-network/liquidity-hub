@@ -4,18 +4,10 @@ pragma solidity 0.8.x;
 import "forge-std/Test.sol";
 import "forge-std/Script.sol";
 
-import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {WETH} from "solmate/src/tokens/WETH.sol";
-import {
-    ExclusiveDutchOrderLib,
-    ExclusiveDutchOrder,
-    DutchInput,
-    DutchOutput
-} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
-
 import {DeployTestInfra} from "script/base/DeployTestInfra.sol";
 
-import {LiquidityHub, IReactor, IValidationCallback} from "src/LiquidityHub.sol";
+import {LiquidityHub, IReactor} from "src/LiquidityHub.sol";
 import {Treasury, IWETH, Consts, IMulticall, IERC20} from "src/Treasury.sol";
 
 // ⛔️ JSON IS PARSED ALPHABETICALLY!
@@ -27,13 +19,6 @@ struct Config {
     IReactor reactor;
     Treasury treasury;
     IWETH weth;
-}
-
-struct Order {
-    ExclusiveDutchOrder order;
-    bytes encoded;
-    bytes32 hash;
-    string permitData;
 }
 
 abstract contract Base is Script, DeployTestInfra {
@@ -85,38 +70,5 @@ abstract contract Base is Script, DeployTestInfra {
         string memory path =
             string.concat(vm.projectRoot(), "/script/input/", vm.toString(block.chainid), "/config.json");
         return abi.decode(vm.parseJson(vm.readFile(path)), (Config));
-    }
-
-    function createOrder(
-        address swapper,
-        address inToken,
-        address outToken,
-        uint256 inAmount,
-        uint256 outAmount,
-        uint256 outAmountGas
-    ) public view returns (Order memory result) {
-        ExclusiveDutchOrder memory order;
-        {
-            order.info.reactor = config.reactor;
-            order.info.swapper = swapper;
-            order.info.nonce = block.timestamp;
-            order.info.deadline = block.timestamp + 10 minutes;
-            order.decayStartTime = order.info.deadline;
-            order.decayEndTime = order.info.deadline;
-
-            order.exclusiveFiller = address(config.executor);
-            order.info.additionalValidationContract = IValidationCallback(config.executor);
-
-            order.input.token = ERC20(inToken);
-            order.input.startAmount = inAmount;
-            order.input.endAmount = inAmount;
-
-            order.outputs = new DutchOutput[](2);
-            order.outputs[0] = DutchOutput(outToken, outAmount, outAmount, swapper);
-            order.outputs[1] = DutchOutput(outToken, outAmountGas, outAmountGas, address(config.treasury));
-        }
-        result.order = order;
-        result.encoded = abi.encode(order);
-        result.hash = ExclusiveDutchOrderLib.hash(order);
     }
 }
