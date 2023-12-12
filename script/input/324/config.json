@@ -1,0 +1,9 @@
+{
+  "chainId": 324,
+  "chainName": "zksync",
+  "executor": "",
+  "feeRecipient": "",
+  "reactor": "",
+  "treasury": "",
+  "weth": "0x000000000000000000000000000000000000800A"
+}
