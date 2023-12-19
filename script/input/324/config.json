@@ -2,8 +2,8 @@
   "chainId": 324,
   "chainName": "zksync",
   "executor": "",
-  "feeRecipient": "",
+  "feeRecipient": "0xeA35e625a1907813Bdefd1b2DC703917079e1bC9",
   "reactor": "",
-  "treasury": "",
+  "treasury": "0xeA35e625a1907813Bdefd1b2DC703917079e1bC9",
   "weth": "0x000000000000000000000000000000000000800A"
 }
