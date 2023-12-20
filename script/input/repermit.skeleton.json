@@ -5,7 +5,7 @@
     "verifyingContract": "<REPERMIT>"
   },
   "types": {
-    "PermitWitnessTransferFrom": [
+    "RePermitWitnessTransferFrom": [
       {
         "name": "permitted",
         "type": "TokenPermissions"
@@ -25,38 +25,6 @@
       {
         "name": "witness",
         "type": "PartialOrder"
-      }
-    ],
-    "TokenPermissions": [
-      {
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "PartialOrder": [
-      {
-        "name": "info",
-        "type": "OrderInfo"
-      },
-      {
-        "name": "exclusiveFiller",
-        "type": "address"
-      },
-      {
-        "name": "exclusivityOverrideBps",
-        "type": "uint256"
-      },
-      {
-        "name": "input",
-        "type": "PartialInput"
-      },
-      {
-        "name": "outputs",
-        "type": "PartialOutput[]"
       }
     ],
     "OrderInfo": [
@@ -95,6 +63,28 @@
         "type": "uint256"
       }
     ],
+    "PartialOrder": [
+      {
+        "name": "info",
+        "type": "OrderInfo"
+      },
+      {
+        "name": "exclusiveFiller",
+        "type": "address"
+      },
+      {
+        "name": "exclusivityOverrideBps",
+        "type": "uint256"
+      },
+      {
+        "name": "input",
+        "type": "PartialInput"
+      },
+      {
+        "name": "outputs",
+        "type": "PartialOutput[]"
+      }
+    ],
     "PartialOutput": [
       {
         "name": "token",
@@ -108,12 +98,22 @@
         "name": "recipient",
         "type": "address"
       }
+    ],
+    "TokenPermissions": [
+      {
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256"
+      }
     ]
   },
   "values": {
     "permitted": {
       "token": "<INTOKEN>",
-      "amount": "<TOTALINAMOUNT>"
+      "amount": "<INAMOUNT>"
     },
     "spender": "<REACTOR>",
     "nonce": "<NONCE>",
@@ -124,7 +124,7 @@
         "swapper": "<SWAPPER>",
         "nonce": "<NONCE>",
         "deadline": "<DEADLINE>",
-        "additionalValidationContract": "0x0",
+        "additionalValidationContract": "0x0000000000000000000000000000000000000000",
         "additionalValidationData": "0x"
       },
       "exclusiveFiller": "<EXECUTOR>",
