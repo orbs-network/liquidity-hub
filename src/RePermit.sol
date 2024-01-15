@@ -58,11 +58,10 @@ contract RePermit is EIP712, IEIP712 {
 
     error InvalidSignature();
     error SignatureExpired(uint256 deadline);
-    error InvalidAmount(uint256 permitted);
-    error InsufficientAllowance(uint256 maxAmount);
+    error InsufficientAllowance(uint256 spent);
 
-    // signer => token => spender => allowance
-    mapping(address => mapping(address => mapping(address => uint256))) public allowance;
+    // signer => token => spender => nonce => spent
+    mapping(address => mapping(address => mapping(address => mapping(uint256 => uint256)))) public spent;
 
     constructor() EIP712("RePermit", "1") {}
 
@@ -79,22 +78,15 @@ contract RePermit is EIP712, IEIP712 {
         bytes calldata signature
     ) external {
         if (block.timestamp > permit.deadline) revert SignatureExpired(permit.deadline);
-        if (request.amount > permit.permitted.amount) revert InvalidAmount(permit.permitted.amount);
+        uint256 _s = spent[signer][permit.permitted.token][msg.sender][permit.nonce];
+        if (_s + request.amount > permit.permitted.amount) {
+            revert InsufficientAllowance(_s);
+        }
 
         bytes32 hash = _hashTypedDataV4(RePermitLib.hashWithWitness(permit, witness, witnessTypeString, msg.sender));
         if (!SignatureChecker.isValidSignatureNow(signer, hash, signature)) revert InvalidSignature();
 
-        // uint256 allowed = allowance[signer][permit.permitted.token][msg.sender];
-        // if (allowed != type(uint256).max) {
-        //     if (request.amount > allowed) {
-        //         revert InsufficientAllowance(allowed);
-        //     } else {
-        //         unchecked {
-        //             allowance[signer][permit.permitted.token][msg.sender] = allowed - request.amount;
-        //         }
-        //     }
-        // }
-
+        spent[signer][permit.permitted.token][msg.sender][permit.nonce] += request.amount;
         IERC20(permit.permitted.token).safeTransferFrom(signer, request.to, request.amount);
     }
 }
