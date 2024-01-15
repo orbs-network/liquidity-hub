@@ -78,15 +78,15 @@ contract RePermit is EIP712, IEIP712 {
         bytes calldata signature
     ) external {
         if (block.timestamp > permit.deadline) revert SignatureExpired(permit.deadline);
-        uint256 _s = spent[signer][permit.permitted.token][msg.sender][permit.nonce];
-        if (_s + request.amount > permit.permitted.amount) {
-            revert InsufficientAllowance(_s);
-        }
 
         bytes32 hash = _hashTypedDataV4(RePermitLib.hashWithWitness(permit, witness, witnessTypeString, msg.sender));
         if (!SignatureChecker.isValidSignatureNow(signer, hash, signature)) revert InvalidSignature();
 
-        spent[signer][permit.permitted.token][msg.sender][permit.nonce] += request.amount;
+        uint256 _spent = (spent[signer][permit.permitted.token][msg.sender][permit.nonce] += request.amount);
+        if (_spent > permit.permitted.amount) {
+            revert InsufficientAllowance(_spent - request.amount);
+        }
+
         IERC20(permit.permitted.token).safeTransferFrom(signer, request.to, request.amount);
     }
 }
