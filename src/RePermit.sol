@@ -59,6 +59,10 @@ contract RePermit is EIP712, IEIP712 {
     error InvalidSignature();
     error SignatureExpired(uint256 deadline);
     error InvalidAmount(uint256 permitted);
+    error InsufficientAllowance(uint256 maxAmount);
+
+    // signer => token => spender => allowance
+    mapping(address => mapping(address => mapping(address => uint256))) public allowance;
 
     constructor() EIP712("RePermit", "1") {}
 
@@ -80,13 +84,13 @@ contract RePermit is EIP712, IEIP712 {
         bytes32 hash = _hashTypedDataV4(RePermitLib.hashWithWitness(permit, witness, witnessTypeString, msg.sender));
         if (!SignatureChecker.isValidSignatureNow(signer, hash, signature)) revert InvalidSignature();
 
-        // uint256 maxAmount = allowed.amount;
-        // if (maxAmount != type(uint160).max) {
-        //     if (amount > maxAmount) {
-        //         revert InsufficientAllowance(maxAmount);
+        // uint256 allowed = allowance[signer][permit.permitted.token][msg.sender];
+        // if (allowed != type(uint256).max) {
+        //     if (request.amount > allowed) {
+        //         revert InsufficientAllowance(allowed);
         //     } else {
         //         unchecked {
-        //             allowed.amount = uint160(maxAmount) - amount;
+        //             allowance[signer][permit.permitted.token][msg.sender] = allowed - request.amount;
         //         }
         //     }
         // }

@@ -6,7 +6,6 @@ import "forge-std/Test.sol";
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import {PermitSignature} from "uniswapx/test/util/PermitSignature.sol";
 import {
@@ -22,8 +21,7 @@ import {
     LiquidityHub, Consts, IMulticall, IReactor, IERC20, SignedOrder, IValidationCallback
 } from "src/LiquidityHub.sol";
 import {Treasury, IWETH} from "src/Treasury.sol";
-import {PartialOrderLib, RePermitLib} from "src/PartialOrderReactor.sol";
-import {IEIP712} from "src/RePermit.sol";
+import {PartialOrderLib} from "src/PartialOrderReactor.sol";
 
 abstract contract BaseTest is Base, PermitSignature {
     function setUp() public virtual override {
@@ -100,27 +98,5 @@ abstract contract BaseTest is Base, PermitSignature {
 
         result.sig = signRePermit(repermit, privateKey, order);
         result.order = abi.encode(order);
-    }
-
-    function signRePermit(address repermit, uint256 privateKey, PartialOrderLib.PartialOrder memory order)
-        internal
-        view
-        returns (bytes memory sig)
-    {
-        bytes32 msgHash = ECDSA.toTypedDataHash(
-            IEIP712(repermit).DOMAIN_SEPARATOR(),
-            RePermitLib.hashWithWitness(
-                RePermitLib.RePermitTransferFrom(
-                    RePermitLib.TokenPermissions(address(order.input.token), order.input.amount),
-                    order.info.nonce,
-                    order.info.deadline
-                ),
-                PartialOrderLib.hash(order),
-                PartialOrderLib.WITNESS_TYPE,
-                address(config.reactor)
-            )
-        );
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, msgHash);
-        sig = bytes.concat(r, s, bytes1(v));
     }
 }

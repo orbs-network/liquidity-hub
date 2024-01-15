@@ -5,10 +5,15 @@ import "forge-std/Test.sol";
 import "forge-std/Script.sol";
 
 import {WETH} from "solmate/src/tokens/WETH.sol";
+
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
 import {DeployTestInfra} from "script/base/DeployTestInfra.sol";
 
 import {LiquidityHub, IReactor} from "src/LiquidityHub.sol";
 import {Treasury, IWETH, Consts, IMulticall, IERC20} from "src/Treasury.sol";
+import {PartialOrderLib, RePermitLib} from "src/PartialOrderReactor.sol";
+import {IEIP712} from "src/RePermit.sol";
 
 // ⛔️ JSON IS PARSED ALPHABETICALLY!
 struct Config {
@@ -24,6 +29,7 @@ struct Config {
 abstract contract Base is Script, DeployTestInfra {
     Config public config;
     address public deployer = msg.sender;
+    uint256 public deployerPK;
 
     function setUp() public virtual {
         initProductionConfig();
@@ -40,9 +46,9 @@ abstract contract Base is Script, DeployTestInfra {
         vm.label(address(config.reactor), "reactor");
         vm.label(address(config.weth), "weth");
 
-        uint256 pk = vm.envOr("DEPLOYER_PK", uint256(0));
-        if (pk != 0) {
-            deployer = vm.rememberKey(pk);
+        deployerPK = vm.envOr("DEPLOYER_PK", uint256(0));
+        if (deployerPK != 0) {
+            deployer = vm.rememberKey(deployerPK);
             vm.label(deployer, "deployer");
         }
     }
@@ -70,5 +76,33 @@ abstract contract Base is Script, DeployTestInfra {
         string memory path =
             string.concat(vm.projectRoot(), "/script/input/", vm.toString(block.chainid), "/config.json");
         return abi.decode(vm.parseJson(vm.readFile(path)), (Config));
+    }
+
+    function signPermit2(uint256 privateKey, bytes32 orderHash) internal view returns (bytes memory sig) {
+        bytes32 msgHash = ECDSA.toTypedDataHash(IEIP712(Consts.PERMIT2_ADDRESS).DOMAIN_SEPARATOR(), orderHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, msgHash);
+        sig = bytes.concat(r, s, bytes1(v));
+    }
+
+    function signRePermit(address repermit, uint256 privateKey, PartialOrderLib.PartialOrder memory order)
+        internal
+        view
+        returns (bytes memory sig)
+    {
+        bytes32 msgHash = ECDSA.toTypedDataHash(
+            IEIP712(repermit).DOMAIN_SEPARATOR(),
+            RePermitLib.hashWithWitness(
+                RePermitLib.RePermitTransferFrom(
+                    RePermitLib.TokenPermissions(address(order.input.token), order.input.amount),
+                    order.info.nonce,
+                    order.info.deadline
+                ),
+                PartialOrderLib.hash(order),
+                PartialOrderLib.WITNESS_TYPE,
+                address(config.reactor)
+            )
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, msgHash);
+        sig = bytes.concat(r, s, bytes1(v));
     }
 }
