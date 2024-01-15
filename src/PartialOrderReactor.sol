@@ -19,12 +19,12 @@ import {RePermit, RePermitLib} from "./RePermit.sol";
 
 import {PartialOrderLib} from "./PartialOrderLib.sol";
 
-contract PartialOrderReactor is BaseReactor {
+contract PartialOrderReactor is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     RePermit public immutable repermit;
 
-    constructor(RePermit _repermit) BaseReactor(IPermit2(Consts.PERMIT2_ADDRESS), address(0)) {
+    constructor(RePermit _repermit) {
         repermit = _repermit;
     }
 
