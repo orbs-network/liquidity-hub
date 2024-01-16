@@ -19,12 +19,12 @@ import {RePermit, RePermitLib} from "./RePermit.sol";
 
 import {PartialOrderLib} from "./PartialOrderLib.sol";
 
-contract PartialOrderReactor is ReentrancyGuard {
+contract PartialOrderReactor is BaseReactor {
     using SafeERC20 for IERC20;
 
     RePermit public immutable repermit;
 
-    constructor(RePermit _repermit) {
+    constructor(RePermit _repermit) BaseReactor(IPermit2(Consts.PERMIT2_ADDRESS), address(0)) {
         repermit = _repermit;
     }
 
@@ -34,12 +34,13 @@ contract PartialOrderReactor is ReentrancyGuard {
         override
         returns (ResolvedOrder memory resolvedOrder)
     {
-        PartialOrderLib.PartialOrder memory order = abi.decode(signedOrder.order, (PartialOrderLib.PartialOrder));
+        (PartialOrderLib.PartialOrder memory order, uint256 inAmount) =
+            abi.decode(signedOrder.order, (PartialOrderLib.PartialOrder, uint256));
+
         // _validateOrder(order); // :amounts
 
         resolvedOrder.info = order.info;
-        resolvedOrder.input =
-            InputToken({token: ERC20(order.input.token), amount: order.input.amount, maxAmount: order.input.amount});
+        resolvedOrder.input = InputToken({token: ERC20(order.input.token), amount: inAmount, maxAmount: inAmount});
         resolvedOrder.sig = signedOrder.sig;
         resolvedOrder.hash = PartialOrderLib.hash(order);
 

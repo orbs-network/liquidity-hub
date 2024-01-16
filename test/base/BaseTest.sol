@@ -97,6 +97,6 @@ abstract contract BaseTest is Base, PermitSignature {
         }
 
         result.sig = signRePermit(repermit, privateKey, order);
-        result.order = abi.encode(order);
+        result.order = abi.encode(order, inAmount);
     }
 }
