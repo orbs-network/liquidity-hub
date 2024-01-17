@@ -37,19 +37,20 @@ contract PartialOrderReactor is BaseReactor {
         (PartialOrderLib.PartialOrder memory order, uint256 inAmount) =
             abi.decode(signedOrder.order, (PartialOrderLib.PartialOrder, uint256));
 
-        // _validateOrder(order); // :amounts
-
         resolvedOrder.info = order.info;
         resolvedOrder.input = InputToken({token: ERC20(order.input.token), amount: inAmount, maxAmount: inAmount});
         resolvedOrder.sig = signedOrder.sig;
         resolvedOrder.hash = PartialOrderLib.hash(order);
 
-        OutputToken[] memory outputs;
-        PartialOrderLib.PartialOutput[] memory partialOutputs = order.outputs;
-        assembly {
-            outputs := partialOutputs
+        resolvedOrder.outputs = new OutputToken[](order.outputs.length);
+        for (uint256 i = 0; i < order.outputs.length; i++) {
+            PartialOrderLib.PartialOutput memory output = order.outputs[i];
+            resolvedOrder.outputs[i] = OutputToken({
+                token: output.token,
+                amount: output.amount * inAmount / order.input.amount,
+                recipient: output.recipient
+            });
         }
-        resolvedOrder.outputs = outputs;
 
         ExclusivityOverrideLib.handleOverride(
             resolvedOrder, order.exclusiveFiller, order.info.deadline, order.exclusivityOverrideBps
