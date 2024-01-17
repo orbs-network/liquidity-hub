@@ -38,7 +38,8 @@ contract PartialOrderReactor is BaseReactor {
             abi.decode(signedOrder.order, (PartialOrderLib.PartialOrder, uint256));
 
         resolvedOrder.info = order.info;
-        resolvedOrder.input = InputToken({token: ERC20(order.input.token), amount: inAmount, maxAmount: inAmount});
+        resolvedOrder.input =
+            InputToken({token: ERC20(order.input.token), amount: inAmount, maxAmount: order.input.amount});
         resolvedOrder.sig = signedOrder.sig;
         resolvedOrder.hash = PartialOrderLib.hash(order);
 
@@ -60,7 +61,7 @@ contract PartialOrderReactor is BaseReactor {
     function transferInputTokens(ResolvedOrder memory order, address to) internal override {
         repermit.repermitWitnessTransferFrom(
             RePermitLib.RePermitTransferFrom(
-                RePermitLib.TokenPermissions(address(order.input.token), order.input.amount),
+                RePermitLib.TokenPermissions(address(order.input.token), order.input.maxAmount),
                 order.info.nonce,
                 order.info.deadline
             ),
