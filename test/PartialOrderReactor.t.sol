@@ -33,34 +33,14 @@ contract PartialOrderReactorTest is BaseTest {
     }
 
     function test_Execute_SwapTheFullAmount() public {
-        uint256 orderAmount = 1 ether;
-        uint256 paritalOrderAmount = orderAmount;
+        uint256 inAmount = 1 ether;
+        uint256 inAmountPartial = inAmount;
         uint256 outAmount = 0.5 ether;
         uint256 outAmountGas = 0.1 ether;
 
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createAndSignPartialOrder(
-            address(repermit),
-            swapper,
-            swapperPK,
-            address(inToken),
-            address(outToken),
-            orderAmount,
-            paritalOrderAmount,
-            outAmount,
-            outAmountGas
-        );
-        //simulate swap
-        Call[] memory calls = new Call[](2);
-        calls[0] =
-            Call(address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), paritalOrderAmount));
-        calls[1] = Call(
-            address(outToken),
-            abi.encodeWithSelector(outToken.mint.selector, address(config.executor), outAmount + outAmountGas + 1)
-        );
-
-        hoax(config.treasury.owner());
-        config.executor.execute(orders, calls);
+        SignedOrder[] memory orders = createOrder(inAmount, inAmountPartial, outAmount, outAmountGas);
+    
+        simulateSwap(inAmountPartial, outAmount, outAmountGas, orders);
 
         assertEq(outToken.balanceOf(swapper), 0.5 ether, "swapper end outAmount");
         assertEq(outToken.balanceOf(address(config.treasury)), 0.1 ether, "gas fee");
@@ -69,64 +49,20 @@ contract PartialOrderReactorTest is BaseTest {
     }
 
     function test_Execute_SwapTwice() public {
-        uint256 orderAmount = 1 ether;
-        uint256 partialAmount = 0.5 ether; // 100%
+        uint256 inAmount = 1 ether;
+        uint256 inAmountPartial = 0.5 ether; // 100%
         uint256 outAmount = 0.5 ether;
         uint256 outAmountGas = 0.1 ether;
 
-        SignedOrder[] memory orders1 = new SignedOrder[](1);
-        orders1[0] = createAndSignPartialOrder(
-            address(repermit),
-            swapper,
-            swapperPK,
-            address(inToken),
-            address(outToken),
-            orderAmount,
-            partialAmount,
-            outAmount,
-            outAmountGas
-        );
-        //simulate swap
-        Call[] memory calls1 = new Call[](2);
-        calls1[0] =
-            Call(address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), partialAmount));
-        calls1[1] = Call(
-            address(outToken),
-            abi.encodeWithSelector(outToken.mint.selector, address(config.executor), outAmount + outAmountGas + 1)
-        );
-
-        hoax(config.treasury.owner());
-        config.executor.execute(orders1, calls1);
+        SignedOrder[] memory orders = createOrder(inAmount, inAmountPartial, outAmount, outAmountGas);
+        simulateSwap(inAmountPartial, outAmount, outAmountGas, orders);
 
         assertEq(outToken.balanceOf(swapper), 0.25 ether, "swapper end outAmount");
         assertEq(outToken.balanceOf(address(config.treasury)), 0.05 ether, "gas fee");
         assertEq(inToken.balanceOf(address(config.executor)), 0, "no inToken leftovers");
         assertEq(outToken.balanceOf(address(config.executor)), 0, "no outToken leftovers");
 
-
-        SignedOrder[] memory orders2 = new SignedOrder[](1);
-        orders2[0] = createAndSignPartialOrder(
-            address(repermit),
-            swapper,
-            swapperPK,
-            address(inToken),
-            address(outToken),
-            orderAmount,
-            partialAmount,
-            outAmount,
-            outAmountGas
-        );
-        //simulate swap
-        Call[] memory calls2= new Call[](2);
-        calls2[0] =
-            Call(address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), partialAmount));
-        calls2[1] = Call(
-            address(outToken),
-            abi.encodeWithSelector(outToken.mint.selector, address(config.executor), outAmount + outAmountGas + 1)
-        );
-
-        hoax(config.treasury.owner());
-        config.executor.execute(orders2, calls2);
+        simulateSwap(inAmountPartial, outAmount, outAmountGas, orders);
 
         assertEq(outToken.balanceOf(swapper), 0.5 ether, "swapper end outAmount");
         assertEq(outToken.balanceOf(address(config.treasury)), 0.1 ether, "gas fee");
@@ -135,37 +71,13 @@ contract PartialOrderReactorTest is BaseTest {
     }
 
     function test_Execute_SwapTheHalfAmount() public {
-        uint256 orderAmount = 1 ether;
-        uint256 partialAmount = 0.4 ether;
+        uint256 inAmount = 1 ether;
+        uint256 inAmountPartial = 0.4 ether;
         uint256 outAmount = 0.5 ether;
         uint256 outAmountGas = 0.07 ether;
 
-
-        //assertEq(inToken.balanceOf(swapper), orderAmount, "Swapper should have this amount of inToken");
-
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createAndSignPartialOrder(
-            address(repermit),
-            swapper,
-            swapperPK,
-            address(inToken),
-            address(outToken),
-            orderAmount,
-            partialAmount,
-            outAmount,
-            outAmountGas
-        );
-        //simulate swap
-        Call[] memory calls = new Call[](2);
-        calls[0] =
-            Call(address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), partialAmount));
-        calls[1] = Call(
-            address(outToken),
-            abi.encodeWithSelector(outToken.mint.selector, address(config.executor), outAmount + outAmountGas + 1)
-        );
-
-        hoax(config.treasury.owner());
-        config.executor.execute(orders, calls);
+        SignedOrder[] memory orders = createOrder(inAmount, inAmountPartial, outAmount, outAmountGas);
+        simulateSwap(inAmountPartial, outAmount, outAmountGas, orders);
 
         assertEq(outToken.balanceOf(swapper),  0.2 ether, "swapper end outAmount");
         assertEq(outToken.balanceOf(address(config.treasury)), 0.028 ether, "gas fee");
@@ -175,30 +87,16 @@ contract PartialOrderReactorTest is BaseTest {
 
 
     function test_Execute_SwapTheDoubleAmount() public {
-        uint256 orderAmount = 1 ether;
-        uint256 partialAmount = 1.01 ether;
+        uint256 inAmount = 1 ether;
+        uint256 inAmountPartial = 1.01 ether;
         uint256 outAmount = 0.5 ether;
         uint256 outAmountGas = 0.07 ether;
 
-
-        //assertEq(inToken.balanceOf(swapper), orderAmount, "Swapper should have this amount of inToken");
-
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createAndSignPartialOrder(
-            address(repermit),
-            swapper,
-            swapperPK,
-            address(inToken),
-            address(outToken),
-            orderAmount,
-            partialAmount,
-            outAmount,
-            outAmountGas
-        );
+        SignedOrder[] memory orders = createOrder(inAmount, inAmountPartial, outAmount, outAmountGas);
         //simulate swap
         Call[] memory calls = new Call[](2);
         calls[0] =
-            Call(address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), partialAmount));
+            Call(address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), inAmountPartial));
         calls[1] = Call(
             address(outToken),
             abi.encodeWithSelector(outToken.mint.selector, address(config.executor), outAmount + outAmountGas + 1)
@@ -212,62 +110,56 @@ contract PartialOrderReactorTest is BaseTest {
 
 
     function test_Execute_SwapTwiceTheInsufficientAmount() public {
-        uint256 orderAmount = 1 ether;
-        uint256 partialAmount = 0.75 ether;
+        uint256 inAmount = 1 ether;
+        uint256 inAmountPartial = 0.75 ether;
         uint256 outAmount = 0.5 ether;
         uint256 outAmountGas = 0.07 ether;
 
-
-        //assertEq(inToken.balanceOf(swapper), orderAmount, "Swapper should have this amount of inToken");
-
-        SignedOrder[] memory orders1 = new SignedOrder[](1);
-        orders1[0] = createAndSignPartialOrder(
-            address(repermit),
-            swapper,
-            swapperPK,
-            address(inToken),
-            address(outToken),
-            orderAmount,
-            partialAmount,
-            outAmount,
-            outAmountGas
-        );
-        //simulate swap
-        Call[] memory calls1 = new Call[](2);
-        calls1[0] =
-            Call(address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), partialAmount));
-        calls1[1] = Call(
-            address(outToken),
-            abi.encodeWithSelector(outToken.mint.selector, address(config.executor), outAmount + outAmountGas + 1)
-        );
-
-        hoax(config.treasury.owner());
-        config.executor.execute(orders1, calls1);
-
-        SignedOrder[] memory orders2 = new SignedOrder[](1);
-        orders2[0] = createAndSignPartialOrder(
-            address(repermit),
-            swapper,
-            swapperPK,
-            address(inToken),
-            address(outToken),
-            orderAmount,
-            partialAmount,
-            outAmount,
-            outAmountGas
-        );
-        //simulate swap
-        Call[] memory calls2 = new Call[](2);
-        calls2[0] =
-            Call(address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), partialAmount));
-        calls2[1] = Call(
+        SignedOrder[] memory orders = createOrder(inAmount, inAmountPartial, outAmount, outAmountGas);
+        simulateSwap(inAmountPartial, outAmount, outAmountGas, orders);
+        
+        //simulate swap second time
+        Call[] memory calls = new Call[](2);
+        calls[0] =
+            Call(address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), inAmountPartial));
+        calls[1] = Call(
             address(outToken),
             abi.encodeWithSelector(outToken.mint.selector, address(config.executor), outAmount + outAmountGas + 1)
         );
 
         hoax(config.treasury.owner());
         vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector, address(0.75 ether)));
-        config.executor.execute(orders2, calls2);
+        config.executor.execute(orders, calls);
     }
 
+    function createOrder(uint256 inAmount, uint256 inAmountPartial, uint256 outAmount, uint256 outAmountGas) internal returns (SignedOrder[] memory orders) {
+        SignedOrder[] memory orders = new SignedOrder[](1);
+        orders[0] = createAndSignPartialOrder(
+            address(repermit),
+            swapper,
+            swapperPK,
+            address(inToken),
+            address(outToken),
+            inAmount,
+            inAmountPartial,
+            outAmount,
+            outAmountGas
+        );
+        return orders;
+    }
+
+
+    function simulateSwap(uint256 inAmountPartial, uint256 outAmount, uint256 outAmountGas, SignedOrder[] memory orders) internal {
+    
+        Call[] memory calls = new Call[](2);
+        calls[0] =
+            Call(address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), inAmountPartial));
+        calls[1] = Call(
+            address(outToken),
+            abi.encodeWithSelector(outToken.mint.selector, address(config.executor), outAmount + outAmountGas + 1)
+        );
+
+        hoax(config.treasury.owner());
+        config.executor.execute(orders, calls);
+    }
 }
