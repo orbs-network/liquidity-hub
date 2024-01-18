@@ -75,7 +75,8 @@ abstract contract BaseTest is Base, PermitSignature {
         uint256 privateKey,
         address inToken,
         address outToken,
-        uint256 inAmount,
+        uint256 orderAmount,
+        uint256 partialOrderAmount,
         uint256 outAmount,
         uint256 outAmountGas
     ) internal view returns (SignedOrder memory result) {
@@ -89,7 +90,7 @@ abstract contract BaseTest is Base, PermitSignature {
             order.exclusiveFiller = address(config.executor);
 
             order.input.token = inToken;
-            order.input.amount = inAmount;
+            order.input.amount = orderAmount;
 
             order.outputs = new PartialOrderLib.PartialOutput[](2);
             order.outputs[0] = PartialOrderLib.PartialOutput(outToken, outAmount, swapper);
@@ -97,6 +98,6 @@ abstract contract BaseTest is Base, PermitSignature {
         }
 
         result.sig = signRePermit(repermit, privateKey, order);
-        result.order = abi.encode(order, inAmount);
+        result.order = abi.encode(order, partialOrderAmount);
     }
 }
