@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import {RePermit} from "src/RePermit.sol";
 import {Base, Consts} from "script/base/Base.sol";
 
-contract DeployRepermit is Base {
+contract DeployRePermit is Base {
 
     function run() public returns (address reactor) {
         reactor = computeCreate2Address(
