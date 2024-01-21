@@ -12,7 +12,7 @@ import {DeployTestInfra} from "script/base/DeployTestInfra.sol";
 
 import {LiquidityHub, IReactor} from "src/LiquidityHub.sol";
 import {Treasury, IWETH, Consts, IMulticall, IERC20} from "src/Treasury.sol";
-import {PartialOrderLib, RePermitLib} from "src/PartialOrderReactor.sol";
+import {PartialOrderLib, RePermit, RePermitLib} from "src/PartialOrderReactor.sol";
 import {IEIP712} from "src/RePermit.sol";
 
 // ⛔️ JSON IS PARSED ALPHABETICALLY!
@@ -22,6 +22,7 @@ struct Config {
     LiquidityHub executor;
     address payable feeRecipient;
     IReactor reactor;
+    address repermit;
     Treasury treasury;
     IWETH weth;
 }
@@ -44,6 +45,7 @@ abstract contract Base is Script, DeployTestInfra {
         vm.label(address(config.executor), "executor");
         vm.label(address(config.feeRecipient), "feeRecipient");
         vm.label(address(config.reactor), "reactor");
+        vm.label(address(config.repermit), "repermit");
         vm.label(address(config.weth), "weth");
 
         deployerPK = vm.envOr("DEPLOYER_PK", uint256(0));
@@ -61,12 +63,15 @@ abstract contract Base is Script, DeployTestInfra {
         Treasury treasury = new Treasury(weth, deployer);
         LiquidityHub executor = new LiquidityHub(reactor, treasury, payable(makeAddr("feeRecipient")));
 
+        address repermit = address(new RePermit());
+
         config = Config({
             chainId: block.chainid,
             chainName: "anvil",
             executor: executor,
             feeRecipient: executor.feeRecipient(),
             reactor: reactor,
+            repermit: repermit,
             treasury: treasury,
             weth: weth
         });
