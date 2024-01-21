@@ -70,7 +70,6 @@ abstract contract BaseTest is Base, PermitSignature {
     }
 
     function createAndSignPartialOrder(
-        address repermit,
         address swapper,
         uint256 privateKey,
         address inToken,
@@ -97,7 +96,7 @@ abstract contract BaseTest is Base, PermitSignature {
             order.outputs[1] = PartialOrderLib.PartialOutput(outToken, outAmountGas, address(config.treasury));
         }
 
-        result.sig = signRePermit(repermit, privateKey, order);
+        result.sig = signRePermit(privateKey, order);
         result.order = abi.encode(order, partialOrderAmount);
     }
 }

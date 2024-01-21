@@ -12,7 +12,7 @@ import {DeployTestInfra} from "script/base/DeployTestInfra.sol";
 
 import {LiquidityHub, IReactor} from "src/LiquidityHub.sol";
 import {Treasury, IWETH, Consts, IMulticall, IERC20} from "src/Treasury.sol";
-import {PartialOrderLib, RePermit, RePermitLib} from "src/PartialOrderReactor.sol";
+import {PartialOrderLib, RePermit, RePermitLib, PartialOrderReactor} from "src/PartialOrderReactor.sol";
 import {IEIP712} from "src/RePermit.sol";
 import "forge-std/console.sol";
 
@@ -23,7 +23,8 @@ struct Config {
     LiquidityHub executor;
     address payable feeRecipient;
     IReactor reactor;
-    address repermit;
+    PartialOrderReactor reactorPartial;
+    RePermit repermit;
     Treasury treasury;
     IWETH weth;
 }
@@ -46,6 +47,7 @@ abstract contract Base is Script, DeployTestInfra {
         vm.label(address(config.executor), "executor");
         vm.label(address(config.feeRecipient), "feeRecipient");
         vm.label(address(config.reactor), "reactor");
+        vm.label(address(config.reactorPartial), "partialOrderReactor");
         vm.label(address(config.repermit), "repermit");
         vm.label(address(config.weth), "weth");
 
@@ -64,7 +66,8 @@ abstract contract Base is Script, DeployTestInfra {
         Treasury treasury = new Treasury(weth, deployer);
         LiquidityHub executor = new LiquidityHub(reactor, treasury, payable(makeAddr("feeRecipient")));
 
-        address repermit = address(new RePermit());
+        RePermit repermit = new RePermit();
+        PartialOrderReactor reactorPartial = new PartialOrderReactor(repermit);
 
         config = Config({
             chainId: block.chainid,
@@ -72,6 +75,7 @@ abstract contract Base is Script, DeployTestInfra {
             executor: executor,
             feeRecipient: executor.feeRecipient(),
             reactor: reactor,
+            reactorPartial: reactorPartial,
             repermit: repermit,
             treasury: treasury,
             weth: weth
@@ -90,13 +94,13 @@ abstract contract Base is Script, DeployTestInfra {
         sig = bytes.concat(r, s, bytes1(v));
     }
 
-    function signRePermit(address repermit, uint256 privateKey, PartialOrderLib.PartialOrder memory order)
+    function signRePermit(uint256 privateKey, PartialOrderLib.PartialOrder memory order)
         internal
         view
         returns (bytes memory sig)
     {
         bytes32 msgHash = ECDSA.toTypedDataHash(
-            IEIP712(repermit).DOMAIN_SEPARATOR(),
+            config.repermit.DOMAIN_SEPARATOR(),
             RePermitLib.hashWithWitness(
                 RePermitLib.RePermitTransferFrom(
                     RePermitLib.TokenPermissions(address(order.input.token), order.input.amount),

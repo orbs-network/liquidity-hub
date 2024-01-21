@@ -4,6 +4,7 @@
   "executor": "0x54C872002Ffa6b64D4a6dc614c3756C1cC441C03",
   "feeRecipient": "0x2B6b06E352730f1d783526fBE847169Ff5a5Bf76",
   "reactor": "0xe9E78109c89162cEF32Bfe7cBCEe1f31312fc1F6",
+  "reactorPartial": "",
   "repermit": "",
   "treasury": "0x2B6b06E352730f1d783526fBE847169Ff5a5Bf76",
   "weth": "0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f"
