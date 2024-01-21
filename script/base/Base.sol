@@ -12,7 +12,7 @@ import {DeployTestInfra} from "script/base/DeployTestInfra.sol";
 
 import {LiquidityHub, IReactor} from "src/LiquidityHub.sol";
 import {Treasury, IWETH, Consts, IMulticall, IERC20} from "src/Treasury.sol";
-import {PartialOrderLib, RePermitLib} from "src/PartialOrderReactor.sol";
+import {PartialOrderLib, RePermit, RePermitLib} from "src/PartialOrderReactor.sol";
 import {IEIP712} from "src/RePermit.sol";
 
 // ⛔️ JSON IS PARSED ALPHABETICALLY!
@@ -22,6 +22,7 @@ struct Config {
     LiquidityHub executor;
     address payable feeRecipient;
     IReactor reactor;
+    address repermit;
     Treasury treasury;
     IWETH weth;
     address repermit;
