@@ -1,27 +1,26 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "forge-std/Script.sol";
 import {RePermit} from "src/RePermit.sol";
+import {Base, Consts} from "script/base/Base.sol";
 
+contract DeployRepermit is Base {
 
-struct RePermitDeployment {
-    RePermit repermit;
-}
+    function run() public returns (address reactor) {
+        reactor = computeCreate2Address(
+            0,
+            hashInitCode(type(RePermit).creationCode, address(0))
+        );
 
-contract DeployRepermit is Script {
-
-    function setUp() public {}
-
-    function run() public returns (RePermitDeployment memory deployment) {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
-
-        RePermit repermit = new RePermit();
-        console2.log("Repermit", address(repermit));
-
-        vm.stopBroadcast();
-
-        return RePermitDeployment(repermit);
+        if (reactor.code.length == 0) {
+            vm.broadcast(deployer);
+            require(
+                reactor
+                    == address(new RePermit{salt: 0}())
+            );
+        } else {
+            console.log("already deployed");
+        }
     }
 }
+

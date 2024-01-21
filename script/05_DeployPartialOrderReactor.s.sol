@@ -1,28 +1,27 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "forge-std/Script.sol";
 import {PartialOrderReactor} from "src/PartialOrderReactor.sol";
 import {RePermit} from "src/RePermit.sol";
+import {Base, Consts} from "script/base/Base.sol";
 
-struct PartialOrderReactorDeployment {
-    PartialOrderReactor reactor;
-    RePermit permit;
-}
+contract DeployPartialOrderReactor is Base {
 
-contract DeployPartialOrderReactor is Script {
+    function run() public returns (address reactor) {
+        RePermit rePermit = RePermit(config.repermit);
+        reactor = computeCreate2Address(
+            0,
+            hashInitCode(type(PartialOrderReactor).creationCode, address(rePermit))
+        );
 
-    function setUp() public {}
-
-    function run() public returns (PartialOrderReactorDeployment memory deployment) {
-        RePermit rePermit = RePermit(vm.envAddress("FOUNDRY_REPERMIT"));
-        vm.startBroadcast();
-
-        PartialOrderReactor reactor = new PartialOrderReactor(rePermit);
-        console2.log("PartialOrderReactor", address(reactor));
-
-        vm.stopBroadcast();
-
-        return PartialOrderReactorDeployment(reactor, rePermit);
+        if (reactor.code.length == 0) {
+            vm.broadcast(deployer);
+            require(
+                reactor
+                    == address(new PartialOrderReactor{salt: 0}(address(rePermit)))
+            );
+        } else {
+            console.log("already deployed");
+        }
     }
 }
