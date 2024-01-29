@@ -47,7 +47,7 @@ contract PartialOrderReactor is BaseReactor {
             PartialOrderLib.PartialOutput memory output = order.outputs[i];
             resolvedOrder.outputs[i] = OutputToken({
                 token: output.token,
-                amount: output.amount * inAmount / order.input.amount,
+                amount: (output.amount * inAmount) / order.input.amount,
                 recipient: output.recipient
             });
         }
