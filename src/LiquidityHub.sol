@@ -44,7 +44,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     }
 
     /**
-     * Entry point
+     * Entry point, always DutchOrder
      */
     function execute(SignedOrder[] calldata orders, Call[] calldata calls) external onlyAllowed {
         reactor.executeBatchWithCallback(orders, abi.encode(calls));
@@ -83,6 +83,11 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     function _withdrawSlippage(ResolvedOrder[] memory orders) private {
         for (uint256 i = 0; i < orders.length; i++) {
             ResolvedOrder memory order = orders[i];
+
+            IERC20 inToken = IERC20(address(order.input.token));
+            uint256 inBalance = inToken.balanceOf(address(this));
+            if (inBalance > 0) inToken.safeTransfer(feeRecipient, inBalance);
+
             for (uint256 j = 0; j < order.outputs.length; j++) {
                 address token = order.outputs[j].token;
                 if (token != address(0)) {

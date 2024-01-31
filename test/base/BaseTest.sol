@@ -18,7 +18,14 @@ import {
 import {Base, Config} from "script/base/Base.sol";
 
 import {
-    LiquidityHub, Consts, IMulticall, IReactor, IERC20, SignedOrder, IValidationCallback
+    LiquidityHub,
+    Consts,
+    IMulticall,
+    IReactor,
+    IERC20,
+    SignedOrder,
+    IValidationCallback,
+    Call
 } from "src/LiquidityHub.sol";
 import {Treasury, IWETH} from "src/Treasury.sol";
 import {PartialOrderLib} from "src/PartialOrderReactor.sol";
@@ -36,8 +43,8 @@ abstract contract BaseTest is Base, PermitSignature {
     }
 
     function createAndSignOrder(
-        address swapper,
-        uint256 privateKey,
+        address signer,
+        uint256 signerPK,
         address inToken,
         address outToken,
         uint256 inAmount,
@@ -47,7 +54,7 @@ abstract contract BaseTest is Base, PermitSignature {
         ExclusiveDutchOrder memory order;
         {
             order.info.reactor = config.reactor;
-            order.info.swapper = swapper;
+            order.info.swapper = signer;
             order.info.nonce = block.timestamp;
             order.info.deadline = block.timestamp + 10 minutes;
             order.decayStartTime = order.info.deadline;
@@ -61,42 +68,52 @@ abstract contract BaseTest is Base, PermitSignature {
             order.input.endAmount = inAmount;
 
             order.outputs = new DutchOutput[](2);
-            order.outputs[0] = DutchOutput(outToken, outAmount, outAmount, swapper);
+            order.outputs[0] = DutchOutput(outToken, outAmount, outAmount, signer);
             order.outputs[1] = DutchOutput(outToken, outAmountGas, outAmountGas, address(config.treasury));
         }
 
-        result.sig = signOrder(privateKey, PERMIT2_ADDRESS, order);
+        result.sig = signOrder(signerPK, PERMIT2_ADDRESS, order);
         result.order = abi.encode(order);
     }
 
     function createAndSignPartialOrder(
-        address swapper,
-        uint256 privateKey,
+        address signer,
+        uint256 signerPK,
         address inToken,
         address outToken,
-        uint256 orderAmount,
-        uint256 partialOrderAmount,
-        uint256 outAmount,
-        uint256 outAmountGas
+        uint256 inMaxAmount,
+        uint256 inPartialAmount,
+        uint256 outAmount
     ) internal view returns (SignedOrder memory result) {
         PartialOrderLib.PartialOrder memory order;
         {
-            order.info.reactor = config.reactor;
-            order.info.swapper = swapper;
+            order.info.reactor = config.reactorPartial;
+            order.info.swapper = signer;
             order.info.nonce = block.timestamp;
             order.info.deadline = block.timestamp + 10 minutes;
 
             order.exclusiveFiller = address(config.executor);
+            // order.info.additionalValidationContract = IValidationCallback(config.executor); // this will work, but redundant and wastes gas
 
             order.input.token = inToken;
-            order.input.amount = orderAmount;
+            order.input.amount = inMaxAmount;
 
-            order.outputs = new PartialOrderLib.PartialOutput[](2);
-            order.outputs[0] = PartialOrderLib.PartialOutput(outToken, outAmount, swapper);
-            order.outputs[1] = PartialOrderLib.PartialOutput(outToken, outAmountGas, address(config.treasury));
+            order.outputs = new PartialOrderLib.PartialOutput[](1);
+            order.outputs[0] = PartialOrderLib.PartialOutput(outToken, outAmount, signer);
         }
 
-        result.sig = signRePermit(privateKey, order);
-        result.order = abi.encode(order, partialOrderAmount);
+        result.sig = signRePermit(signerPK, order);
+        result.order = abi.encode(order, inPartialAmount);
+    }
+
+    function mockSwapCalls(ERC20Mock inToken, ERC20Mock outToken, uint256 inAmount, uint256 outAmount)
+        internal
+        returns (Call[] memory calls)
+    {
+        calls = new Call[](2);
+        calls[0] =
+            Call(address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), inAmount));
+        calls[1] =
+            Call(address(outToken), abi.encodeWithSelector(outToken.mint.selector, address(config.executor), outAmount));
     }
 }

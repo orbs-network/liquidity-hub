@@ -108,7 +108,7 @@ abstract contract Base is Script, DeployTestInfra {
                 ),
                 PartialOrderLib.hash(order),
                 PartialOrderLib.WITNESS_TYPE,
-                address(config.reactor)
+                address(config.reactorPartial)
             )
         );
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, msgHash);

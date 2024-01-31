@@ -16,7 +16,6 @@ contract PartialOrderReactorTest is BaseTest {
 
     function setUp() public override {
         super.setUp();
-        vm.etch(address(config.reactor), address(config.reactorPartial).code);
 
         (swapper, swapperPK) = makeAddrAndKey("swapper");
 
@@ -148,7 +147,7 @@ contract PartialOrderReactorTest is BaseTest {
     ) internal view returns (SignedOrder[] memory orders) {
         orders = new SignedOrder[](1);
         orders[0] = createAndSignPartialOrder(
-            swapper, swapperPK, address(inToken), address(outToken), inAmount, inAmountRequest, outAmount, outAmountGas
+            swapper, swapperPK, address(inToken), address(outToken), inAmount, inAmountRequest, outAmount
         );
     }
 

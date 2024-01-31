@@ -175,6 +175,7 @@ contract LiquidityHubExecuteTest is BaseTest {
 
     function test_GasToTreasury() public {
         ERC20Mock inToken = new ERC20Mock();
+        ERC20Mock outToken = new ERC20Mock();
         uint256 inAmount = 1 ether;
         uint256 outAmount = 0.5 ether;
         uint256 outAmountGas = 0.25 ether;
@@ -184,13 +185,22 @@ contract LiquidityHubExecuteTest is BaseTest {
 
         SignedOrder[] memory orders = new SignedOrder[](1);
         orders[0] = createAndSignOrder(
-            swapper, swapperPK, address(inToken), address(inToken), inAmount, outAmount, outAmountGas
+            swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, outAmountGas
         );
 
         inToken.mint(swapper, inAmount);
 
+        Call[] memory calls = new Call[](2);
+        calls[0] = Call({
+            target: address(outToken),
+            callData: abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount + outAmountGas)
+        });
+        calls[1] = Call({
+            target: address(inToken),
+            callData: abi.encodeWithSelector(ERC20Mock.burn.selector, address(config.executor), inAmount)
+        });
         hoax(config.treasury.owner());
-        config.executor.execute(orders, new Call[](0));
+        config.executor.execute(orders, calls);
 
         assertEq(inToken.balanceOf(swapper), outAmount);
         assertEq(inToken.balanceOf(address(config.executor)), 0);
