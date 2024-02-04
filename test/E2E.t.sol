@@ -125,4 +125,62 @@ contract E2ETest is BaseTest {
         assertEq(usdc.balanceOf(config.executor.feeRecipient()), 9 * 10 ** 6, "usdc positive slippage");
         assertEq(weth.balanceOf(config.executor.feeRecipient()), 0.163333333333333334 ether, "weth positive slippage");
     }
+
+
+    function test_e2e_multiplePartialInputs() public {
+        uint256 wethTakerAmount = 1 ether; // taker input, selling 1 eth
+        uint256 usdcTakerAmount = 2500 * 10 ** 6; // taker output, buying 2500 usdc
+        // $2500
+
+        uint256 usdcMakerAmount = 1255 * 10 ** 6; // maker input, selling 2510 usdc
+        uint256 wethMakerAmount = 0.5 ether; // maker output, buying 1 eth
+        // $1255
+
+        // two orders, each selling 1255 usdc for 0.5 eth    
+        // 1255 + 1255 = 2510 usdc for 1 eth
+
+        uint256 usdcAmountGas = 1 * 10 ** 6; // 1 usdc gas fee, from maker's output
+
+        SignedOrder memory takerOrder = createAndSignOrder(
+            taker, takerPK, address(weth), address(usdc), wethTakerAmount, usdcTakerAmount, usdcAmountGas
+        );
+
+        // $2510
+        SignedOrder memory makerOrder1 = createAndSignPartialOrderWithNonce(
+            maker, makerPK, address(usdc), address(weth), usdcMakerAmount, usdcMakerAmount, wethMakerAmount, block.timestamp
+        );
+
+        // $2510
+        SignedOrder memory makerOrder2 = createAndSignPartialOrderWithNonce(
+            maker, makerPK, address(usdc), address(weth), usdcMakerAmount, usdcMakerAmount, wethMakerAmount, block.timestamp + 1
+        );
+
+        SignedOrder[] memory orders = new SignedOrder[](1);
+        orders[0] = takerOrder;
+        Call[] memory calls = new Call[](4);
+        calls[0] = Call({
+            target: address(weth),
+            callData: abi.encodeWithSelector(IERC20.approve.selector, address(config.reactorPartial), wethMakerAmount * 2)
+        });
+        calls[1] = Call({
+            target: address(config.reactorPartial),
+            callData: abi.encodeWithSelector(BaseReactor.execute.selector, makerOrder1)
+        });
+        calls[2] = Call({
+            target: address(config.reactorPartial),
+            callData: abi.encodeWithSelector(BaseReactor.execute.selector, makerOrder2)
+        });
+        hoax(config.treasury.owner());
+        config.executor.execute(orders, calls);
+
+        assertEq(weth.balanceOf(taker), wethTakerStartBalance - wethTakerAmount, "weth taker balance");
+        assertEq(usdc.balanceOf(taker), usdcTakerAmount, "usdc taker balance");
+        assertEq(weth.balanceOf(maker), 1 ether, "maker bought 0.8366 eth");
+        assertEq(usdcMakerStartBalance - usdc.balanceOf(maker), 2510 * 10 ** 6, "maker paid $2510");
+        assertEq(usdc.balanceOf(address(config.treasury)), usdcAmountGas, "gas fee");
+        assertEq(weth.balanceOf(address(config.executor)), 0, "no weth leftovers");
+        assertEq(usdc.balanceOf(address(config.executor)), 0, "no usdc leftovers");
+        assertEq(usdc.balanceOf(config.executor.feeRecipient()), 9 * 10 ** 6, "usdc positive slippage");
+        assertEq(weth.balanceOf(config.executor.feeRecipient()), 0 ether, "weth positive slippage");
+    }
 }
