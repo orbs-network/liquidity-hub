@@ -2,7 +2,6 @@
   "chainId": 56,
   "chainName": "bnb",
   "executor": "0x6E24969C7425475f9f3aA065Dc10D74d188107DD",
-  "fees": "0xbe2dAE039bb3B92E8F457E69bfd6543604A297F2",
   "reactor": "0xe9E78109c89162cEF32Bfe7cBCEe1f31312fc1F6",
   "reactorPartial": "",
   "repermit": "",

@@ -2,7 +2,6 @@
   "chainId": 324,
   "chainName": "zksync",
   "executor": "",
-  "fees": "0xeA35e625a1907813Bdefd1b2DC703917079e1bC9",
   "reactor": "",
   "reactorPartial": "",
   "repermit": "",
