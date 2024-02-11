@@ -23,12 +23,10 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
 
     IReactor public immutable reactor;
     Treasury public immutable treasury;
-    address payable public immutable fees;
 
-    constructor(IReactor _reactor, Treasury _treasury, address payable _fees) {
+    constructor(IReactor _reactor, Treasury _treasury) {
         reactor = _reactor;
         treasury = _treasury;
-        fees = _fees;
     }
 
     error InvalidSender(address sender);
@@ -46,12 +44,12 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     /**
      * Entry point
      */
-    function execute(SignedOrder[] calldata orders, Call[] calldata calls, address[] calldata tokens)
+    function execute(SignedOrder[] calldata orders, Call[] calldata calls, address fees, address[] calldata tokens)
         external
         onlyAllowed
     {
         reactor.executeBatchWithCallback(orders, abi.encode(calls));
-        _withdraw(tokens);
+        _withdraw(fees, tokens);
     }
 
     /**
@@ -83,9 +81,9 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         }
     }
 
-    function _withdraw(address[] calldata tokens) private {
+    function _withdraw(address fees, address[] calldata tokens) private {
         uint256 nativeBalance = address(this).balance;
-        if (nativeBalance > 0) Address.sendValue(fees, nativeBalance);
+        if (nativeBalance > 0) Address.sendValue(payable(fees), nativeBalance);
 
         for (uint256 i = 0; i < tokens.length; i++) {
             IERC20 token = IERC20(tokens[i]);

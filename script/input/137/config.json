@@ -2,7 +2,7 @@
   "chainId": 137,
   "chainName": "matic",
   "executor": "0x1a08D64Fb4a7D0b6DA5606A1e4619c147C3fB95e",
-  "fees": "0xbd098dB9AD3dbaF2bDAF581340B2662d9A3CA8D2",
+  "fees": "0x9c142aa9f83d317e9ADF1cD2DDBBa99e20E3C431",
   "reactor": "0x21Da9737764527e75C17F1AB26Cb668b66dEE0a0",
   "reactorPartial": "0x0B94c1A3E11F8aaA25D27cAf8DD05818e6f2Ad97",
   "repermit": "0x4d415B58EA43988FfF7f50A3475718b0858fE0f1",

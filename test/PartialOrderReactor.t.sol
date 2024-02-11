@@ -18,10 +18,7 @@ contract PartialOrderReactorTest is BaseTest {
     function setUp() public override {
         super.setUp();
 
-        vm.etch(
-            address(config.executor),
-            address(new LiquidityHub(config.reactorPartial, config.treasury, config.fees)).code
-        );
+        vm.etch(address(config.executor), address(new LiquidityHub(config.reactorPartial, config.treasury)).code);
 
         (swapper, swapperPK) = makeAddrAndKey("swapper");
 
@@ -91,13 +88,11 @@ contract PartialOrderReactorTest is BaseTest {
             swapper, swapperPK, address(inToken), address(outToken), inAmount, inAmountRequest, outAmount
         );
 
-        address[] memory tokens = new address[](2);
-        tokens[0] = address(inToken);
-        tokens[1] = address(outToken);
-
         hoax(config.treasury.owner());
         vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector, 0));
-        config.executor.execute(orders, mockSwapCalls(inToken, outToken, inAmountRequest, outAmount), tokens);
+        config.executor.execute(
+            orders, mockSwapCalls(inToken, outToken, inAmountRequest, outAmount), address(0), new address[](0)
+        );
     }
 
     function test_Revert_InsufficentAlowanceAfterSpending() public {
@@ -114,13 +109,11 @@ contract PartialOrderReactorTest is BaseTest {
             swapper, swapperPK, address(inToken), address(outToken), inAmount, inAmountRequest, outAmount
         );
 
-        address[] memory tokens = new address[](2);
-        tokens[0] = address(inToken);
-        tokens[1] = address(outToken);
-
         hoax(config.treasury.owner());
         vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector, 0.75 ether));
-        config.executor.execute(orders, mockSwapCalls(inToken, outToken, inAmountRequest, outAmount), tokens);
+        config.executor.execute(
+            orders, mockSwapCalls(inToken, outToken, inAmountRequest, outAmount), address(0), new address[](0)
+        );
     }
 
     function _execute(uint256 inAmount, uint256 inAmountRequest, uint256 outAmount) private {
@@ -134,6 +127,8 @@ contract PartialOrderReactorTest is BaseTest {
         tokens[1] = address(outToken);
 
         hoax(config.treasury.owner());
-        config.executor.execute(orders, mockSwapCalls(inToken, outToken, inAmountRequest, outAmount), tokens);
+        config.executor.execute(
+            orders, mockSwapCalls(inToken, outToken, inAmountRequest, outAmount), address(1), tokens
+        );
     }
 }

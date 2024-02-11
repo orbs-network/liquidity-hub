@@ -16,11 +16,13 @@ contract E2ETest is BaseTest {
     ERC20Mock public usdc;
     uint256 public wethTakerStartBalance = 10 ether;
     uint256 public usdcMakerStartBalance = 25_000 * 10 ** 6;
+    address public fees;
 
     function setUp() public override {
         super.setUp();
         (taker, takerPK) = makeAddrAndKey("taker");
         (maker, makerPK) = makeAddrAndKey("maker");
+        fees = makeAddr("fees");
 
         weth = new ERC20Mock();
         usdc = new ERC20Mock();
@@ -72,7 +74,7 @@ contract E2ETest is BaseTest {
         tokens[1] = address(usdc);
 
         hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, tokens);
+        config.executor.execute(orders, calls, fees, tokens);
 
         assertEq(weth.balanceOf(taker), wethTakerStartBalance - wethTakerAmount, "weth taker balance");
         assertEq(usdc.balanceOf(taker), usdcTakerAmount, "usdc taker balance");
@@ -81,8 +83,8 @@ contract E2ETest is BaseTest {
         assertEq(usdc.balanceOf(address(config.treasury)), usdcAmountGas, "gas fee");
         assertEq(weth.balanceOf(address(config.executor)), 0, "no weth leftovers");
         assertEq(usdc.balanceOf(address(config.executor)), 0, "no usdc leftovers");
-        assertEq(usdc.balanceOf(config.executor.fees()), 9 * 10 ** 6, "usdc positive slippage");
-        assertEq(weth.balanceOf(config.executor.fees()), 0, "weth positive slippage");
+        assertEq(usdc.balanceOf(fees), 9 * 10 ** 6, "usdc positive slippage");
+        assertEq(weth.balanceOf(fees), 0, "weth positive slippage");
     }
 
     function test_e2e_PartialInputMatch() public {
@@ -121,7 +123,7 @@ contract E2ETest is BaseTest {
         tokens[1] = address(usdc);
 
         hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, tokens);
+        config.executor.execute(orders, calls, fees, tokens);
 
         assertEq(weth.balanceOf(taker), wethTakerStartBalance - wethTakerAmount, "weth taker balance");
         assertEq(usdc.balanceOf(taker), usdcTakerAmount, "usdc taker balance");
@@ -130,8 +132,8 @@ contract E2ETest is BaseTest {
         assertEq(usdc.balanceOf(address(config.treasury)), usdcAmountGas, "gas fee");
         assertEq(weth.balanceOf(address(config.executor)), 0, "no weth leftovers");
         assertEq(usdc.balanceOf(address(config.executor)), 0, "no usdc leftovers");
-        assertEq(usdc.balanceOf(config.executor.fees()), 9 * 10 ** 6, "usdc positive slippage");
-        assertEq(weth.balanceOf(config.executor.fees()), 0.163333333333333334 ether, "weth positive slippage");
+        assertEq(usdc.balanceOf(fees), 9 * 10 ** 6, "usdc positive slippage");
+        assertEq(weth.balanceOf(fees), 0.163333333333333334 ether, "weth positive slippage");
     }
 
     function test_e2e_multiplePartialInputs() public {
@@ -185,7 +187,7 @@ contract E2ETest is BaseTest {
         tokens[1] = address(usdc);
 
         hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, tokens);
+        config.executor.execute(orders, calls, fees, tokens);
 
         assertEq(weth.balanceOf(taker), wethTakerStartBalance - wethTakerAmount, "weth taker balance");
         assertEq(usdc.balanceOf(taker), usdcTakerAmount, "usdc taker balance");
@@ -196,7 +198,7 @@ contract E2ETest is BaseTest {
         assertEq(usdc.balanceOf(address(config.treasury)), usdcAmountGas, "gas fee");
         assertEq(weth.balanceOf(address(config.executor)), 0, "no weth leftovers");
         assertEq(usdc.balanceOf(address(config.executor)), 0, "no usdc leftovers");
-        assertEq(usdc.balanceOf(config.executor.fees()), 9 * 10 ** 6, "usdc positive slippage");
-        assertEq(weth.balanceOf(config.executor.fees()), 0 ether, "weth positive slippage");
+        assertEq(usdc.balanceOf(fees), 9 * 10 ** 6, "usdc positive slippage");
+        assertEq(weth.balanceOf(fees), 0 ether, "weth positive slippage");
     }
 }

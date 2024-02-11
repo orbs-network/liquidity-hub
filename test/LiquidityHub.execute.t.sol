@@ -10,10 +10,12 @@ import {LiquidityHub, SignedOrder, Call} from "src/LiquidityHub.sol";
 contract LiquidityHubExecuteTest is BaseTest {
     address public swapper;
     uint256 public swapperPK;
+    address public fees;
 
     function setUp() public override {
         super.setUp();
         (swapper, swapperPK) = makeAddrAndKey("swapper");
+        fees = makeAddr("fees");
     }
 
     function test_NoSwap_SameToken() public {
@@ -30,7 +32,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(token.balanceOf(swapper), amount);
 
         hoax(config.treasury.owner());
-        config.executor.execute(orders, new Call[](0), new address[](0));
+        config.executor.execute(orders, new Call[](0), address(0), new address[](0));
 
         assertEq(token.balanceOf(swapper), amount);
     }
@@ -68,7 +70,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         tokens[1] = address(tokenB);
 
         hoax(config.treasury.owner());
-        config.executor.execute(orders, new Call[](0), tokens);
+        config.executor.execute(orders, new Call[](0), fees, tokens);
 
         assertEq(tokenA.balanceOf(swapper), 0);
         assertEq(tokenA.balanceOf(swapper2), amountA);
@@ -102,7 +104,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         tokens[1] = address(outToken);
 
         hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, tokens);
+        config.executor.execute(orders, calls, fees, tokens);
 
         assertEq(inToken.balanceOf(swapper), 0);
         assertEq(outToken.balanceOf(swapper), outAmount);
@@ -129,7 +131,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(swapper.balance, 0);
 
         hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, new address[](0));
+        config.executor.execute(orders, calls, address(0), new address[](0));
 
         assertEq(inToken.balanceOf(swapper), 0);
         assertEq(swapper.balance, outAmount);
@@ -152,11 +154,11 @@ contract LiquidityHubExecuteTest is BaseTest {
         tokens[0] = address(inToken);
 
         hoax(config.treasury.owner());
-        config.executor.execute(orders, new Call[](0), tokens);
+        config.executor.execute(orders, new Call[](0), fees, tokens);
 
         assertEq(inToken.balanceOf(swapper), outAmount);
         assertEq(inToken.balanceOf(address(config.executor)), 0);
-        assertEq(inToken.balanceOf(config.fees), inAmount - outAmount);
+        assertEq(inToken.balanceOf(fees), inAmount - outAmount);
     }
 
     function test_NativeSlippageToFeeRecipient() public {
@@ -180,11 +182,11 @@ contract LiquidityHubExecuteTest is BaseTest {
 
         dealWETH(swapper, inAmount);
         hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, tokens);
+        config.executor.execute(orders, calls, fees, tokens);
 
         assertEq(swapper.balance, outAmount);
         assertEq(address(config.executor).balance, 0);
-        assertEq(config.fees.balance, inAmount - outAmount);
+        assertEq(fees.balance, inAmount - outAmount);
     }
 
     function test_GasToTreasury() public {
@@ -220,11 +222,11 @@ contract LiquidityHubExecuteTest is BaseTest {
         tokens[1] = address(outToken);
 
         hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, tokens);
+        config.executor.execute(orders, calls, fees, tokens);
 
         assertEq(outToken.balanceOf(swapper), outAmount, "swapper outToken");
         assertEq(outToken.balanceOf(address(config.executor)), 0, "no dust");
         assertEq(outToken.balanceOf(address(config.treasury)), outAmountGas, "gas fee");
-        assertEq(outToken.balanceOf(config.fees), 123, "slippage");
+        assertEq(outToken.balanceOf(fees), 123, "slippage");
     }
 }

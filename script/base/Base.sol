@@ -20,7 +20,6 @@ struct Config {
     uint256 chainId;
     string chainName;
     LiquidityHub executor;
-    address payable fees;
     IReactor reactor;
     PartialOrderReactor reactorPartial;
     RePermit repermit;
@@ -40,11 +39,13 @@ abstract contract Base is Script, DeployTestInfra {
     function initProductionConfig() public {
         uint256 chainId = vm.envOr("CHAIN", block.chainid);
         if (chainId != block.chainid) vm.chainId(chainId);
-        config = _readConfig();
+
+        string memory path =
+            string.concat(vm.projectRoot(), "/script/input/", vm.toString(block.chainid), "/config.json");
+        config = abi.decode(vm.parseJson(vm.readFile(path)), (Config));
 
         vm.label(address(config.treasury), "treasury");
         vm.label(address(config.executor), "executor");
-        vm.label(address(config.fees), "fees");
         vm.label(address(config.reactor), "reactor");
         vm.label(address(config.reactorPartial), "partialOrderReactor");
         vm.label(address(config.repermit), "repermit");
@@ -63,7 +64,7 @@ abstract contract Base is Script, DeployTestInfra {
         IWETH weth = IWETH(address(new WETH()));
 
         Treasury treasury = new Treasury(weth, deployer);
-        LiquidityHub executor = new LiquidityHub(reactor, treasury, payable(makeAddr("fees")));
+        LiquidityHub executor = new LiquidityHub(reactor, treasury);
 
         RePermit repermit = new RePermit();
         PartialOrderReactor reactorPartial = new PartialOrderReactor(repermit);
@@ -72,19 +73,12 @@ abstract contract Base is Script, DeployTestInfra {
             chainId: block.chainid,
             chainName: "anvil",
             executor: executor,
-            fees: executor.fees(),
             reactor: reactor,
             reactorPartial: reactorPartial,
             repermit: repermit,
             treasury: treasury,
             weth: weth
         });
-    }
-
-    function _readConfig() private view returns (Config memory) {
-        string memory path =
-            string.concat(vm.projectRoot(), "/script/input/", vm.toString(block.chainid), "/config.json");
-        return abi.decode(vm.parseJson(vm.readFile(path)), (Config));
     }
 
     function signPermit2(uint256 privateKey, bytes32 orderHash) internal view returns (bytes memory sig) {
