@@ -82,36 +82,14 @@ abstract contract BaseTest is Base, PermitSignature {
         address inToken,
         address outToken,
         uint256 inMaxAmount,
-        uint256 inPartialAmount,
+        uint256 inAmountRequest,
         uint256 outAmount
-    ) internal view returns (SignedOrder memory result) {
-        return createAndSignPartialOrderWithNonce(
-            signer,
-            signerPK,
-            inToken,
-            outToken,
-            inMaxAmount,
-            inPartialAmount,
-            outAmount,
-            block.timestamp
-        );    
-    }
-
-    function createAndSignPartialOrderWithNonce(
-        address signer,
-        uint256 signerPK,
-        address inToken,
-        address outToken,
-        uint256 inMaxAmount,
-        uint256 inPartialAmount,
-        uint256 outAmount,
-        uint256 nonce
     ) internal view returns (SignedOrder memory result) {
         PartialOrderLib.PartialOrder memory order;
         {
             order.info.reactor = config.reactorPartial;
             order.info.swapper = signer;
-            order.info.nonce = nonce;
+            order.info.nonce = block.timestamp;
             order.info.deadline = block.timestamp + 10 minutes;
 
             order.exclusiveFiller = address(config.executor);
@@ -125,11 +103,12 @@ abstract contract BaseTest is Base, PermitSignature {
         }
 
         result.sig = signRePermit(signerPK, order);
-        result.order = abi.encode(order, inPartialAmount);
+        result.order = abi.encode(PartialOrderLib.PartialFill(order, inAmountRequest));
     }
 
     function mockSwapCalls(ERC20Mock inToken, ERC20Mock outToken, uint256 inAmount, uint256 outAmount)
         internal
+        view
         returns (Call[] memory calls)
     {
         calls = new Call[](2);

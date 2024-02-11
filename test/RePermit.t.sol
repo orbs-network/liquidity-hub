@@ -7,30 +7,29 @@ import {BaseTest, ERC20Mock, IERC20, IWETH} from "test/base/BaseTest.sol";
 
 import {LiquidityHub, SignedOrder, Call, Consts} from "src/LiquidityHub.sol";
 import {RePermit} from "src/RePermit.sol";
+import {PartialOrderLib} from "src/PartialOrderLib.sol";
 
 contract RePermitTest is BaseTest {
     RePermit public uut;
 
-    address public owner;
-    uint256 public ownerPK;
+    // address public owner;
+    // uint256 public ownerPK;
 
-    address public spender;
+    // address public spender;
 
-    ERC20Mock public token;
-    uint256 public totalAmount = 10 ether;
-    uint40 public deadline = uint40(block.timestamp + 100);
+    // ERC20Mock public token;
 
     function setUp() public override {
         super.setUp();
-        uut = RePermit(Consts.PERMIT2_ADDRESS);
+        // uut = RePermit(Consts.PERMIT2_ADDRESS);
 
-        (owner, ownerPK) = makeAddrAndKey("owner");
-        spender = makeAddr("spender");
-        token = new ERC20Mock();
+        // (owner, ownerPK) = makeAddrAndKey("owner");
+        // spender = makeAddr("spender");
+        // token = new ERC20Mock();
 
-        token.mint(owner, totalAmount * 2);
-        hoax(owner);
-        token.approve(Consts.PERMIT2_ADDRESS, type(uint256).max);
+        // token.mint(owner, totalAmount * 2);
+        // hoax(owner);
+        // token.approve(Consts.PERMIT2_ADDRESS, type(uint256).max);
     }
 
     // function test_Permit_Transfer() public {

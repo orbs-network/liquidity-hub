@@ -3,19 +3,25 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
-import {BaseTest, ERC20Mock, IERC20, IWETH, SignedOrder} from "test/base/BaseTest.sol";
+import {BaseTest, ERC20Mock, IERC20, IWETH, SignedOrder, Call} from "test/base/BaseTest.sol";
 
-import {PartialOrderReactor, RePermit, Call} from "src/PartialOrderReactor.sol";
+import {LiquidityHub} from "src/LiquidityHub.sol";
+import {PartialOrderReactor, RePermit} from "src/PartialOrderReactor.sol";
 
 contract PartialOrderReactorTest is BaseTest {
     address public swapper;
     uint256 public swapperPK;
     ERC20Mock public inToken;
     ERC20Mock public outToken;
-    uint256 public inTokenTotalSupply = 10 ether;
+    uint256 public inAmountSwapperStart = 10 ether;
 
     function setUp() public override {
         super.setUp();
+
+        vm.etch(
+            address(config.executor),
+            address(new LiquidityHub(config.reactorPartial, config.treasury, config.fees)).code
+        );
 
         (swapper, swapperPK) = makeAddrAndKey("swapper");
 
@@ -24,7 +30,7 @@ contract PartialOrderReactorTest is BaseTest {
         vm.label(address(inToken), "inToken");
         vm.label(address(outToken), "outToken");
 
-        inToken.mint(swapper, inTokenTotalSupply);
+        inToken.mint(swapper, inAmountSwapperStart);
         hoax(swapper);
         inToken.approve(address(config.repermit), type(uint256).max);
     }
@@ -33,140 +39,101 @@ contract PartialOrderReactorTest is BaseTest {
         uint256 inAmount = 1 ether;
         uint256 inAmountRequest = inAmount;
         uint256 outAmount = 0.5 ether;
-        uint256 outAmountGas = 0.1 ether;
 
-        SignedOrder[] memory orders = createSignedPartialOrder(inAmount, inAmountRequest, outAmount, outAmountGas);
-        simulateSwap(inAmountRequest, outAmount, outAmountGas, orders);
+        _execute(inAmount, inAmountRequest, outAmount);
 
         assertEq(outToken.balanceOf(swapper), 0.5 ether, "swapper end outAmount");
-        assertEq(outToken.balanceOf(address(config.treasury)), 0.1 ether, "gas fee");
         assertEq(inToken.balanceOf(address(config.executor)), 0, "no inToken leftovers");
         assertEq(outToken.balanceOf(address(config.executor)), 0, "no outToken leftovers");
-        assertEq(
-            inToken.balanceOf(address(swapper)),
-            inTokenTotalSupply - inAmountRequest,
-            "user has the correct inToken balance"
-        );
+        assertEq(inToken.balanceOf(address(swapper)), inAmountSwapperStart - inAmountRequest, "swapper inToken");
     }
 
     function test_Execute_SwapTwice() public {
         uint256 inAmount = 1 ether;
         uint256 inAmountRequest = 0.5 ether; // 50%
         uint256 outAmount = 0.5 ether;
-        uint256 outAmountGas = 0.1 ether;
 
-        SignedOrder[] memory orders = createSignedPartialOrder(inAmount, inAmountRequest, outAmount, outAmountGas);
-        simulateSwap(inAmountRequest, outAmount, outAmountGas, orders);
+        _execute(inAmount, inAmountRequest, outAmount);
 
-        assertEq(outToken.balanceOf(swapper), 0.25 ether, "swapper end outAmount");
-        assertEq(outToken.balanceOf(address(config.treasury)), 0.05 ether, "gas fee");
+        assertEq(outToken.balanceOf(swapper), 0.25 ether, "swapper end outAmount, swap1");
         assertEq(inToken.balanceOf(address(config.executor)), 0, "no inToken leftovers");
         assertEq(outToken.balanceOf(address(config.executor)), 0, "no outToken leftovers");
-        assertEq(
-            inToken.balanceOf(address(swapper)),
-            inTokenTotalSupply - inAmountRequest,
-            "user has the correct inToken balance"
-        );
+        assertEq(inToken.balanceOf(address(swapper)), inAmountSwapperStart - inAmountRequest, "swapper inToken");
 
-        simulateSwap(inAmountRequest, outAmount, outAmountGas, orders);
+        _execute(inAmount, inAmountRequest, outAmount);
 
-        assertEq(outToken.balanceOf(swapper), 0.5 ether, "swapper end outAmount");
-        assertEq(outToken.balanceOf(address(config.treasury)), 0.1 ether, "gas fee");
+        assertEq(outToken.balanceOf(swapper), 0.5 ether, "swapper end outAmount, swap2");
         assertEq(inToken.balanceOf(address(config.executor)), 0, "no inToken leftovers");
         assertEq(outToken.balanceOf(address(config.executor)), 0, "no outToken leftovers");
-        assertEq(inToken.balanceOf(address(swapper)), inTokenTotalSupply - inAmountRequest * 2, "no inToken leftovers");
+        assertEq(inToken.balanceOf(address(swapper)), inAmountSwapperStart - inAmount, "swapper inToken");
     }
 
     function test_Execute_SwapPartialAmount() public {
         uint256 inAmount = 1 ether;
-        uint256 inAmountRequest = 0.4 ether;
+        uint256 inAmountRequest = 0.4 ether; // 40%
         uint256 outAmount = 0.5 ether;
-        uint256 outAmountGas = 0.07 ether;
 
-        SignedOrder[] memory orders = createSignedPartialOrder(inAmount, inAmountRequest, outAmount, outAmountGas);
-        simulateSwap(inAmountRequest, outAmount, outAmountGas, orders);
+        _execute(inAmount, inAmountRequest, outAmount);
 
         assertEq(outToken.balanceOf(swapper), 0.2 ether, "swapper end outAmount");
-        assertEq(outToken.balanceOf(address(config.treasury)), 0.028 ether, "gas fee");
         assertEq(inToken.balanceOf(address(config.executor)), 0, "no inToken leftovers");
         assertEq(outToken.balanceOf(address(config.executor)), 0, "no outToken leftovers");
-        assertEq(inToken.balanceOf(address(swapper)), inTokenTotalSupply - inAmountRequest, "no inToken leftovers");
+        assertEq(inToken.balanceOf(address(swapper)), inAmountSwapperStart - inAmountRequest, "swapper inToken");
     }
 
-    function test_Revert_inAmountRequestGreaterThenInAmount() public {
+    function test_Revert_inAmountRequestGreaterThanInAmount() public {
         uint256 inAmount = 1 ether;
-        uint256 inAmountRequest = 1.01 ether; // 101%
+        uint256 inAmountRequest = 1 ether + 1;
         uint256 outAmount = 0.5 ether;
-        uint256 outAmountGas = 0.07 ether;
 
-        SignedOrder[] memory orders = createSignedPartialOrder(inAmount, inAmountRequest, outAmount, outAmountGas);
-        Call[] memory calls = new Call[](2);
-        calls[0] = Call(
-            address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), inAmountRequest)
+        SignedOrder[] memory orders = new SignedOrder[](1);
+        orders[0] = createAndSignPartialOrder(
+            swapper, swapperPK, address(inToken), address(outToken), inAmount, inAmountRequest, outAmount
         );
-        calls[1] = Call(
-            address(outToken),
-            abi.encodeWithSelector(outToken.mint.selector, address(config.executor), outAmount + outAmountGas + 1)
-        );
+
+        address[] memory tokens = new address[](2);
+        tokens[0] = address(inToken);
+        tokens[1] = address(outToken);
 
         hoax(config.treasury.owner());
-        vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector, address(0)));
-        config.executor.execute(orders, calls);
+        vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector, 0));
+        config.executor.execute(orders, mockSwapCalls(inToken, outToken, inAmountRequest, outAmount), tokens);
     }
 
     function test_Revert_InsufficentAlowanceAfterSpending() public {
         uint256 inAmount = 1 ether;
         uint256 inAmountRequest = 0.75 ether;
         uint256 outAmount = 0.5 ether;
-        uint256 outAmountGas = 0.07 ether;
 
-        SignedOrder[] memory orders = createSignedPartialOrder(inAmount, inAmountRequest, outAmount, outAmountGas);
-        simulateSwap(inAmountRequest, outAmount, outAmountGas, orders);
+        _execute(inAmount, inAmountRequest, outAmount);
 
-        Call[] memory calls = new Call[](2);
-        calls[0] = Call(
-            address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), inAmountRequest)
-        );
-        calls[1] = Call(
-            address(outToken),
-            abi.encodeWithSelector(outToken.mint.selector, address(config.executor), outAmount + outAmountGas + 1)
-        );
+        assertEq(inToken.balanceOf(address(swapper)), inAmountSwapperStart - inAmountRequest, "no inToken leftovers");
 
-        assertEq(inToken.balanceOf(address(swapper)), inTokenTotalSupply - inAmountRequest, "no inToken leftovers");
-
-        hoax(config.treasury.owner());
-        vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector, address(0.75 ether)));
-        config.executor.execute(orders, calls);
-    }
-
-    function createSignedPartialOrder(
-        uint256 inAmount,
-        uint256 inAmountRequest,
-        uint256 outAmount,
-        uint256 outAmountGas
-    ) internal view returns (SignedOrder[] memory orders) {
-        orders = new SignedOrder[](1);
+        SignedOrder[] memory orders = new SignedOrder[](1);
         orders[0] = createAndSignPartialOrder(
             swapper, swapperPK, address(inToken), address(outToken), inAmount, inAmountRequest, outAmount
         );
-    }
 
-    function simulateSwap(uint256 inAmountRequest, uint256 outAmount, uint256 outAmountGas, SignedOrder[] memory orders)
-        internal
-    {
-        uint256 positiveSlippage = 1 wei;
-        Call[] memory calls = new Call[](2);
-        calls[0] = Call(
-            address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), inAmountRequest)
-        );
-        calls[1] = Call(
-            address(outToken),
-            abi.encodeWithSelector(
-                outToken.mint.selector, address(config.executor), outAmount + outAmountGas + positiveSlippage
-            )
-        );
+        address[] memory tokens = new address[](2);
+        tokens[0] = address(inToken);
+        tokens[1] = address(outToken);
 
         hoax(config.treasury.owner());
-        config.executor.execute(orders, calls);
+        vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector, 0.75 ether));
+        config.executor.execute(orders, mockSwapCalls(inToken, outToken, inAmountRequest, outAmount), tokens);
+    }
+
+    function _execute(uint256 inAmount, uint256 inAmountRequest, uint256 outAmount) private {
+        SignedOrder[] memory orders = new SignedOrder[](1);
+        orders[0] = createAndSignPartialOrder(
+            swapper, swapperPK, address(inToken), address(outToken), inAmount, inAmountRequest, outAmount
+        );
+
+        address[] memory tokens = new address[](2);
+        tokens[0] = address(inToken);
+        tokens[1] = address(outToken);
+
+        hoax(config.treasury.owner());
+        config.executor.execute(orders, mockSwapCalls(inToken, outToken, inAmountRequest, outAmount), tokens);
     }
 }

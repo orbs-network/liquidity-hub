@@ -20,7 +20,7 @@ struct Config {
     uint256 chainId;
     string chainName;
     LiquidityHub executor;
-    address payable feeRecipient;
+    address payable fees;
     IReactor reactor;
     PartialOrderReactor reactorPartial;
     RePermit repermit;
@@ -44,7 +44,7 @@ abstract contract Base is Script, DeployTestInfra {
 
         vm.label(address(config.treasury), "treasury");
         vm.label(address(config.executor), "executor");
-        vm.label(address(config.feeRecipient), "feeRecipient");
+        vm.label(address(config.fees), "fees");
         vm.label(address(config.reactor), "reactor");
         vm.label(address(config.reactorPartial), "partialOrderReactor");
         vm.label(address(config.repermit), "repermit");
@@ -63,7 +63,7 @@ abstract contract Base is Script, DeployTestInfra {
         IWETH weth = IWETH(address(new WETH()));
 
         Treasury treasury = new Treasury(weth, deployer);
-        LiquidityHub executor = new LiquidityHub(reactor, treasury, payable(makeAddr("feeRecipient")));
+        LiquidityHub executor = new LiquidityHub(reactor, treasury, payable(makeAddr("fees")));
 
         RePermit repermit = new RePermit();
         PartialOrderReactor reactorPartial = new PartialOrderReactor(repermit);
@@ -72,7 +72,7 @@ abstract contract Base is Script, DeployTestInfra {
             chainId: block.chainid,
             chainName: "anvil",
             executor: executor,
-            feeRecipient: executor.feeRecipient(),
+            fees: executor.fees(),
             reactor: reactor,
             reactorPartial: reactorPartial,
             repermit: repermit,

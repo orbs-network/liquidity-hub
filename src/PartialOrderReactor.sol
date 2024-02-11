@@ -1,26 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.x;
 
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
-import {IReactor} from "uniswapx/src/interfaces/IReactor.sol";
-import {IReactorCallback} from "uniswapx/src/interfaces/IReactorCallback.sol";
-import {IValidationCallback} from "uniswapx/src/interfaces/IValidationCallback.sol";
 import {ResolvedOrder, SignedOrder, InputToken, ERC20, OutputToken} from "uniswapx/src/base/ReactorStructs.sol";
-import {OrderInfoLib, OrderInfo} from "uniswapx/src/lib/OrderInfoLib.sol";
 import {BaseReactor, IPermit2} from "uniswapx/src/reactors/BaseReactor.sol";
 import {ExclusivityOverrideLib} from "uniswapx/src/lib/ExclusivityOverrideLib.sol";
 
 import {Consts} from "./Consts.sol";
-import {IMulticall, Call} from "./IMulticall.sol";
 import {RePermit, RePermitLib} from "./RePermit.sol";
 import {PartialOrderLib} from "./PartialOrderLib.sol";
 
 contract PartialOrderReactor is BaseReactor {
-    using SafeERC20 for IERC20;
-
     RePermit public immutable repermit;
 
     constructor(RePermit _repermit) BaseReactor(IPermit2(Consts.PERMIT2_ADDRESS), address(0)) {
@@ -33,12 +22,12 @@ contract PartialOrderReactor is BaseReactor {
         override
         returns (ResolvedOrder memory resolvedOrder)
     {
-        (PartialOrderLib.PartialOrder memory order, uint256 inAmount) =
-            abi.decode(signedOrder.order, (PartialOrderLib.PartialOrder, uint256));
+        PartialOrderLib.PartialFill memory fill = abi.decode(signedOrder.order, (PartialOrderLib.PartialFill));
+        PartialOrderLib.PartialOrder memory order = fill.order;
 
         resolvedOrder.info = order.info;
         resolvedOrder.input =
-            InputToken({token: ERC20(order.input.token), amount: inAmount, maxAmount: order.input.amount});
+            InputToken({token: ERC20(order.input.token), amount: fill.inAmount, maxAmount: order.input.amount});
         resolvedOrder.sig = signedOrder.sig;
         resolvedOrder.hash = PartialOrderLib.hash(order);
 
@@ -47,7 +36,7 @@ contract PartialOrderReactor is BaseReactor {
             PartialOrderLib.PartialOutput memory output = order.outputs[i];
             resolvedOrder.outputs[i] = OutputToken({
                 token: output.token,
-                amount: (output.amount * inAmount) / order.input.amount,
+                amount: (output.amount * fill.inAmount) / order.input.amount,
                 recipient: output.recipient
             });
         }

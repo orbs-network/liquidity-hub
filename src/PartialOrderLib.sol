@@ -5,6 +5,11 @@ import {OrderInfoLib, OrderInfo} from "uniswapx/src/lib/OrderInfoLib.sol";
 import {RePermit, RePermitLib} from "./RePermit.sol";
 
 library PartialOrderLib {
+    struct PartialFill {
+        PartialOrder order;
+        uint256 inAmount;
+    }
+
     struct PartialOrder {
         OrderInfo info;
         address exclusiveFiller;

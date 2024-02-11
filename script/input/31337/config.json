@@ -2,7 +2,7 @@
   "chainId": 31337,
   "chainName": "anvil",
   "executor": "0x0BE5101AB8e4E3664a86a83bD8568dbE8ab374Fc",
-  "feeRecipient": "0x6ec6385953C5FCbF1Aa8eD794505390F31b66f7C",
+  "fees": "0x6ec6385953C5FCbF1Aa8eD794505390F31b66f7C",
   "reactor": "0xe9E78109c89162cEF32Bfe7cBCEe1f31312fc1F6",
   "reactorPartial": "0xCc341BD1Ca650a5Ac5b2FC1cD8D484BC1A371AcC",
   "repermit": "0xd548F6F0f300ab22a538B7e7FFD33AE209445F9f",

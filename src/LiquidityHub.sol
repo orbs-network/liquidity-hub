@@ -19,16 +19,16 @@ import {IMulticall, Call} from "./IMulticall.sol";
 contract LiquidityHub is IReactorCallback, IValidationCallback {
     using SafeERC20 for IERC20;
 
-    uint8 public constant VERSION = 2;
+    uint8 public constant VERSION = 4;
 
     IReactor public immutable reactor;
     Treasury public immutable treasury;
-    address payable public immutable feeRecipient;
+    address payable public immutable fees;
 
-    constructor(IReactor _reactor, Treasury _treasury, address payable _feeRecipient) {
+    constructor(IReactor _reactor, Treasury _treasury, address payable _fees) {
         reactor = _reactor;
         treasury = _treasury;
-        feeRecipient = _feeRecipient;
+        fees = _fees;
     }
 
     error InvalidSender(address sender);
@@ -44,10 +44,14 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     }
 
     /**
-     * Entry point, always DutchOrder
+     * Entry point
      */
-    function execute(SignedOrder[] calldata orders, Call[] calldata calls) external onlyAllowed {
+    function execute(SignedOrder[] calldata orders, Call[] calldata calls, address[] calldata tokens)
+        external
+        onlyAllowed
+    {
         reactor.executeBatchWithCallback(orders, abi.encode(calls));
+        _withdraw(tokens);
     }
 
     /**
@@ -56,7 +60,6 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     function reactorCallback(ResolvedOrder[] memory orders, bytes memory callbackData) external override onlyReactor {
         _executeMulticall(abi.decode(callbackData, (Call[])));
         _approveReactorOutputs(orders);
-        _withdrawSlippage(orders);
     }
 
     function _executeMulticall(Call[] memory calls) private {
@@ -80,26 +83,15 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         }
     }
 
-    function _withdrawSlippage(ResolvedOrder[] memory orders) private {
-        for (uint256 i = 0; i < orders.length; i++) {
-            ResolvedOrder memory order = orders[i];
+    function _withdraw(address[] calldata tokens) private {
+        uint256 nativeBalance = address(this).balance;
+        if (nativeBalance > 0) Address.sendValue(fees, nativeBalance);
 
-            IERC20 inToken = IERC20(address(order.input.token));
-            uint256 inBalance = inToken.balanceOf(address(this));
-            if (inBalance > 0) inToken.safeTransfer(feeRecipient, inBalance);
-
-            for (uint256 j = 0; j < order.outputs.length; j++) {
-                address token = order.outputs[j].token;
-                if (token != address(0)) {
-                    uint256 balance = IERC20(token).balanceOf(address(this));
-                    uint256 allowance = IERC20(token).allowance(address(this), address(reactor));
-                    if (balance > allowance) {
-                        IERC20(token).safeTransfer(feeRecipient, balance - allowance);
-                    }
-                }
-            }
+        for (uint256 i = 0; i < tokens.length; i++) {
+            IERC20 token = IERC20(tokens[i]);
+            uint256 balance = token.balanceOf(address(this));
+            if (balance > 0) token.safeTransfer(fees, balance);
         }
-        Address.sendValue(feeRecipient, address(this).balance);
     }
 
     /**
