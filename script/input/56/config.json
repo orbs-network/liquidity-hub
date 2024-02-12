@@ -1,10 +1,10 @@
 {
   "chainId": 56,
   "chainName": "bnb",
-  "executor": "0x6E24969C7425475f9f3aA065Dc10D74d188107DD",
+  "executor": "0x120971cAc17B63FFdaDf862724925914b025A9E6",
   "reactor": "0xe9E78109c89162cEF32Bfe7cBCEe1f31312fc1F6",
-  "reactorPartial": "",
-  "repermit": "",
+  "reactorPartial": "0x2Ee46d8d20020520d5266F3cAcc7c41e1AadD4C6",
+  "repermit": "0xBCafFd7936205c879EDa52293497BE88C3d02361",
   "treasury": "0xb1BaF397B3946a81c7f5C54807474ECF194dc446",
   "weth": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
 }
