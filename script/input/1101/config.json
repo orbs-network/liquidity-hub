@@ -1,0 +1,10 @@
+{
+  "chainId": 1101,
+  "chainName": "zkevm",
+  "executor": "",
+  "reactor": "",
+  "reactorPartial": "",
+  "repermit": "",
+  "treasury": "",
+  "weth": "0x4F9A0e7FD2Bf6067db6994CF12E4495Df938E6e9"
+}
