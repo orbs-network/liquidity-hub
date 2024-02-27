@@ -1,0 +1,10 @@
+{
+  "chainId": 169,
+  "chainName": "manta",
+  "executor": "0x8473022ee04ADFd27c178010ffBAb3b32a7f7fB9",
+  "reactor": "0xe9E78109c89162cEF32Bfe7cBCEe1f31312fc1F6",
+  "reactorPartial": "0x2Ee46d8d20020520d5266F3cAcc7c41e1AadD4C6",
+  "repermit": "0xBCafFd7936205c879EDa52293497BE88C3d02361",
+  "treasury": "0x7ae466596C57241459eBaE32D2E64F51Da68F3B8",
+  "weth": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"
+}
