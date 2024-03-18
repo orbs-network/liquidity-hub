@@ -1,0 +1,10 @@
+{
+  "chainId": 81457,
+  "chainName": "blast",
+  "executor": "0x2f815a7C8047aa649960eaDB1557249fFc93A0CD",
+  "reactor": "0xe9E78109c89162cEF32Bfe7cBCEe1f31312fc1F6",
+  "reactorPartial": "0x2Ee46d8d20020520d5266F3cAcc7c41e1AadD4C6",
+  "repermit": "0xBCafFd7936205c879EDa52293497BE88C3d02361",
+  "treasury": "0xE92329709A7C19e1568294fc3693a064CcaeAc39",
+  "weth": "0x4300000000000000000000000000000000000004"
+}
