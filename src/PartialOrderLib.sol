@@ -7,7 +7,7 @@ import {RePermit, RePermitLib} from "./RePermit.sol";
 library PartialOrderLib {
     struct PartialFill {
         PartialOrder order;
-        uint256 inAmount;
+        uint256 outAmount;
     }
 
     struct PartialOrder {

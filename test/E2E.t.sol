@@ -40,22 +40,20 @@ contract E2ETest is BaseTest {
     }
 
     function test_e2e_ExactMirrorMatch() public {
-        uint256 wethTakerAmount = 1 ether; // taker input, selling 1 eth
-        uint256 usdcTakerAmount = 2500 * 10 ** 6; // taker output, buying 2500 usdc
-        // $2500
+        uint256 wethTakerAmount = 1 ether; // taker input
+        uint256 usdcTakerAmount = 2500 * 10 ** 6; // taker output
 
-        uint256 usdcMakerAmount = 2510 * 10 ** 6; // maker input, selling 2510 usdc
-        uint256 wethMakerAmount = 1 ether; // maker output, buying 1 eth
-        // $2510
+        uint256 usdcMakerAmount = 2510 * 10 ** 6; // maker input
+        uint256 wethMakerAmount = 1 ether; // maker output
 
-        uint256 usdcAmountGas = 1 * 10 ** 6; // 1 usdc gas fee, from maker's output
+        uint256 usdcAmountGas = 1 * 10 ** 6;
 
         SignedOrder memory takerOrder = createAndSignOrder(
             taker, takerPK, address(weth), address(usdc), wethTakerAmount, usdcTakerAmount, usdcAmountGas
         );
 
         SignedOrder memory makerOrder = createAndSignPartialOrder(
-            maker, makerPK, address(usdc), address(weth), usdcMakerAmount, usdcMakerAmount, wethMakerAmount
+            maker, makerPK, address(usdc), address(weth), usdcMakerAmount, wethMakerAmount, wethMakerAmount
         );
 
         SignedOrder[] memory orders = new SignedOrder[](1);
@@ -88,23 +86,20 @@ contract E2ETest is BaseTest {
     }
 
     function test_e2e_PartialInputMatch() public {
-        uint256 wethTakerAmount = 1 ether; // taker input, selling 1 eth
-        uint256 usdcTakerAmount = 2500 * 10 ** 6; // taker output, buying 2500 usdc
-        // $2500
+        uint256 wethTakerAmount = 1 ether; // taker input
+        uint256 usdcTakerAmount = 2500 * 10 ** 6; // taker output
 
-        uint256 usdcMakerAmount = 2510 * 10 ** 6; // maker input, selling 2510 usdc
-        uint256 wethMakerAmount = 1 ether; // maker output, buying 1 eth
-        // $2510
+        uint256 usdcMakerAmount = 25100 * 10 ** 6; // maker input
+        uint256 wethMakerAmount = 10 ether; // maker output
 
-        uint256 usdcAmountGas = 1 * 10 ** 6; // 1 usdc gas fee, from maker's output
+        uint256 usdcAmountGas = 1 * 10 ** 6;
 
         SignedOrder memory takerOrder = createAndSignOrder(
             taker, takerPK, address(weth), address(usdc), wethTakerAmount, usdcTakerAmount, usdcAmountGas
         );
 
-        // $3000
         SignedOrder memory makerOrder = createAndSignPartialOrder(
-            maker, makerPK, address(usdc), address(weth), 3000 * 10 ** 6, usdcMakerAmount, wethMakerAmount
+            maker, makerPK, address(usdc), address(weth), usdcMakerAmount, wethMakerAmount, wethTakerAmount
         );
 
         SignedOrder[] memory orders = new SignedOrder[](1);
@@ -127,44 +122,39 @@ contract E2ETest is BaseTest {
 
         assertEq(weth.balanceOf(taker), wethTakerStartBalance - wethTakerAmount, "weth taker balance");
         assertEq(usdc.balanceOf(taker), usdcTakerAmount, "usdc taker balance");
-        assertEq(weth.balanceOf(maker), 0.836666666666666666 ether, "maker bought 0.8366 eth");
+        assertEq(weth.balanceOf(maker), 1 ether, "maker bought 1 eth");
         assertEq(usdcMakerStartBalance - usdc.balanceOf(maker), 2510 * 10 ** 6, "maker paid $2510");
         assertEq(usdc.balanceOf(address(config.treasury)), usdcAmountGas, "gas fee");
         assertEq(weth.balanceOf(address(config.executor)), 0, "no weth leftovers");
         assertEq(usdc.balanceOf(address(config.executor)), 0, "no usdc leftovers");
         assertEq(usdc.balanceOf(fees), 9 * 10 ** 6, "usdc positive slippage");
-        assertEq(weth.balanceOf(fees), 0.163333333333333334 ether, "weth positive slippage");
+        assertEq(weth.balanceOf(fees), 0, "weth no slippage");
     }
 
     function test_e2e_multiplePartialInputs() public {
-        uint256 wethTakerAmount = 1 ether; // taker input, selling 1 eth
-        uint256 usdcTakerAmount = 2500 * 10 ** 6; // taker output, buying 2500 usdc
-        // $2500
+        uint256 wethTakerAmount = 1 ether; // taker input
+        uint256 usdcTakerAmount = 2500 * 10 ** 6; // taker output
 
-        uint256 usdcMakerAmount = 1255 * 10 ** 6; // maker input, selling 2510 usdc
-        uint256 wethMakerAmount = 0.5 ether; // maker output, buying 1 eth
-        // $1255
+        uint256 usdcMakerAmount = 1255 * 10 ** 6; // maker input
+        uint256 wethMakerAmount = 0.5 ether; // maker output
 
         (address maker2, uint256 maker2PK) = makeAddrAndKey("maker2");
         usdc.mint(maker2, usdcMakerStartBalance);
         hoax(maker2);
         usdc.approve(address(config.repermit), type(uint256).max);
 
-        // two orders, each selling 1255 usdc for 0.5 eth
-        // 1255 + 1255 = 2510 usdc for 1 eth
-
-        uint256 usdcAmountGas = 1 * 10 ** 6; // 1 usdc gas fee, from maker's output
+        uint256 usdcAmountGas = 1 * 10 ** 6;
 
         SignedOrder memory takerOrder = createAndSignOrder(
             taker, takerPK, address(weth), address(usdc), wethTakerAmount, usdcTakerAmount, usdcAmountGas
         );
 
         SignedOrder memory makerOrder1 = createAndSignPartialOrder(
-            maker, makerPK, address(usdc), address(weth), usdcMakerAmount, usdcMakerAmount, wethMakerAmount
+            maker, makerPK, address(usdc), address(weth), usdcMakerAmount, wethMakerAmount, wethMakerAmount
         );
 
         SignedOrder memory makerOrder2 = createAndSignPartialOrder(
-            maker2, maker2PK, address(usdc), address(weth), usdcMakerAmount, usdcMakerAmount, wethMakerAmount
+            maker2, maker2PK, address(usdc), address(weth), usdcMakerAmount, wethMakerAmount, wethMakerAmount
         );
 
         SignedOrder[] memory orders = new SignedOrder[](1);

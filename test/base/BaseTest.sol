@@ -81,9 +81,9 @@ abstract contract BaseTest is Base, PermitSignature {
         uint256 signerPK,
         address inToken,
         address outToken,
-        uint256 inMaxAmount,
-        uint256 inAmountRequest,
-        uint256 outAmount
+        uint256 inAmount,
+        uint256 outAmount,
+        uint256 fillOutAmount
     ) internal view returns (SignedOrder memory result) {
         PartialOrderLib.PartialOrder memory order;
         {
@@ -96,25 +96,25 @@ abstract contract BaseTest is Base, PermitSignature {
             // order.info.additionalValidationContract = IValidationCallback(config.executor); // this will work, but redundant and wastes gas
 
             order.input.token = inToken;
-            order.input.amount = inMaxAmount;
+            order.input.amount = inAmount;
 
             order.outputs = new PartialOrderLib.PartialOutput[](1);
             order.outputs[0] = PartialOrderLib.PartialOutput(outToken, outAmount, signer);
         }
 
         result.sig = signRePermit(signerPK, order);
-        result.order = abi.encode(PartialOrderLib.PartialFill(order, inAmountRequest));
+        result.order = abi.encode(PartialOrderLib.PartialFill(order, fillOutAmount));
     }
 
-    function mockSwapCalls(ERC20Mock inToken, ERC20Mock outToken, uint256 inAmount, uint256 outAmount)
+    function mockSwapCalls(ERC20Mock inToken, ERC20Mock outToken, uint256 inAmountMin, uint256 outAmountExact)
         internal
         view
         returns (Call[] memory calls)
     {
         calls = new Call[](2);
         calls[0] =
-            Call(address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), inAmount));
+            Call(address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), inAmountMin));
         calls[1] =
-            Call(address(outToken), abi.encodeWithSelector(outToken.mint.selector, address(config.executor), outAmount));
+            Call(address(outToken), abi.encodeWithSelector(outToken.mint.selector, address(config.executor), outAmountExact));
     }
 }
