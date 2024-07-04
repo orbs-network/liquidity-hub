@@ -9,17 +9,8 @@ import {Consts} from "./Consts.sol";
 import {IWETH} from "./IWETH.sol";
 import {IMulticall, Call} from "./IMulticall.sol";
 
-contract Treasury is Ownable {
+contract Admin is Ownable {
     using SafeERC20 for IERC20;
-
-    IWETH public immutable weth;
-    mapping(address => bool) public allowed;
-
-    constructor(IWETH _weth, address _owner) Ownable() {
-        weth = _weth;
-        allowed[_owner] = true;
-        transferOwnership(_owner);
-    }
 
     error NotAllowed(address sender);
 
@@ -28,9 +19,22 @@ contract Treasury is Ownable {
         _;
     }
 
+    mapping(address => bool) public allowed;
+    IWETH public weth;
+
+    constructor(address _owner) Ownable() {
+        allowed[_owner] = true;
+        transferOwnership(_owner);
+    }
+
+    function initialize(address _weth) external onlyOwner {
+        weth = IWETH(_weth);
+    }
+
     function set(address[] calldata addr, bool value) external onlyOwner {
-        for (uint256 i = 0; i < addr.length; i++) {
+        for (uint256 i = 0; i < addr.length;) {
             allowed[addr[i]] = value;
+            unchecked {++i;}
         }
     }
 
@@ -38,12 +42,13 @@ contract Treasury is Ownable {
         Address.functionDelegateCall(
             Consts.MULTICALL_ADDRESS, abi.encodeWithSelector(IMulticall.aggregate.selector, calls)
         );
-        withdraw(new IERC20[](0));
     }
 
-    function withdraw(IERC20[] memory tokens) public onlyAllowed {
-        for (uint256 i = 0; i < tokens.length; i++) {
-            tokens[i].safeTransfer(owner(), tokens[i].balanceOf(address(this)));
+    function withdraw(IERC20[] calldata tokens) public onlyAllowed {
+        unchecked {
+            for (uint256 i = 0; i < tokens.length; i++) {
+                tokens[i].safeTransfer(owner(), tokens[i].balanceOf(address(this)));
+            }
         }
         weth.withdraw(weth.balanceOf(address(this)));
         Address.sendValue(payable(owner()), address(this).balance);
