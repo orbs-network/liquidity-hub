@@ -8,7 +8,7 @@ import {IReactor} from "uniswapx/src/interfaces/IReactor.sol";
 import {IReactorCallback} from "uniswapx/src/interfaces/IReactorCallback.sol";
 import {IValidationCallback} from "uniswapx/src/interfaces/IValidationCallback.sol";
 import {ResolvedOrder, SignedOrder} from "uniswapx/src/base/ReactorStructs.sol";
-import {ExclusiveDutchOrder} from "uniswapx/src/base/ExclusiveDutchOrder.sol";
+import {ExclusiveDutchOrder} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
 
 import {Consts} from "./Consts.sol";
 import {Admin} from "./Admin.sol";
@@ -50,26 +50,26 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
 
         for (uint256 i = 0; i < orders.length;) {
             ExclusiveDutchOrder memory order = abi.decode(orders[i].order, (ExclusiveDutchOrder));
-            withdraw(address(order.input.token));
+            address ref = abi.decode(order.info.additionalValidationData, (address));
+            admin.shares(ref);
+
+            _withdraw(address(order.input.token), ref);
 
             for (uint256 j = 0; j < order.outputs.length;) {
-                withdraw(address(order.outputs[j].token));
+                _withdraw(address(order.outputs[j].token), ref);
                 unchecked {++j;}
             }
 
             unchecked {++i;}
         }
 
-        uint256 nativeBalance = address(this).balance;
-        if (nativeBalance > 0) Address.sendValue(payable(admin), nativeBalance);
     }
 
     /**
      * @dev IReactorCallback
      */
     function reactorCallback(ResolvedOrder[] memory orders, bytes memory callbackData) external override onlyReactor {
-        (Call[] memory calls) = abi.decode(callbackData, (Call[]));
-        _executeMulticall(calls);
+        _executeMulticall(abi.decode(callbackData, (Call[])));
         _approveReactorOutputs(orders);
     }
 
@@ -98,10 +98,18 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         }
     }
 
-    function withdraw(address token) private {
-        if (token == address(0)) return;
-        uint256 balance = token.balanceOf(address(this));
-        if (balance > 0) token.safeTransfer(admin, balance);
+    function _withdraw(address token, address ref) private {
+        if (token == address(0)) {
+            uint256 nativeBalance = address(this).balance;
+            if (nativeBalance > 0) Address.sendValue(payable(admin), nativeBalance);
+            return;
+        } else {
+            uint256 balance = IERC20(token).balanceOf(address(this));
+            if (balance > 0) {
+
+                IERC20(token).safeTransfer(ref, balance);
+            }
+        }
     }
 
     /**

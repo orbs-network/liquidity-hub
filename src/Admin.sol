@@ -13,13 +13,16 @@ contract Admin is Ownable {
     using SafeERC20 for IERC20;
 
     error NotAllowed(address sender);
+    error BadParams();
 
     modifier onlyAllowed() {
         if (!allowed[msg.sender]) revert NotAllowed(msg.sender);
         _;
     }
 
+    uint16 public constant BPS = 10_000;
     mapping(address => bool) public allowed;
+    mapping(address => uint16) public shares;
     IWETH public weth;
 
     constructor(address _owner) Ownable() {
@@ -31,11 +34,16 @@ contract Admin is Ownable {
         weth = IWETH(_weth);
     }
 
-    function set(address[] calldata addr, bool value) external onlyOwner {
+    function allow(address[] calldata addr, bool value) external onlyOwner {
         for (uint256 i = 0; i < addr.length;) {
             allowed[addr[i]] = value;
             unchecked {++i;}
         }
+    }
+    
+    function share(address ref, uint16 bps) external onlyOwner {
+        if (bps > BPS) revert BadParams();
+        shares[ref] = bps;
     }
 
     function execute(Call[] calldata calls) external onlyAllowed {

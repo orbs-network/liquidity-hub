@@ -27,7 +27,7 @@ import {
     IValidationCallback,
     Call
 } from "src/LiquidityHub.sol";
-import {Treasury, IWETH} from "src/Treasury.sol";
+import {Admin, IWETH} from "src/Admin.sol";
 import {PartialOrderLib} from "src/PartialOrderReactor.sol";
 
 abstract contract BaseTest is Base, PermitSignature {
