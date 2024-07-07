@@ -46,17 +46,16 @@ contract Admin is Ownable {
         shares[ref] = bps;
     }
 
-    function execute(Call[] calldata calls) external onlyAllowed {
+    function execute(Call[] calldata calls) external onlyOwner {
         Address.functionDelegateCall(
             Consts.MULTICALL_ADDRESS, abi.encodeWithSelector(IMulticall.aggregate.selector, calls)
         );
     }
 
-    function withdraw(IERC20[] calldata tokens) public onlyAllowed {
-        unchecked {
-            for (uint256 i = 0; i < tokens.length; i++) {
-                tokens[i].safeTransfer(owner(), tokens[i].balanceOf(address(this)));
-            }
+    function withdraw(IERC20[] calldata tokens) external onlyAllowed {
+        for (uint256 i = 0; i < tokens.length;) {
+            tokens[i].safeTransfer(owner(), tokens[i].balanceOf(address(this)));
+            unchecked {++i;}
         }
         weth.withdraw(weth.balanceOf(address(this)));
         Address.sendValue(payable(owner()), address(this).balance);
