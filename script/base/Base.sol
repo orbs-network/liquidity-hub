@@ -11,11 +11,10 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {DeployTestInfra} from "script/base/DeployTestInfra.sol";
 
 import {LiquidityHub, IReactor} from "src/LiquidityHub.sol";
-import {Treasury, IWETH, Consts, IMulticall, IERC20} from "src/Treasury.sol";
+import {Admin, IWETH, Consts, IMulticall, IERC20} from "src/Admin.sol";
 import {PartialOrderLib, RePermit, RePermitLib, PartialOrderReactor} from "src/PartialOrderReactor.sol";
 import {IEIP712} from "src/RePermit.sol";
 
-// ⛔️ JSON IS PARSED ALPHABETICALLY!
 struct Config {
     uint256 chainId;
     string chainName;
@@ -23,7 +22,7 @@ struct Config {
     IReactor reactor;
     PartialOrderReactor reactorPartial;
     RePermit repermit;
-    Treasury treasury;
+    Admin admin;
     IWETH weth;
 }
 
@@ -44,7 +43,7 @@ abstract contract Base is Script, DeployTestInfra {
             string.concat(vm.projectRoot(), "/script/input/", vm.toString(block.chainid), "/config.json");
         config = abi.decode(vm.parseJson(vm.readFile(path)), (Config));
 
-        vm.label(address(config.treasury), "treasury");
+        vm.label(address(config.admin), "admin");
         vm.label(address(config.executor), "executor");
         vm.label(address(config.reactor), "reactor");
         vm.label(address(config.reactorPartial), "partialOrderReactor");
@@ -63,8 +62,8 @@ abstract contract Base is Script, DeployTestInfra {
 
         IWETH weth = IWETH(address(new WETH()));
 
-        Treasury treasury = new Treasury(weth, deployer);
-        LiquidityHub executor = new LiquidityHub(reactor, treasury);
+        Admin admin = new Admin(weth, deployer);
+        LiquidityHub executor = new LiquidityHub(reactor, admin);
 
         RePermit repermit = new RePermit();
         PartialOrderReactor reactorPartial = new PartialOrderReactor(repermit);
@@ -76,7 +75,7 @@ abstract contract Base is Script, DeployTestInfra {
             reactor: reactor,
             reactorPartial: reactorPartial,
             repermit: repermit,
-            treasury: treasury,
+            admin: admin,
             weth: weth
         });
     }

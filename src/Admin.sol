@@ -40,7 +40,7 @@ contract Admin is Ownable {
             unchecked {++i;}
         }
     }
-    
+
     function share(address ref, uint16 bps) external onlyOwner {
         if (bps > BPS) revert BadParams();
         shares[ref] = bps;
@@ -53,11 +53,14 @@ contract Admin is Ownable {
     }
 
     function withdraw(IERC20[] calldata tokens) external onlyAllowed {
+        weth.withdraw(weth.balanceOf(address(this)));
+
         for (uint256 i = 0; i < tokens.length;) {
-            tokens[i].safeTransfer(owner(), tokens[i].balanceOf(address(this)));
+            uint256 balance = tokens[i].balanceOf(address(this));
+            if (balance > 0) tokens[i].safeTransfer(owner(), balance);
             unchecked {++i;}
         }
-        weth.withdraw(weth.balanceOf(address(this)));
+
         Address.sendValue(payable(owner()), address(this).balance);
     }
 

@@ -32,6 +32,9 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
 
     error InvalidSender(address sender);
 
+    // event Order();
+    event Excess(address indexed ref, address indexed token, uint256 amount);
+
     modifier onlyAllowed() {
         if (!admin.allowed(msg.sender)) revert InvalidSender(msg.sender);
         _;
@@ -47,22 +50,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
      */
     function execute(SignedOrder[] calldata orders, Call[] calldata calls) external onlyAllowed {
         reactor.executeBatchWithCallback(orders, abi.encode(calls));
-
-        for (uint256 i = 0; i < orders.length;) {
-            ExclusiveDutchOrder memory order = abi.decode(orders[i].order, (ExclusiveDutchOrder));
-            address ref = abi.decode(order.info.additionalValidationData, (address));
-            admin.shares(ref);
-
-            _withdraw(address(order.input.token), ref);
-
-            for (uint256 j = 0; j < order.outputs.length;) {
-                _withdraw(address(order.outputs[j].token), ref);
-                unchecked {++j;}
-            }
-
-            unchecked {++i;}
-        }
-
+        _excess(orders);
     }
 
     /**
@@ -98,17 +86,42 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         }
     }
 
-    function _withdraw(address token, address ref) private {
+    function _excess(SignedOrder[] calldata orders) private {
+        for (uint256 i = 0; i < orders.length;) {
+            ExclusiveDutchOrder memory order = abi.decode(orders[i].order, (ExclusiveDutchOrder));
+            
+            address ref = abi.decode(order.info.additionalValidationData, (address));
+
+            _withdraw(address(order.input.token), ref);
+            _withdraw(address(order.outputs[0].token), ref);
+
+            unchecked {++i;}
+        }
+    }
+
+    function withdraw(address token, address ref) public onlyAllowed {
+        uint16 bps = admin.shares(ref);
+
         if (token == address(0)) {
-            uint256 nativeBalance = address(this).balance;
-            if (nativeBalance > 0) Address.sendValue(payable(admin), nativeBalance);
-            return;
+            uint256 balance = address(this).balance;
+            if (balance == 0) return;
+
+            uint256 share = (balance * bps) / admin.BPS;
+            Address.sendValue(payable(ref), share);
+            Address.sendValue(payable(admin), balance - share);
+            
+            emit Excess(ref, token, share);
+            emit Excess(address(admin), token, balance - share);
         } else {
             uint256 balance = IERC20(token).balanceOf(address(this));
-            if (balance > 0) {
+            if (balance == 0) return;
 
-                IERC20(token).safeTransfer(ref, balance);
-            }
+            uint256 share = (balance * bps) / admin.BPS;
+            IERC20(token).safeTransfer(ref, share);
+            IERC20(token).safeTransfer(address(admin), balance - share);
+            
+            emit Excess(ref, token, share);
+            emit Excess(address(admin), token, balance - share);
         }
     }
 
