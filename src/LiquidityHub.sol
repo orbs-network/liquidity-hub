@@ -31,8 +31,17 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     }
 
     error InvalidSender(address sender);
+    error InvalidOrder();
 
-    // event Order();
+    event Resolved(
+        bytes32 indexed orderHash,
+        address indexed swapper,
+        address indexed ref,
+        address inToken,
+        address outToken,
+        uint256 inAmount,
+        uint256 outAmount);
+
     event Excess(address indexed ref, address indexed token, uint256 amount);
 
     modifier onlyAllowed() {
@@ -68,60 +77,68 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     }
 
     function _approveReactorOutputs(ResolvedOrder[] memory orders) private {
-        for (uint256 i = 0; i < orders.length;) {
-            ResolvedOrder memory order = orders[i];
+        unchecked {
+            for (uint256 i = 0; i < orders.length; i++) {
+                ResolvedOrder memory order = orders[i];
 
-            for (uint256 j = 0; j < order.outputs.length;) {
-                uint256 amount = order.outputs[j].amount;
-                if (amount == 0) continue;
+                address outToken;
+                uint256 outAmount;
 
-                address token = order.outputs[j].token;
-                if (token == address(0)) Address.sendValue(payable(address(reactor)), amount);
-                else IERC20(token).safeIncreaseAllowance(address(reactor), amount);
-                
-                unchecked {++j;}
+                for (uint256 j = 0; j < order.outputs.length; j++) {
+                    uint256 amount = order.outputs[j].amount;
+                    if (amount == 0) continue;
+                    address token = address(order.outputs[j].token);
+
+                    if (token == address(0)) Address.sendValue(payable(address(reactor)), amount);
+                    else IERC20(token).safeIncreaseAllowance(address(reactor), amount);
+
+                    if (order.outputs[j].recipient == order.info.swapper) {
+                        if (outToken != address(0) && outToken != token) revert InvalidOrder();
+                        outToken = token;
+                        outAmount += amount;
+                    }
+                }
+
+                emit Resolved(
+                    order.hash,
+                    order.info.swapper,
+                    ref,
+                    address(order.input.token),
+                    outToken,
+                    order.input.amount,
+                    outAmount);
             }
-
-            unchecked {++i;}
         }
     }
 
     function _excess(SignedOrder[] calldata orders) private {
-        for (uint256 i = 0; i < orders.length;) {
-            ExclusiveDutchOrder memory order = abi.decode(orders[i].order, (ExclusiveDutchOrder));
-            
-            address ref = abi.decode(order.info.additionalValidationData, (address));
+        unchecked {
+            for (uint256 i = 0; i < orders.length; i++) {
+                ExclusiveDutchOrder memory order = abi.decode(orders[i].order, (ExclusiveDutchOrder));
+                address ref = abi.decode(order.info.additionalValidationData, (address));
 
-            _withdraw(address(order.input.token), ref);
-            _withdraw(address(order.outputs[0].token), ref);
+                _withdrawExcess(address(order.input.token), ref);
 
-            unchecked {++i;}
+                for (uint256 j = 0; j < order.outputs.length; j++) {
+                    _withdrawExcess(address(order.outputs[j].token), ref);
+                }
+            }
         }
     }
 
-    function withdraw(address token, address ref) public onlyAllowed {
-        uint16 bps = admin.shares(ref);
-
+    function _withdrawExcess(address token, address ref) private {
         if (token == address(0)) {
             uint256 balance = address(this).balance;
-            if (balance == 0) return;
-
-            uint256 share = (balance * bps) / admin.BPS;
-            Address.sendValue(payable(ref), share);
-            Address.sendValue(payable(admin), balance - share);
-            
-            emit Excess(ref, token, share);
-            emit Excess(address(admin), token, balance - share);
+            if (balance > 0) {
+                Address.sendValue(payable(ref), balance);
+                emit Excess(ref, token, balance);
+            }
         } else {
             uint256 balance = IERC20(token).balanceOf(address(this));
-            if (balance == 0) return;
-
-            uint256 share = (balance * bps) / admin.BPS;
-            IERC20(token).safeTransfer(ref, share);
-            IERC20(token).safeTransfer(address(admin), balance - share);
-            
-            emit Excess(ref, token, share);
-            emit Excess(address(admin), token, balance - share);
+            if (balance > 0) {
+                IERC20(token).safeTransfer(ref, balance);
+                emit Excess(ref, token, balance);
+            }
         }
     }
 
