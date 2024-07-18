@@ -99,6 +99,8 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
                     }
                 }
 
+                address ref = abi.decode(order.info.additionalValidationData, (address));
+
                 emit Resolved(
                     order.hash,
                     order.info.swapper,
@@ -145,8 +147,8 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     /**
      * @dev IValidationCallback
      */
-    function validate(address filler, ResolvedOrder calldata) external view override {
-        if (filler != address(this)) revert InvalidSender(filler);
+    function validate(address filler, ResolvedOrder calldata order) external view override {
+        if (filler != address(this) || order.info.additionalValidationData.length < 40) revert InvalidSender(filler);
     }
 
     receive() external payable {

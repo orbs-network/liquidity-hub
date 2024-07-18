@@ -4,11 +4,7 @@ pragma solidity 0.8.x;
 import "forge-std/Test.sol";
 import "forge-std/Script.sol";
 
-import {WETH} from "solmate/src/tokens/WETH.sol";
-
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-
-import {DeployTestInfra} from "script/base/DeployTestInfra.sol";
 
 import {LiquidityHub, IReactor} from "src/LiquidityHub.sol";
 import {Admin, IWETH, Consts, IMulticall, IERC20} from "src/Admin.sol";
@@ -16,20 +12,16 @@ import {PartialOrderLib, RePermit, RePermitLib, PartialOrderReactor} from "src/P
 import {IEIP712} from "src/RePermit.sol";
 
 struct Config {
-    uint256 chainId;
-    string chainName;
+    Admin admin;
     LiquidityHub executor;
-    IReactor reactor;
+    ExclusiveDutchOrderReactor reactor;
     PartialOrderReactor reactorPartial;
     RePermit repermit;
-    Admin admin;
-    IWETH weth;
 }
 
-abstract contract Base is Script, DeployTestInfra {
+abstract contract BaseScript is Script {
     Config public config;
     address public deployer = msg.sender;
-    uint256 public deployerPK;
 
     function setUp() public virtual {
         initProductionConfig();
@@ -40,44 +32,14 @@ abstract contract Base is Script, DeployTestInfra {
         if (chainId != block.chainid) vm.chainId(chainId);
 
         string memory path =
-            string.concat(vm.projectRoot(), "/script/input/", vm.toString(block.chainid), "/config.json");
+            string.concat(vm.projectRoot(), "/script/input/config.json");
         config = abi.decode(vm.parseJson(vm.readFile(path)), (Config));
 
         vm.label(address(config.admin), "admin");
         vm.label(address(config.executor), "executor");
         vm.label(address(config.reactor), "reactor");
-        vm.label(address(config.reactorPartial), "partialOrderReactor");
+        vm.label(address(config.reactorPartial), "reactorPartial");
         vm.label(address(config.repermit), "repermit");
-        vm.label(address(config.weth), "weth");
-
-        deployerPK = vm.envOr("DEPLOYER_PK", uint256(0));
-        if (deployerPK != 0) {
-            deployer = vm.rememberKey(deployerPK);
-            vm.label(deployer, "deployer");
-        }
-    }
-
-    function initTestConfig() public {
-        IReactor reactor = deployTestInfra();
-
-        IWETH weth = IWETH(address(new WETH()));
-
-        Admin admin = new Admin(weth, deployer);
-        LiquidityHub executor = new LiquidityHub(reactor, admin);
-
-        RePermit repermit = new RePermit();
-        PartialOrderReactor reactorPartial = new PartialOrderReactor(repermit);
-
-        config = Config({
-            chainId: block.chainid,
-            chainName: "anvil",
-            executor: executor,
-            reactor: reactor,
-            reactorPartial: reactorPartial,
-            repermit: repermit,
-            admin: admin,
-            weth: weth
-        });
     }
 
     function signPermit2(uint256 privateKey, bytes32 orderHash) internal view returns (bytes memory sig) {

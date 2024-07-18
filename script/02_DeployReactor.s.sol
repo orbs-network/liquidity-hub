@@ -5,9 +5,9 @@ import "forge-std/Script.sol";
 
 import {ExclusiveDutchOrderReactor, IPermit2} from "uniswapx/src/reactors/ExclusiveDutchOrderReactor.sol";
 
-import {Base, Consts} from "script/base/Base.sol";
+import {BaseScript, Consts} from "script/base/BaseScript.sol";
 
-contract DeployReactor is Base {
+contract DeployReactor is BaseScript {
     function run() public returns (address reactor) {
         reactor = computeCreate2Address(
             0,
@@ -15,11 +15,9 @@ contract DeployReactor is Base {
         );
 
         if (reactor.code.length == 0) {
-            vm.broadcast(deployer);
-            require(
-                reactor
-                    == address(new ExclusiveDutchOrderReactor{salt: 0}(IPermit2(Consts.PERMIT2_ADDRESS), address(0)))
-            );
+            vm.broadcast();
+            ExclusiveDutchOrderReactor deployed = new ExclusiveDutchOrderReactor{salt: 0}(IPermit2(Consts.PERMIT2_ADDRESS), address(0));
+            require(reactor == address(deployed), "mismatched address");
         } else {
             console.log("already deployed");
         }

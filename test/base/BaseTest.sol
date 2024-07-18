@@ -5,16 +5,17 @@ import "forge-std/Test.sol";
 
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
 
+import {WETH} from "solmate/src/tokens/WETH.sol";
+
 import {PermitSignature} from "uniswapx/test/util/PermitSignature.sol";
 import {
     ExclusiveDutchOrderLib,
     ExclusiveDutchOrder,
     DutchInput,
-    DutchOutput,
-    ERC20
+    DutchOutput
 } from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
 
-import {Base, Config} from "script/base/Base.sol";
+import {BaseScript, Config} from "script/base/BaseScript.sol";
 
 import {
     LiquidityHub,
@@ -28,11 +29,34 @@ import {
 } from "src/LiquidityHub.sol";
 import {PartialOrderLib} from "src/PartialOrderReactor.sol";
 
-abstract contract BaseTest is Base, PermitSignature {
+abstract contract BaseTest is Base, PermitSignature, DeployTestInfra {
 
     function setUp() public virtual override {
         // no call to super.setUp()
         initTestConfig();
+    }
+
+    function initTestConfig() public {
+        IReactor reactor = deployTestInfra();
+
+        IWETH weth = IWETH(address(new WETH()));
+
+        Admin admin = new Admin(weth, deployer);
+        LiquidityHub executor = new LiquidityHub(reactor, admin);
+
+        RePermit repermit = new RePermit();
+        PartialOrderReactor reactorPartial = new PartialOrderReactor(repermit);
+
+        config = Config({
+            chainId: block.chainid,
+            chainName: "anvil",
+            executor: executor,
+            reactor: reactor,
+            reactorPartial: reactorPartial,
+            repermit: repermit,
+            admin: admin,
+            weth: weth
+        });
     }
 
     function dealWETH(address target, uint256 amount) internal {
