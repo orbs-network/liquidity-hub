@@ -17,7 +17,7 @@ contract PartialOrderReactorTest is BaseTest {
     function setUp() public override {
         super.setUp();
 
-        vm.etch(address(config.executor), address(new LiquidityHub(config.reactorPartial, config.treasury)).code);
+        vm.etch(address(config.executor), address(new LiquidityHub(config.reactorPartial, config.admin)).code);
 
         (swapper, swapperPK) = makeAddrAndKey("swapper");
 
@@ -75,9 +75,9 @@ contract PartialOrderReactorTest is BaseTest {
             swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, 0.6 ether
         );
 
-        hoax(config.treasury.owner());
+        hoax(config.admin.owner());
         vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector, 0));
-        config.executor.execute(orders, mockSwapCalls(inToken, outToken, 0, 0.6 ether), address(0), new address[](0));
+        config.executor.execute(orders, mockSwapCalls(inToken, outToken, 0, 0.6 ether));
     }
 
     function test_Revert_InsufficentAlowanceAfterSpending() public {
@@ -93,9 +93,9 @@ contract PartialOrderReactorTest is BaseTest {
             swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, 0.5 ether
         );
 
-        hoax(config.treasury.owner());
+        hoax(config.admin.owner());
         vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector, 0.5 ether));
-        config.executor.execute(orders, mockSwapCalls(inToken, outToken, 0, 0.5 ether), address(0), new address[](0));
+        config.executor.execute(orders, mockSwapCalls(inToken, outToken, 0, 0.5 ether));
     }
 
     function _execute(uint256 inAmount, uint256 outAmount, uint256 fillOutAmount) private {
@@ -108,12 +108,9 @@ contract PartialOrderReactorTest is BaseTest {
         tokens[0] = address(inToken);
         tokens[1] = address(outToken);
 
-        hoax(config.treasury.owner());
+        hoax(config.admin.owner());
         config.executor.execute(
-            orders,
-            mockSwapCalls(inToken, outToken, (inAmount * fillOutAmount) / outAmount, fillOutAmount),
-            address(0),
-            tokens
+            orders, mockSwapCalls(inToken, outToken, (inAmount * fillOutAmount) / outAmount, fillOutAmount)
         );
 
         assertEq(inToken.balanceOf(address(config.executor)), 0, "no inToken leftovers");

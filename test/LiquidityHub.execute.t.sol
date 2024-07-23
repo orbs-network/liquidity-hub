@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 import {BaseTest, ERC20Mock, IERC20} from "test/base/BaseTest.sol";
 
 import {LiquidityHub, SignedOrder, Call} from "src/LiquidityHub.sol";
+import {IWETH} from "src/IWETH.sol";
 
 contract LiquidityHubExecuteTest is BaseTest {
     address public swapper;
@@ -31,8 +32,8 @@ contract LiquidityHubExecuteTest is BaseTest {
         token.mint(swapper, amount);
         assertEq(token.balanceOf(swapper), amount);
 
-        hoax(config.treasury.owner());
-        config.executor.execute(orders, new Call[](0), address(0), new address[](0));
+        hoax(config.admin.owner());
+        config.executor.execute(orders, new Call[](0));
 
         assertEq(token.balanceOf(swapper), amount);
     }
@@ -69,8 +70,8 @@ contract LiquidityHubExecuteTest is BaseTest {
         tokens[0] = address(tokenA);
         tokens[1] = address(tokenB);
 
-        hoax(config.treasury.owner());
-        config.executor.execute(orders, new Call[](0), fees, tokens);
+        hoax(config.admin.owner());
+        config.executor.execute(orders, new Call[](0));
 
         assertEq(tokenA.balanceOf(swapper), 0);
         assertEq(tokenA.balanceOf(swapper2), amountA);
@@ -103,15 +104,15 @@ contract LiquidityHubExecuteTest is BaseTest {
         tokens[0] = address(inToken);
         tokens[1] = address(outToken);
 
-        hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, fees, tokens);
+        hoax(config.admin.owner());
+        config.executor.execute(orders, calls);
 
         assertEq(inToken.balanceOf(swapper), 0);
         assertEq(outToken.balanceOf(swapper), outAmount);
     }
 
     function test_NativeOutput() public {
-        IWETH inToken = config.weth;
+        IWETH inToken = config.admin.weth();
         address outToken = address(0);
         uint256 inAmount = 1 ether;
         uint256 outAmount = 1 ether;
@@ -130,8 +131,8 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(inToken.balanceOf(swapper), inAmount);
         assertEq(swapper.balance, 0);
 
-        hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, address(0), new address[](0));
+        hoax(config.admin.owner());
+        config.executor.execute(orders, calls);
 
         assertEq(inToken.balanceOf(swapper), 0);
         assertEq(swapper.balance, outAmount);
@@ -153,8 +154,8 @@ contract LiquidityHubExecuteTest is BaseTest {
         address[] memory tokens = new address[](1);
         tokens[0] = address(inToken);
 
-        hoax(config.treasury.owner());
-        config.executor.execute(orders, new Call[](0), fees, tokens);
+        hoax(config.admin.owner());
+        config.executor.execute(orders, new Call[](0));
 
         assertEq(inToken.balanceOf(swapper), outAmount);
         assertEq(inToken.balanceOf(address(config.executor)), 0);
@@ -162,7 +163,7 @@ contract LiquidityHubExecuteTest is BaseTest {
     }
 
     function test_NativeSlippageToFeeRecipient() public {
-        IWETH inToken = config.weth;
+        IWETH inToken = config.admin.weth();
         address outToken = address(0);
         uint256 inAmount = 1 ether;
         uint256 outAmount = 0.5 ether;
@@ -181,8 +182,8 @@ contract LiquidityHubExecuteTest is BaseTest {
         tokens[0] = address(inToken);
 
         dealWETH(swapper, inAmount);
-        hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, fees, tokens);
+        hoax(config.admin.owner());
+        config.executor.execute(orders, calls);
 
         assertEq(swapper.balance, outAmount);
         assertEq(address(config.executor).balance, 0);
@@ -221,12 +222,12 @@ contract LiquidityHubExecuteTest is BaseTest {
         tokens[0] = address(inToken);
         tokens[1] = address(outToken);
 
-        hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, fees, tokens);
+        hoax(config.admin.owner());
+        config.executor.execute(orders, calls);
 
         assertEq(outToken.balanceOf(swapper), outAmount, "swapper outToken");
         assertEq(outToken.balanceOf(address(config.executor)), 0, "no dust");
-        assertEq(outToken.balanceOf(address(config.treasury)), outAmountGas, "gas fee");
+        assertEq(outToken.balanceOf(address(config.admin)), outAmountGas, "gas fee");
         assertEq(outToken.balanceOf(fees), 123, "slippage");
     }
 }

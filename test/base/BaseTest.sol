@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
 
 import {WETH} from "solmate/src/tokens/WETH.sol";
+import {ERC20} from "solmate/src/tokens/ERC20.sol";
 
 import {PermitSignature} from "uniswapx/test/util/PermitSignature.sol";
 import {
@@ -14,9 +15,11 @@ import {
     DutchInput,
     DutchOutput
 } from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
+import {ExclusiveDutchOrderReactor, IPermit2} from "uniswapx/src/reactors/ExclusiveDutchOrderReactor.sol";
 
 import {BaseScript, Config} from "script/base/BaseScript.sol";
-
+import {DeployTestInfra} from "./DeployTestInfra.sol";
+import {Admin} from "src/Admin.sol";
 import {
     LiquidityHub,
     Consts,
@@ -27,9 +30,11 @@ import {
     IValidationCallback,
     Call
 } from "src/LiquidityHub.sol";
-import {PartialOrderLib} from "src/PartialOrderReactor.sol";
+import {PartialOrderReactor, PartialOrderLib} from "src/PartialOrderReactor.sol";
+import {RePermit} from "src/RePermit.sol";
 
-abstract contract BaseTest is Base, PermitSignature, DeployTestInfra {
+
+abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
 
     function setUp() public virtual override {
         // no call to super.setUp()
@@ -37,32 +42,28 @@ abstract contract BaseTest is Base, PermitSignature, DeployTestInfra {
     }
 
     function initTestConfig() public {
-        IReactor reactor = deployTestInfra();
+        deployTestInfra();
 
-        IWETH weth = IWETH(address(new WETH()));
-
-        Admin admin = new Admin(weth, deployer);
+        Admin admin = new Admin(deployer);
+        IReactor reactor = new ExclusiveDutchOrderReactor(IPermit2(Consts.PERMIT2_ADDRESS), address(0));
         LiquidityHub executor = new LiquidityHub(reactor, admin);
 
         RePermit repermit = new RePermit();
         PartialOrderReactor reactorPartial = new PartialOrderReactor(repermit);
 
         config = Config({
-            chainId: block.chainid,
-            chainName: "anvil",
-            executor: executor,
-            reactor: reactor,
-            reactorPartial: reactorPartial,
-            repermit: repermit,
-            admin: admin,
-            weth: weth
+            admin:admin,
+            executor:executor,
+            reactor:reactor,
+            reactorPartial:reactorPartial,
+            repermit:repermit
         });
     }
 
     function dealWETH(address target, uint256 amount) internal {
         hoax(target, amount);
-        config.weth.deposit{value: amount}();
-        assertEq(config.weth.balanceOf(target), amount, "weth balance");
+        config.admin.weth().deposit{value: amount}();
+        assertEq(config.admin.weth().balanceOf(target), amount, "weth balance");
     }
 
     function createAndSignOrder(
@@ -92,7 +93,7 @@ abstract contract BaseTest is Base, PermitSignature, DeployTestInfra {
 
             order.outputs = new DutchOutput[](2);
             order.outputs[0] = DutchOutput(outToken, outAmount, outAmount, signer);
-            order.outputs[1] = DutchOutput(outToken, outAmountGas, outAmountGas, address(config.treasury));
+            order.outputs[1] = DutchOutput(outToken, outAmountGas, outAmountGas, address(config.admin));
         }
 
         result.sig = signOrder(signerPK, PERMIT2_ADDRESS, order);

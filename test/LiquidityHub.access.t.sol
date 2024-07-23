@@ -16,13 +16,13 @@ contract LiquidityHubAccessTest is BaseTest {
     }
 
     function test_Execute_OnlyAllowed() public {
-        hoax(config.treasury.owner());
-        config.executor.execute(new SignedOrder[](0), new Call[](0), address(0), new address[](0));
+        hoax(config.admin.owner());
+        config.executor.execute(new SignedOrder[](0), new Call[](0));
     }
 
     function test_Revert_Execute_OnlyAllowed() public {
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, address(this)));
-        config.executor.execute(new SignedOrder[](0), new Call[](0), address(0), new address[](0));
+        config.executor.execute(new SignedOrder[](0), new Call[](0));
     }
 
     function test_ValidationCallback_OnlySelf() public {

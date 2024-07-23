@@ -71,14 +71,14 @@ contract E2ETest is BaseTest {
         tokens[0] = address(weth);
         tokens[1] = address(usdc);
 
-        hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, fees, tokens);
+        hoax(config.admin.owner());
+        config.executor.execute(orders, calls);
 
         assertEq(weth.balanceOf(taker), wethTakerStartBalance - wethTakerAmount, "weth taker balance");
         assertEq(usdc.balanceOf(taker), usdcTakerAmount, "usdc taker balance");
         assertEq(weth.balanceOf(maker), wethTakerAmount, "weth maker balance");
         assertEq(usdc.balanceOf(maker), usdcMakerStartBalance - usdcMakerAmount, "usdc maker balance");
-        assertEq(usdc.balanceOf(address(config.treasury)), usdcAmountGas, "gas fee");
+        assertEq(usdc.balanceOf(address(config.admin)), usdcAmountGas, "gas fee");
         assertEq(weth.balanceOf(address(config.executor)), 0, "no weth leftovers");
         assertEq(usdc.balanceOf(address(config.executor)), 0, "no usdc leftovers");
         assertEq(usdc.balanceOf(fees), 9 * 10 ** 6, "usdc positive slippage");
@@ -117,14 +117,14 @@ contract E2ETest is BaseTest {
         tokens[0] = address(weth);
         tokens[1] = address(usdc);
 
-        hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, fees, tokens);
+        hoax(config.admin.owner());
+        config.executor.execute(orders, calls);
 
         assertEq(weth.balanceOf(taker), wethTakerStartBalance - wethTakerAmount, "weth taker balance");
         assertEq(usdc.balanceOf(taker), usdcTakerAmount, "usdc taker balance");
         assertEq(weth.balanceOf(maker), 1 ether, "maker bought 1 eth");
         assertEq(usdcMakerStartBalance - usdc.balanceOf(maker), 2510 * 10 ** 6, "maker paid $2510");
-        assertEq(usdc.balanceOf(address(config.treasury)), usdcAmountGas, "gas fee");
+        assertEq(usdc.balanceOf(address(config.admin)), usdcAmountGas, "gas fee");
         assertEq(weth.balanceOf(address(config.executor)), 0, "no weth leftovers");
         assertEq(usdc.balanceOf(address(config.executor)), 0, "no usdc leftovers");
         assertEq(usdc.balanceOf(fees), 9 * 10 ** 6, "usdc positive slippage");
@@ -176,8 +176,8 @@ contract E2ETest is BaseTest {
         tokens[0] = address(weth);
         tokens[1] = address(usdc);
 
-        hoax(config.treasury.owner());
-        config.executor.execute(orders, calls, fees, tokens);
+        hoax(config.admin.owner());
+        config.executor.execute(orders, calls);
 
         assertEq(weth.balanceOf(taker), wethTakerStartBalance - wethTakerAmount, "weth taker balance");
         assertEq(usdc.balanceOf(taker), usdcTakerAmount, "usdc taker balance");
@@ -185,7 +185,7 @@ contract E2ETest is BaseTest {
         assertEq(weth.balanceOf(maker2), 0.5 ether, "weth maker2 balance");
         assertEq(usdcMakerStartBalance - usdc.balanceOf(maker), 1255 * 10 ** 6, "maker paid $1255");
         assertEq(usdcMakerStartBalance - usdc.balanceOf(maker2), 1255 * 10 ** 6, "maker2 paid $1255");
-        assertEq(usdc.balanceOf(address(config.treasury)), usdcAmountGas, "gas fee");
+        assertEq(usdc.balanceOf(address(config.admin)), usdcAmountGas, "gas fee");
         assertEq(weth.balanceOf(address(config.executor)), 0, "no weth leftovers");
         assertEq(usdc.balanceOf(address(config.executor)), 0, "no usdc leftovers");
         assertEq(usdc.balanceOf(fees), 9 * 10 ** 6, "usdc positive slippage");

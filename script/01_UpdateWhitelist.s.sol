@@ -26,7 +26,7 @@ contract UpdateWhitelist is BaseScript {
                 }
 
                 vm.broadcast();
-                config.treasury.set(batch, true);
+                config.admin.allow(batch, true);
 
                 console.log("whitelist updated", i);
             }

@@ -3,7 +3,7 @@ pragma solidity 0.8.x;
 
 import "forge-std/Script.sol";
 
-import {BaseScript} from "script/base/BaseScript.sol";
+import {BaseScript, Admin} from "script/base/BaseScript.sol";
 
 contract DeployAdmin is BaseScript {
     function run(address owner, address weth) public returns (address admin) {
@@ -16,9 +16,9 @@ contract DeployAdmin is BaseScript {
             require(admin == address(deployed), "mismatched address");
 
             vm.broadcast();
-            deployed.initialize(weth);
+            deployed.init(weth);
         } else {
-            require(Admin(admin).weth() != address(0), "not initialized");
+            require(address(Admin(payable(admin)).weth()) != address(0), "not initialized");
             console.log("already deployed");
         }
     }

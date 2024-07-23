@@ -6,8 +6,6 @@ import "forge-std/Script.sol";
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-import {ExclusiveDutchOrderReactor} from "uniswapx/src/reactors/ExclusiveDutchOrderReactor.sol";
-
 import {LiquidityHub, IReactor} from "src/LiquidityHub.sol";
 import {Admin, IWETH, Consts, IMulticall, IERC20} from "src/Admin.sol";
 import {PartialOrderLib, RePermit, RePermitLib, PartialOrderReactor} from "src/PartialOrderReactor.sol";
@@ -16,26 +14,26 @@ import {IEIP712} from "src/RePermit.sol";
 struct Config {
     Admin admin;
     LiquidityHub executor;
-    ExclusiveDutchOrderReactor reactor;
+    IReactor reactor;
     PartialOrderReactor reactorPartial;
     RePermit repermit;
 }
 
 abstract contract BaseScript is Script {
-    Config public config;
     address public deployer = msg.sender;
+    Config public config;
 
     function setUp() public virtual {
         initProductionConfig();
     }
 
     function initProductionConfig() public {
-        uint256 chainId = vm.envOr("CHAIN", block.chainid);
-        if (chainId != block.chainid) vm.chainId(chainId);
+        // uint256 chainId = vm.envOr("CHAIN", block.chainid);
+        // if (chainId != block.chainid) vm.chainId(chainId);
 
-        string memory path =
-            string.concat(vm.projectRoot(), "/script/input/config.json");
-        config = abi.decode(vm.parseJson(vm.readFile(path)), (Config));
+        config = abi.decode(
+            vm.parseJson(vm.readFile(string.concat(vm.projectRoot(), "/script/input/config.json"))), (Config)
+        );
 
         vm.label(address(config.admin), "admin");
         vm.label(address(config.executor), "executor");

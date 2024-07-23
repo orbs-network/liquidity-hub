@@ -22,13 +22,13 @@ contract AdminAccessTest is BaseTest {
         hoax(config.admin.owner());
         address[] memory addrs = new address[](1);
         addrs[0] = address(1);
-        config.admin.set(addrs, true);
+        config.admin.allow(addrs, true);
         assertEq(config.admin.allowed(address(1)), true);
     }
 
     function test_Revert_Allow_OnlyOwner() public {
         vm.expectRevert("Ownable: caller is not the owner");
-        config.admin.set(new address[](0), true);
+        config.admin.allow(new address[](0), true);
     }
 
     function test_Withdraw_OnlyAllowed() public {
