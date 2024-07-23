@@ -6,6 +6,8 @@ import "forge-std/Script.sol";
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
+import {ExclusiveDutchOrderReactor} from "uniswapx/src/reactors/ExclusiveDutchOrderReactor.sol";
+
 import {LiquidityHub, IReactor} from "src/LiquidityHub.sol";
 import {Admin, IWETH, Consts, IMulticall, IERC20} from "src/Admin.sol";
 import {PartialOrderLib, RePermit, RePermitLib, PartialOrderReactor} from "src/PartialOrderReactor.sol";

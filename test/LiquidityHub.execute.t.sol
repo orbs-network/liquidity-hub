@@ -3,7 +3,7 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
-import {BaseTest, ERC20Mock, IERC20, IWETH} from "test/base/BaseTest.sol";
+import {BaseTest, ERC20Mock, IERC20} from "test/base/BaseTest.sol";
 
 import {LiquidityHub, SignedOrder, Call} from "src/LiquidityHub.sol";
 
