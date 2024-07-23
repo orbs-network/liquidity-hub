@@ -20,7 +20,6 @@ struct Config {
 }
 
 abstract contract BaseScript is Script {
-    address public deployer = msg.sender;
     Config public config;
 
     function setUp() public virtual {
@@ -34,7 +33,6 @@ abstract contract BaseScript is Script {
         config = abi.decode(
             vm.parseJson(vm.readFile(string.concat(vm.projectRoot(), "/script/input/config.json"))), (Config)
         );
-
         vm.label(address(config.admin), "admin");
         vm.label(address(config.executor), "executor");
         vm.label(address(config.reactor), "reactor");

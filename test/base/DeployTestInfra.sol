@@ -5,11 +5,13 @@ import "forge-std/Test.sol";
 
 import {DeployPermit2} from "permit2/test/utils/DeployPermit2.sol";
 
+import {WETH} from "solmate/src/tokens/WETH.sol";
+
 import {Consts} from "src/Consts.sol";
 
 contract DeployTestInfra is DeployPermit2 {
 
-    function deployTestInfra() public {
+    function deployTestInfra() public returns (address weth) {
         if (Consts.PERMIT2_ADDRESS.code.length == 0) {
             vm.chainId(137); // needed for permit2
             deployPermit2();
@@ -20,6 +22,8 @@ contract DeployTestInfra is DeployPermit2 {
             _deployMulticall3();
             require(Consts.MULTICALL_ADDRESS.code.length > 0, "Deploy Multicall3 failed");
         }
+
+        weth = address(new WETH{salt:0}());
     }
 
     function _deployMulticall3() private {

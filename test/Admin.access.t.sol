@@ -12,6 +12,15 @@ contract AdminAccessTest is BaseTest {
         assertNotEq(config.admin.owner(), address(0));
     }
 
+    function test_Admin_init() public {
+        assertNotEq(address(config.admin.weth()), address(0));
+    }
+    
+    function test_Revert_Admin_init() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        config.admin.init(address(0));
+    }
+
     function test_Allowed() public {
         assertEq(config.admin.allowed(config.admin.owner()), true);
         assertEq(config.admin.allowed(address(0)), false);
@@ -36,8 +45,8 @@ contract AdminAccessTest is BaseTest {
         config.admin.withdraw(new IERC20[](0));
     }
 
-    function test_Revert_Withdraw_OnlyAllowed() public {
-        vm.expectRevert(abi.encodeWithSelector(Admin.NotAllowed.selector, address(this)));
+    function test_Revert_Withdraw_OnlyOwner() public {
+        vm.expectRevert("Ownable: caller is not the owner");
         config.admin.withdraw(new IERC20[](0));
     }
 }

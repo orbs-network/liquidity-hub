@@ -5,8 +5,8 @@ import "forge-std/Test.sol";
 
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
 
-import {WETH} from "solmate/src/tokens/WETH.sol";
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
+import {WETH} from "solmate/src/tokens/WETH.sol";
 
 import {PermitSignature} from "uniswapx/test/util/PermitSignature.sol";
 import {
@@ -32,19 +32,21 @@ import {
 } from "src/LiquidityHub.sol";
 import {PartialOrderReactor, PartialOrderLib} from "src/PartialOrderReactor.sol";
 import {RePermit} from "src/RePermit.sol";
-
+import {IWETH} from "src/IWETH.sol";
 
 abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
-
     function setUp() public virtual override {
         // no call to super.setUp()
         initTestConfig();
     }
 
     function initTestConfig() public {
-        deployTestInfra();
+        address weth = deployTestInfra();
 
-        Admin admin = new Admin(deployer);
+        Admin admin = new Admin(msg.sender);
+        hoax(msg.sender);
+        admin.init(weth);
+
         IReactor reactor = new ExclusiveDutchOrderReactor(IPermit2(Consts.PERMIT2_ADDRESS), address(0));
         LiquidityHub executor = new LiquidityHub(reactor, admin);
 
@@ -52,18 +54,19 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
         PartialOrderReactor reactorPartial = new PartialOrderReactor(repermit);
 
         config = Config({
-            admin:admin,
-            executor:executor,
-            reactor:reactor,
-            reactorPartial:reactorPartial,
-            repermit:repermit
+            admin: admin,
+            executor: executor,
+            reactor: reactor,
+            reactorPartial: reactorPartial,
+            repermit: repermit
         });
     }
 
     function dealWETH(address target, uint256 amount) internal {
+        IWETH weth = config.admin.weth();
         hoax(target, amount);
-        config.admin.weth().deposit{value: amount}();
-        assertEq(config.admin.weth().balanceOf(target), amount, "weth balance");
+        weth.deposit{value: amount}();
+        assertEq(weth.balanceOf(target), amount, "dealWETH failed");
     }
 
     function createAndSignOrder(
@@ -138,7 +141,8 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
         calls = new Call[](2);
         calls[0] =
             Call(address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), inAmountMin));
-        calls[1] =
-            Call(address(outToken), abi.encodeWithSelector(outToken.mint.selector, address(config.executor), outAmountExact));
+        calls[1] = Call(
+            address(outToken), abi.encodeWithSelector(outToken.mint.selector, address(config.executor), outAmountExact)
+        );
     }
 }
