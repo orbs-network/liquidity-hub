@@ -34,9 +34,8 @@ contract Admin is Ownable {
     }
 
     function allow(address[] calldata addr, bool value) external onlyOwner {
-        for (uint256 i = 0; i < addr.length;) {
+        for (uint256 i = 0; i < addr.length; i++) {
             allowed[addr[i]] = value;
-            unchecked {++i;}
         }
     }
 
@@ -50,10 +49,9 @@ contract Admin is Ownable {
         uint256 balance = weth.balanceOf(address(this));
         if (balance > 0) weth.withdraw(balance);
 
-        for (uint256 i = 0; i < tokens.length;) {
+        for (uint256 i = 0; i < tokens.length; i++) {
             balance = tokens[i].balanceOf(address(this));
             if (balance > 0) tokens[i].safeTransfer(owner(), balance);
-            unchecked {++i;}
         }
 
         Address.sendValue(payable(owner()), address(this).balance);

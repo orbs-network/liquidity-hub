@@ -10,9 +10,6 @@
 [submodule "lib/solmate"]
 	path = lib/solmate
 	url = https://github.com/transmissions11/solmate
-[submodule "lib/multicall"]
-	path = lib/multicall
-	url = https://github.com/mds1/multicall
 [submodule "lib/UniswapX"]
 	path = lib/UniswapX
 	url = https://github.com/orbs-network/UniswapX

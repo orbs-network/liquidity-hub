@@ -148,7 +148,8 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
      * @dev IValidationCallback
      */
     function validate(address filler, ResolvedOrder calldata order) external view override {
-        if (filler != address(this) || order.info.additionalValidationData.length < 40) revert InvalidSender(filler);
+        if (filler != address(this)) revert InvalidSender(filler);
+        if (order.info.additionalValidationData.length < 20) revert InvalidOrder();
     }
 
     receive() external payable {

@@ -27,9 +27,6 @@ abstract contract BaseScript is Script {
     }
 
     function initProductionConfig() public {
-        // uint256 chainId = vm.envOr("CHAIN", block.chainid);
-        // if (chainId != block.chainid) vm.chainId(chainId);
-
         config = abi.decode(
             vm.parseJson(vm.readFile(string.concat(vm.projectRoot(), "/script/input/config.json"))), (Config)
         );
