@@ -32,7 +32,6 @@ import {
 } from "src/LiquidityHub.sol";
 import {PartialOrderReactor, PartialOrderLib} from "src/PartialOrderReactor.sol";
 import {RePermit} from "src/RePermit.sol";
-import {IWETH} from "src/IWETH.sol";
 
 abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
     function setUp() public virtual override {
@@ -60,13 +59,6 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
             reactorPartial: reactorPartial,
             repermit: repermit
         });
-    }
-
-    function dealWETH(address target, uint256 amount) internal {
-        IWETH weth = config.admin.weth();
-        hoax(target, amount);
-        weth.deposit{value: amount}();
-        assertEq(weth.balanceOf(target), amount, "dealWETH failed");
     }
 
     function signedOrder(

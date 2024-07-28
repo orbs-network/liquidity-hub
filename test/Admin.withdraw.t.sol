@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 import {BaseTest, IERC20, ERC20Mock} from "test/base/BaseTest.sol";
 
 import {Admin, Call} from "src/Admin.sol";
+import {IWETH} from "src/IWETH.sol";
 
 contract AdminWithdrawTest is BaseTest {
     address owner;
@@ -31,7 +32,9 @@ contract AdminWithdrawTest is BaseTest {
     }
 
     function test_WETH() public {
-        dealWETH(address(admin), 1 ether);
+        IWETH w = admin.weth();
+        hoax(address(admin), 1 ether);
+        w.deposit{value: 1 ether}();
         hoax(owner, 0);
         admin.withdraw(new IERC20[](0));
         assertEq(owner.balance, 1 ether);
