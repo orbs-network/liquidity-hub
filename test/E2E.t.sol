@@ -16,13 +16,13 @@ contract E2ETest is BaseTest {
     ERC20Mock public usdc;
     uint256 public wethTakerStartBalance = 10 ether;
     uint256 public usdcMakerStartBalance = 25_000 * 10 ** 6;
-    address public fees;
+    address public ref;
 
     function setUp() public override {
         super.setUp();
         (taker, takerPK) = makeAddrAndKey("taker");
         (maker, makerPK) = makeAddrAndKey("maker");
-        fees = makeAddr("fees");
+        ref = makeAddr("ref");
 
         weth = new ERC20Mock();
         usdc = new ERC20Mock();
@@ -39,7 +39,7 @@ contract E2ETest is BaseTest {
         usdc.approve(address(config.repermit), type(uint256).max);
     }
 
-    function test_e2e_ExactMirrorMatch() public {
+    function test_e2e_exactMirrorMatch() public {
         uint256 wethTakerAmount = 1 ether; // taker input
         uint256 usdcTakerAmount = 2500 * 10 ** 6; // taker output
 
@@ -48,11 +48,11 @@ contract E2ETest is BaseTest {
 
         uint256 usdcAmountGas = 1 * 10 ** 6;
 
-        SignedOrder memory takerOrder = createAndSignOrder(
-            taker, takerPK, address(weth), address(usdc), wethTakerAmount, usdcTakerAmount, usdcAmountGas
+        SignedOrder memory takerOrder = signedOrder(
+            taker, takerPK, address(weth), address(usdc), wethTakerAmount, usdcTakerAmount, usdcAmountGas, ref
         );
 
-        SignedOrder memory makerOrder = createAndSignPartialOrder(
+        SignedOrder memory makerOrder = signedPartialOrder(
             maker, makerPK, address(usdc), address(weth), usdcMakerAmount, wethMakerAmount, wethMakerAmount
         );
 
@@ -67,9 +67,6 @@ contract E2ETest is BaseTest {
             target: address(config.reactorPartial),
             callData: abi.encodeWithSelector(BaseReactor.execute.selector, makerOrder)
         });
-        address[] memory tokens = new address[](2);
-        tokens[0] = address(weth);
-        tokens[1] = address(usdc);
 
         hoax(config.admin.owner());
         config.executor.execute(orders, calls);
@@ -81,11 +78,11 @@ contract E2ETest is BaseTest {
         assertEq(usdc.balanceOf(address(config.admin)), usdcAmountGas, "gas fee");
         assertEq(weth.balanceOf(address(config.executor)), 0, "no weth leftovers");
         assertEq(usdc.balanceOf(address(config.executor)), 0, "no usdc leftovers");
-        assertEq(usdc.balanceOf(fees), 9 * 10 ** 6, "usdc positive slippage");
-        assertEq(weth.balanceOf(fees), 0, "weth positive slippage");
+        assertEq(usdc.balanceOf(ref), 9 * 10 ** 6, "usdc positive slippage");
+        assertEq(weth.balanceOf(ref), 0, "weth positive slippage");
     }
 
-    function test_e2e_PartialInputMatch() public {
+    function test_e2e_partialInputMatch() public {
         uint256 wethTakerAmount = 1 ether; // taker input
         uint256 usdcTakerAmount = 2500 * 10 ** 6; // taker output
 
@@ -94,11 +91,11 @@ contract E2ETest is BaseTest {
 
         uint256 usdcAmountGas = 1 * 10 ** 6;
 
-        SignedOrder memory takerOrder = createAndSignOrder(
-            taker, takerPK, address(weth), address(usdc), wethTakerAmount, usdcTakerAmount, usdcAmountGas
+        SignedOrder memory takerOrder = signedOrder(
+            taker, takerPK, address(weth), address(usdc), wethTakerAmount, usdcTakerAmount, usdcAmountGas, ref
         );
 
-        SignedOrder memory makerOrder = createAndSignPartialOrder(
+        SignedOrder memory makerOrder = signedPartialOrder(
             maker, makerPK, address(usdc), address(weth), usdcMakerAmount, wethMakerAmount, wethTakerAmount
         );
 
@@ -113,9 +110,6 @@ contract E2ETest is BaseTest {
             target: address(config.reactorPartial),
             callData: abi.encodeWithSelector(BaseReactor.execute.selector, makerOrder)
         });
-        address[] memory tokens = new address[](2);
-        tokens[0] = address(weth);
-        tokens[1] = address(usdc);
 
         hoax(config.admin.owner());
         config.executor.execute(orders, calls);
@@ -127,8 +121,8 @@ contract E2ETest is BaseTest {
         assertEq(usdc.balanceOf(address(config.admin)), usdcAmountGas, "gas fee");
         assertEq(weth.balanceOf(address(config.executor)), 0, "no weth leftovers");
         assertEq(usdc.balanceOf(address(config.executor)), 0, "no usdc leftovers");
-        assertEq(usdc.balanceOf(fees), 9 * 10 ** 6, "usdc positive slippage");
-        assertEq(weth.balanceOf(fees), 0, "weth no slippage");
+        assertEq(usdc.balanceOf(ref), 9 * 10 ** 6, "usdc positive slippage");
+        assertEq(weth.balanceOf(ref), 0, "weth no slippage");
     }
 
     function test_e2e_multiplePartialInputs() public {
@@ -145,15 +139,15 @@ contract E2ETest is BaseTest {
 
         uint256 usdcAmountGas = 1 * 10 ** 6;
 
-        SignedOrder memory takerOrder = createAndSignOrder(
-            taker, takerPK, address(weth), address(usdc), wethTakerAmount, usdcTakerAmount, usdcAmountGas
+        SignedOrder memory takerOrder = signedOrder(
+            taker, takerPK, address(weth), address(usdc), wethTakerAmount, usdcTakerAmount, usdcAmountGas, ref
         );
 
-        SignedOrder memory makerOrder1 = createAndSignPartialOrder(
+        SignedOrder memory makerOrder1 = signedPartialOrder(
             maker, makerPK, address(usdc), address(weth), usdcMakerAmount, wethMakerAmount, wethMakerAmount
         );
 
-        SignedOrder memory makerOrder2 = createAndSignPartialOrder(
+        SignedOrder memory makerOrder2 = signedPartialOrder(
             maker2, maker2PK, address(usdc), address(weth), usdcMakerAmount, wethMakerAmount, wethMakerAmount
         );
 
@@ -172,9 +166,6 @@ contract E2ETest is BaseTest {
             target: address(config.reactorPartial),
             callData: abi.encodeWithSelector(BaseReactor.executeBatch.selector, makerOrders)
         });
-        address[] memory tokens = new address[](2);
-        tokens[0] = address(weth);
-        tokens[1] = address(usdc);
 
         hoax(config.admin.owner());
         config.executor.execute(orders, calls);
@@ -188,7 +179,7 @@ contract E2ETest is BaseTest {
         assertEq(usdc.balanceOf(address(config.admin)), usdcAmountGas, "gas fee");
         assertEq(weth.balanceOf(address(config.executor)), 0, "no weth leftovers");
         assertEq(usdc.balanceOf(address(config.executor)), 0, "no usdc leftovers");
-        assertEq(usdc.balanceOf(fees), 9 * 10 ** 6, "usdc positive slippage");
-        assertEq(weth.balanceOf(fees), 0 ether, "weth positive slippage");
+        assertEq(usdc.balanceOf(ref), 9 * 10 ** 6, "usdc positive slippage");
+        assertEq(weth.balanceOf(ref), 0 ether, "weth positive slippage");
     }
 }

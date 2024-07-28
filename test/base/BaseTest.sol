@@ -69,14 +69,15 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
         assertEq(weth.balanceOf(target), amount, "dealWETH failed");
     }
 
-    function createAndSignOrder(
+    function signedOrder(
         address signer,
         uint256 signerPK,
         address inToken,
         address outToken,
         uint256 inAmount,
         uint256 outAmount,
-        uint256 outAmountGas
+        uint256 outAmountGas,
+        address ref
     ) internal view returns (SignedOrder memory result) {
         ExclusiveDutchOrder memory order;
         {
@@ -89,6 +90,7 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
 
             order.exclusiveFiller = address(config.executor);
             order.info.additionalValidationContract = IValidationCallback(config.executor);
+            order.info.additionalValidationData = abi.encode(ref);
 
             order.input.token = ERC20(inToken);
             order.input.startAmount = inAmount;
@@ -103,7 +105,7 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
         result.order = abi.encode(order);
     }
 
-    function createAndSignPartialOrder(
+    function signedPartialOrder(
         address signer,
         uint256 signerPK,
         address inToken,

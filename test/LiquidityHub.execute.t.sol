@@ -6,228 +6,169 @@ import "forge-std/Test.sol";
 import {BaseTest, ERC20Mock, IERC20} from "test/base/BaseTest.sol";
 
 import {LiquidityHub, SignedOrder, Call} from "src/LiquidityHub.sol";
-import {IWETH} from "src/IWETH.sol";
 
 contract LiquidityHubExecuteTest is BaseTest {
     address public swapper;
     uint256 public swapperPK;
-    address public fees;
+    address public ref;
+    ERC20Mock public inToken;
+    ERC20Mock public outToken;
 
     function setUp() public override {
         super.setUp();
         (swapper, swapperPK) = makeAddrAndKey("swapper");
-        fees = makeAddr("fees");
-    }
+        ref = makeAddr("ref");
 
-    function test_NoSwap_SameToken() public {
-        ERC20Mock token = new ERC20Mock();
-        uint256 amount = 1 ether;
-
-        hoax(swapper);
-        token.approve(PERMIT2_ADDRESS, amount);
-
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createAndSignOrder(swapper, swapperPK, address(token), address(token), amount, amount, 0);
-
-        token.mint(swapper, amount);
-        assertEq(token.balanceOf(swapper), amount);
-
-        hoax(config.admin.owner());
-        config.executor.execute(orders, new Call[](0));
-
-        assertEq(token.balanceOf(swapper), amount);
-    }
-
-    function test_NoSwap_MirrorOrders() public {
-        (address swapper2, uint256 swapperPK2) = makeAddrAndKey("swapper2");
-
-        SignedOrder[] memory orders = new SignedOrder[](2);
-
-        ERC20Mock tokenA = new ERC20Mock();
-        ERC20Mock tokenB = new ERC20Mock();
-
-        uint256 amountA = 1 ether;
-        uint256 amountB = 2 ether;
-
-        tokenA.mint(swapper, amountA);
-        tokenB.mint(swapper2, amountB);
-
-        hoax(swapper);
-        tokenA.approve(PERMIT2_ADDRESS, amountA);
-        hoax(swapper2);
-        tokenB.approve(PERMIT2_ADDRESS, amountB);
-
-        orders[0] = createAndSignOrder(swapper, swapperPK, address(tokenA), address(tokenB), amountA, amountB, 0);
-        orders[1] = createAndSignOrder(swapper2, swapperPK2, address(tokenB), address(tokenA), amountB, amountA, 0);
-
-        assertEq(tokenA.balanceOf(swapper), amountA);
-        assertEq(tokenA.balanceOf(swapper2), 0);
-
-        assertEq(tokenB.balanceOf(swapper), 0);
-        assertEq(tokenB.balanceOf(swapper2), amountB);
-
-        address[] memory tokens = new address[](2);
-        tokens[0] = address(tokenA);
-        tokens[1] = address(tokenB);
-
-        hoax(config.admin.owner());
-        config.executor.execute(orders, new Call[](0));
-
-        assertEq(tokenA.balanceOf(swapper), 0);
-        assertEq(tokenA.balanceOf(swapper2), amountA);
-
-        assertEq(tokenB.balanceOf(swapper), amountB);
-        assertEq(tokenB.balanceOf(swapper2), 0);
-    }
-
-    function test_Multicall() public {
-        ERC20Mock inToken = new ERC20Mock();
-        ERC20Mock outToken = new ERC20Mock();
-        uint256 inAmount = 1 ether;
-        uint256 outAmount = 2 ether;
-
-        hoax(swapper);
-        inToken.approve(PERMIT2_ADDRESS, inAmount);
-
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createAndSignOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, 0);
-
-        Call[] memory calls = new Call[](1);
-        calls[0].target = address(outToken);
-        calls[0].callData = abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount);
-
-        inToken.mint(swapper, inAmount);
-        assertEq(inToken.balanceOf(swapper), inAmount);
-        assertEq(outToken.balanceOf(swapper), 0);
-
-        address[] memory tokens = new address[](2);
-        tokens[0] = address(inToken);
-        tokens[1] = address(outToken);
-
-        hoax(config.admin.owner());
-        config.executor.execute(orders, calls);
-
-        assertEq(inToken.balanceOf(swapper), 0);
-        assertEq(outToken.balanceOf(swapper), outAmount);
-    }
-
-    function test_NativeOutput() public {
-        IWETH inToken = config.admin.weth();
-        address outToken = address(0);
-        uint256 inAmount = 1 ether;
-        uint256 outAmount = 1 ether;
+        inToken = new ERC20Mock();
+        outToken = new ERC20Mock();
+        vm.label(address(inToken), "inToken");
+        vm.label(address(outToken), "outToken");
+        inToken.mint(swapper, 10 ether);
 
         hoax(swapper, 0);
-        inToken.approve(PERMIT2_ADDRESS, inAmount);
+        inToken.approve(PERMIT2_ADDRESS, type(uint256).max);
+    }
+
+    function test_noOp() public {
+        uint256 inAmount = 1 ether;
+        uint256 outAmount = 1 ether;
+        uint256 gasAmount = 0;
 
         SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createAndSignOrder(swapper, swapperPK, address(inToken), outToken, inAmount, outAmount, 0);
+        orders[0] = signedOrder(swapper, swapperPK, address(inToken), address(inToken), inAmount, outAmount, gasAmount, ref);
+
+        assertEq(inToken.balanceOf(swapper), 10 ether);
+        assertEq(outToken.balanceOf(swapper), 0);
+
+        hoax(config.admin.owner());
+        config.executor.execute(orders, new Call[](0));
+
+        assertEq(inToken.balanceOf(swapper), 10 ether);
+        assertEq(outToken.balanceOf(swapper), 0);
+    }
+
+    function test_mirrorOrders() public {
+        uint256 inAmount = 1 ether;
+        uint256 outAmount = 2 ether;
+        uint256 gasAmount = 0;
+        (address swapper2, uint256 swapperPK2) = makeAddrAndKey("swapper2");
+
+        outToken.mint(swapper2, outAmount);
+        hoax(swapper2);
+        outToken.approve(PERMIT2_ADDRESS, outAmount);
+
+        SignedOrder[] memory orders = new SignedOrder[](2);
+        orders[0] = signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
+        orders[1] = signedOrder(swapper2, swapperPK2, address(outToken), address(inToken), outAmount, inAmount, gasAmount, ref);
+
+        assertEq(inToken.balanceOf(swapper), 10 ether);
+        assertEq(inToken.balanceOf(swapper2), 0);
+
+        assertEq(outToken.balanceOf(swapper), 0);
+        assertEq(outToken.balanceOf(swapper2), outAmount);
+
+        hoax(config.admin.owner());
+        config.executor.execute(orders, new Call[](0));
+
+        assertEq(inToken.balanceOf(swapper), 9 ether);
+        assertEq(inToken.balanceOf(swapper2), inAmount);
+
+        assertEq(outToken.balanceOf(swapper), outAmount);
+        assertEq(outToken.balanceOf(swapper2), 0);
+    }
+
+    function test_nativeOutput() public {
+        uint256 inAmount = 1 ether;
+        uint256 outAmount = 2 ether;
+        uint256 gasAmount = 0;
+        outToken = ERC20Mock(address(0));
+
+        SignedOrder[] memory orders = new SignedOrder[](1);
+        orders[0] = signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
         Call[] memory calls = new Call[](1);
-        calls[0].target = address(inToken);
-        calls[0].callData = abi.encodeWithSelector(IWETH.withdraw.selector, outAmount);
+        calls[0].target = address(vm);
+        calls[0].callData = abi.encodeWithSelector(vm.deal.selector, address(config.executor), outAmount);
 
-        dealWETH(swapper, inAmount);
-        assertEq(inToken.balanceOf(swapper), inAmount);
+        assertEq(inToken.balanceOf(swapper), 10 ether);
         assertEq(swapper.balance, 0);
 
         hoax(config.admin.owner());
         config.executor.execute(orders, calls);
 
-        assertEq(inToken.balanceOf(swapper), 0);
+        assertEq(inToken.balanceOf(swapper), 9 ether);
         assertEq(swapper.balance, outAmount);
     }
 
-    function test_SlippageToFeeRecipient() public {
-        ERC20Mock inToken = new ERC20Mock();
+    function test_slippageToRef() public {
         uint256 inAmount = 1 ether;
         uint256 outAmount = 0.5 ether;
-
-        hoax(swapper, 0);
-        inToken.approve(PERMIT2_ADDRESS, inAmount);
+        uint256 gasAmount = 0;
 
         SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createAndSignOrder(swapper, swapperPK, address(inToken), address(inToken), inAmount, outAmount, 0);
-
-        inToken.mint(swapper, inAmount);
-
-        address[] memory tokens = new address[](1);
-        tokens[0] = address(inToken);
-
-        hoax(config.admin.owner());
-        config.executor.execute(orders, new Call[](0));
-
-        assertEq(inToken.balanceOf(swapper), outAmount);
-        assertEq(inToken.balanceOf(address(config.executor)), 0);
-        assertEq(inToken.balanceOf(fees), inAmount - outAmount);
-    }
-
-    function test_NativeSlippageToFeeRecipient() public {
-        IWETH inToken = config.admin.weth();
-        address outToken = address(0);
-        uint256 inAmount = 1 ether;
-        uint256 outAmount = 0.5 ether;
-
-        hoax(swapper, 0);
-        inToken.approve(PERMIT2_ADDRESS, inAmount);
-
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createAndSignOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, 0);
+        orders[0] = signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
         Call[] memory calls = new Call[](1);
-        calls[0].target = address(inToken);
-        calls[0].callData = abi.encodeWithSelector(IWETH.withdraw.selector, inAmount);
+        calls[0].target = address(outToken);
+        calls[0].callData = abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount + 123456);
 
-        address[] memory tokens = new address[](1);
-        tokens[0] = address(inToken);
+        hoax(config.admin.owner());
+        config.executor.execute(orders, calls);
 
-        dealWETH(swapper, inAmount);
+        assertEq(inToken.balanceOf(swapper), 9 ether);
+        assertEq(inToken.balanceOf(address(config.executor)), 0);
+        assertEq(outToken.balanceOf(ref), 123456);
+    }
+
+    function test_nativeSlippageToRef() public {
+        uint256 inAmount = 1 ether;
+        uint256 outAmount = 0.7 ether;
+        uint256 gasAmount = 0;
+        outToken = ERC20Mock(address(0));
+
+        SignedOrder[] memory orders = new SignedOrder[](1);
+        orders[0] = signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
+
+        Call[] memory calls = new Call[](1);
+        calls[0].target = address(vm);
+        calls[0].callData = abi.encodeWithSelector(vm.deal.selector, address(config.executor), outAmount + 123456);
+
         hoax(config.admin.owner());
         config.executor.execute(orders, calls);
 
         assertEq(swapper.balance, outAmount);
         assertEq(address(config.executor).balance, 0);
-        assertEq(fees.balance, inAmount - outAmount);
+        assertEq(ref.balance, 123456);
     }
 
-    function test_GasToTreasury() public {
-        ERC20Mock inToken = new ERC20Mock();
-        ERC20Mock outToken = new ERC20Mock();
+    function test_gasToAdmin() public {
         uint256 inAmount = 1 ether;
         uint256 outAmount = 0.5 ether;
-        uint256 outAmountGas = 0.25 ether;
-
-        hoax(swapper, 0);
-        inToken.approve(PERMIT2_ADDRESS, inAmount);
+        uint256 gasAmount = 0.25 ether;
 
         SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createAndSignOrder(
-            swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, outAmountGas
+        orders[0] = signedOrder(
+            swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref
         );
-
-        inToken.mint(swapper, inAmount);
 
         Call[] memory calls = new Call[](2);
         calls[0] = Call({
             target: address(outToken),
             callData: abi.encodeWithSelector(
-                ERC20Mock.mint.selector, address(config.executor), outAmount + outAmountGas + 123
+                ERC20Mock.mint.selector, address(config.executor), outAmount + gasAmount + 123 // random slippage
                 )
         });
         calls[1] = Call({
             target: address(inToken),
             callData: abi.encodeWithSelector(ERC20Mock.burn.selector, address(config.executor), inAmount)
         });
-        address[] memory tokens = new address[](2);
-        tokens[0] = address(inToken);
-        tokens[1] = address(outToken);
 
         hoax(config.admin.owner());
         config.executor.execute(orders, calls);
 
         assertEq(outToken.balanceOf(swapper), outAmount, "swapper outToken");
         assertEq(outToken.balanceOf(address(config.executor)), 0, "no dust");
-        assertEq(outToken.balanceOf(address(config.admin)), outAmountGas, "gas fee");
-        assertEq(outToken.balanceOf(fees), 123, "slippage");
+        assertEq(outToken.balanceOf(address(config.admin)), gasAmount, "gas fee");
+        assertEq(outToken.balanceOf(ref), 123, "slippage");
     }
 }

@@ -17,8 +17,7 @@ contract PartialOrderReactorTest is BaseTest {
     function setUp() public override {
         super.setUp();
 
-        vm.etch(address(config.executor), address(new LiquidityHub(config.reactorPartial, config.admin)).code);
-
+        config.executor = LiquidityHub(payable(address(0))); // avoid exclusivity checks
         (swapper, swapperPK) = makeAddrAndKey("swapper");
 
         inToken = new ERC20Mock();
@@ -31,7 +30,7 @@ contract PartialOrderReactorTest is BaseTest {
         inToken.approve(address(config.repermit), type(uint256).max);
     }
 
-    function test_Execute_SwapFullAmount() public {
+    function test_execute_swapFullAmount() public {
         uint256 inAmount = 1 ether;
         uint256 outAmount = 0.5 ether;
 
@@ -41,7 +40,7 @@ contract PartialOrderReactorTest is BaseTest {
         assertEq(outToken.balanceOf(swapper), 0.5 ether, "swapper end outAmount");
     }
 
-    function test_Execute_SwapPartial() public {
+    function test_execute_swapPartial() public {
         uint256 inAmount = 1 ether;
         uint256 outAmount = 0.5 ether;
 
@@ -56,7 +55,7 @@ contract PartialOrderReactorTest is BaseTest {
         assertEq(outToken.balanceOf(swapper), 0.5 ether, "swapper end outAmount, swap2");
     }
 
-    function test_Execute_SwapPartialOdd() public {
+    function test_execute_swapPartialOdd() public {
         uint256 inAmount = 10 ether;
         uint256 outAmount = 30 ether;
 
@@ -66,21 +65,18 @@ contract PartialOrderReactorTest is BaseTest {
         assertEq(outToken.balanceOf(swapper), 7 ether, "swapper end outAmount");
     }
 
-    function test_Revert_RequestGreaterThanSigned() public {
+    function test_revert_requestGTSigned() public {
         uint256 inAmount = 1 ether;
         uint256 outAmount = 0.5 ether;
-
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createAndSignPartialOrder(
+        SignedOrder memory order = signedPartialOrder(
             swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, 0.6 ether
         );
-
         hoax(config.admin.owner());
         vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector, 0));
-        config.executor.execute(orders, mockSwapCalls(inToken, outToken, 0, 0.6 ether));
+        config.reactorPartial.execute(order);
     }
 
-    function test_Revert_InsufficentAlowanceAfterSpending() public {
+    function test_revert_insufficentAlowanceAfterSpending() public {
         uint256 inAmount = 1 ether;
         uint256 outAmount = 0.5 ether;
 
@@ -88,32 +84,28 @@ contract PartialOrderReactorTest is BaseTest {
 
         assertEq(inToken.balanceOf(address(swapper)), 9.5 ether, "no inToken leftovers");
 
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createAndSignPartialOrder(
+        SignedOrder memory order = signedPartialOrder(
             swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, 0.5 ether
         );
-
         hoax(config.admin.owner());
         vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector, 0.5 ether));
-        config.executor.execute(orders, mockSwapCalls(inToken, outToken, 0, 0.5 ether));
+        config.reactorPartial.execute(order);
     }
 
     function _execute(uint256 inAmount, uint256 outAmount, uint256 fillOutAmount) private {
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = createAndSignPartialOrder(
+        SignedOrder memory order = signedPartialOrder(
             swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, fillOutAmount
         );
 
-        address[] memory tokens = new address[](2);
-        tokens[0] = address(inToken);
-        tokens[1] = address(outToken);
+        assertEq(inToken.balanceOf(address(this)), 0, "inToken pre swap balance");
+        outToken.mint(address(this), outAmount);
+        outToken.approve(address(config.reactorPartial), fillOutAmount);
 
-        hoax(config.admin.owner());
-        config.executor.execute(
-            orders, mockSwapCalls(inToken, outToken, (inAmount * fillOutAmount) / outAmount, fillOutAmount)
-        );
+        config.reactorPartial.execute(order);
 
-        assertEq(inToken.balanceOf(address(config.executor)), 0, "no inToken leftovers");
-        assertEq(outToken.balanceOf(address(config.executor)), 0, "no outToken leftovers");
+        assertEq(inToken.balanceOf(address(this)), inAmount * fillOutAmount / outAmount, "inToken post swap balance");
+        assertEq(outToken.balanceOf(address(this)), outAmount - fillOutAmount, "outToken post swap balance");
+        inToken.burn(address(this), inToken.balanceOf(address(this)));
+        outToken.burn(address(this), outToken.balanceOf(address(this)));
     }
 }
