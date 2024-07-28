@@ -126,17 +126,4 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
         result.sig = signRePermit(signerPK, order);
         result.order = abi.encode(PartialOrderLib.PartialFill(order, fillOutAmount));
     }
-
-    function mockSwapCalls(ERC20Mock inToken, ERC20Mock outToken, uint256 inAmountMin, uint256 outAmountExact)
-        internal
-        view
-        returns (Call[] memory calls)
-    {
-        calls = new Call[](2);
-        calls[0] =
-            Call(address(inToken), abi.encodeWithSelector(inToken.burn.selector, address(config.executor), inAmountMin));
-        calls[1] = Call(
-            address(outToken), abi.encodeWithSelector(outToken.mint.selector, address(config.executor), outAmountExact)
-        );
-    }
 }
