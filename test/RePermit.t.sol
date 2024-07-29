@@ -6,62 +6,71 @@ import "forge-std/Test.sol";
 import {BaseTest, ERC20Mock, IERC20} from "test/base/BaseTest.sol";
 
 import {LiquidityHub, SignedOrder, Call, Consts} from "src/LiquidityHub.sol";
-import {RePermit} from "src/RePermit.sol";
-import {PartialOrderLib} from "src/PartialOrderLib.sol";
+import {RePermit, RePermitLib} from "src/RePermit.sol";
 
 contract RePermitTest is BaseTest {
     RePermit public uut;
 
-    // address public owner;
-    // uint256 public ownerPK;
-
-    // address public spender;
-
-    // ERC20Mock public token;
-
     function setUp() public override {
         super.setUp();
-        // uut = RePermit(Consts.PERMIT2_ADDRESS);
-
-        // (owner, ownerPK) = makeAddrAndKey("owner");
-        // spender = makeAddr("spender");
-        // token = new ERC20Mock();
-
-        // token.mint(owner, totalAmount * 2);
-        // hoax(owner);
-        // token.approve(Consts.PERMIT2_ADDRESS, type(uint256).max);
+        uut = config.repermit;
     }
 
-    // function test_Permit_Transfer() public {
-    //     PermitSingle memory permit =
-    //         PermitSingle(PermitDetails(address(token), uint160(totalAmount), deadline, 0), spender, deadline);
-    //     bytes memory sig = signPermit(permit, ownerPK);
-    //     uut.permit(owner, permit, sig);
+    function test_domainSeparator() public {
+        assertNotEq(uut.DOMAIN_SEPARATOR().length, 0, "domain separator");
+    }
 
-    //     address target = makeAddr("target");
+    function test_nameAndVersion() public {
+        (,string memory name, string memory version,,,,) = uut.eip712Domain();
+        assertEq(name, "RePermit", "name");
+        assertEq(version, "1", "version");
+    }
+    
+    function test_revert_signatureExpired() public {
+        RePermitLib.RePermitTransferFrom memory permit =
+            RePermitLib.RePermitTransferFrom(
+                RePermitLib.TokenPermissions(makeAddr("token"), 1 ether),
+                0,
+                block.timestamp - 1
+            );
 
-    //     hoax(spender);
-    //     uut.transferFrom(owner, target, uint160(totalAmount / 2), address(token));
-    //     hoax(spender);
-    //     uut.transferFrom(owner, target, uint160(totalAmount / 2), address(token));
-    //     assertEq(token.balanceOf(target), totalAmount, "target end balance");
-    // }
+        // vm.expectRevert();
+        // uut.repermitWitnessTransferFrom(permit, request, owner, witness, witnessTypeString, signature);
+    }
+    
+    function test_revert_invalidSignature() public {
+        RePermitLib.RePermitTransferFrom memory permit =
+            RePermitLib.RePermitTransferFrom(
+                RePermitLib.TokenPermissions(makeAddr("token"), 1 ether),
+                0,
+                block.timestamp + 1
+            );
 
-    // function test_Revert_InvalidSignature() public {
-    //     PermitSingle memory permit =
-    //         PermitSingle(PermitDetails(address(token), uint160(totalAmount), deadline, 0), spender, deadline);
-    //     bytes memory sig = signPermit(permit, 0x1234);
+        // vm.expectRevert();
+        // uut.repermitWitnessTransferFrom(permit, request, owner, witness, witnessTypeString, signature);
+    }
 
-    //     vm.expectRevert();
-    //     uut.permit(owner, permit, sig);
-    // }
+    function test_revert_insufficientAllowance() public {
+        RePermitLib.RePermitTransferFrom memory permit =
+            RePermitLib.RePermitTransferFrom(
+                RePermitLib.TokenPermissions(makeAddr("token"), 1 ether),
+                0,
+                block.timestamp + 1
+            );
 
-    // function test_Revert_Deadline() public {
-    //     PermitSingle memory permit =
-    //         PermitSingle(PermitDetails(address(token), uint160(totalAmount), deadline, 0), spender, block.timestamp - 1);
-    //     bytes memory sig = signPermit(permit, ownerPK);
+        // vm.expectRevert();
+        // uut.repermitWitnessTransferFrom(permit, request, owner, witness, witnessTypeString, signature);
+    }
 
-    //     vm.expectRevert();
-    //     uut.permit(owner, permit, sig);
-    // }
+    function test_repermitWitnessTransferFrom() public {
+        RePermitLib.RePermitTransferFrom memory permit =
+            RePermitLib.RePermitTransferFrom(
+                RePermitLib.TokenPermissions(makeAddr("token"), 1 ether),
+                0,
+                block.timestamp + 1
+            );
+        // RePermitLib.TransferRequest memory request = RePermitLib.TransferRequest(owner, 1 ether);
+
+        // uut.repermitWitnessTransferFrom(permit, request, owner, witness, witnessTypeString, signature);
+    }
 }
