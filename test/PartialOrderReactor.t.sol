@@ -68,9 +68,8 @@ contract PartialOrderReactorTest is BaseTest {
     function test_revert_requestGTSigned() public {
         uint256 inAmount = 1 ether;
         uint256 outAmount = 0.5 ether;
-        SignedOrder memory order = signedPartialOrder(
-            swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, 0.6 ether
-        );
+        SignedOrder memory order =
+            signedPartialOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, 0.6 ether);
         hoax(config.admin.owner());
         vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector, 0));
         config.reactorPartial.execute(order);
@@ -84,9 +83,8 @@ contract PartialOrderReactorTest is BaseTest {
 
         assertEq(inToken.balanceOf(address(swapper)), 9.5 ether, "no inToken leftovers");
 
-        SignedOrder memory order = signedPartialOrder(
-            swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, 0.5 ether
-        );
+        SignedOrder memory order =
+            signedPartialOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, 0.5 ether);
         hoax(config.admin.owner());
         vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector, 0.5 ether));
         config.reactorPartial.execute(order);

@@ -8,7 +8,6 @@ import {BaseTest} from "test/base/BaseTest.sol";
 import {LiquidityHub, IReactor, ResolvedOrder, SignedOrder, Call} from "src/LiquidityHub.sol";
 
 contract LiquidityHubAccessTest is BaseTest {
-
     address public owner;
     LiquidityHub public uut;
 

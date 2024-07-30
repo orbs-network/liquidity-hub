@@ -35,7 +35,8 @@ contract LiquidityHubExecuteTest is BaseTest {
         uint256 gasAmount = 0;
 
         SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = signedOrder(swapper, swapperPK, address(inToken), address(inToken), inAmount, outAmount, gasAmount, ref);
+        orders[0] =
+            signedOrder(swapper, swapperPK, address(inToken), address(inToken), inAmount, outAmount, gasAmount, ref);
 
         assertEq(inToken.balanceOf(swapper), 10 ether);
         assertEq(outToken.balanceOf(swapper), 0);
@@ -58,8 +59,10 @@ contract LiquidityHubExecuteTest is BaseTest {
         outToken.approve(PERMIT2_ADDRESS, outAmount);
 
         SignedOrder[] memory orders = new SignedOrder[](2);
-        orders[0] = signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
-        orders[1] = signedOrder(swapper2, swapperPK2, address(outToken), address(inToken), outAmount, inAmount, gasAmount, ref);
+        orders[0] =
+            signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
+        orders[1] =
+            signedOrder(swapper2, swapperPK2, address(outToken), address(inToken), outAmount, inAmount, gasAmount, ref);
 
         assertEq(inToken.balanceOf(swapper), 10 ether);
         assertEq(inToken.balanceOf(swapper2), 0);
@@ -84,7 +87,8 @@ contract LiquidityHubExecuteTest is BaseTest {
         outToken = ERC20Mock(address(0));
 
         SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
+        orders[0] =
+            signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
         Call[] memory calls = new Call[](1);
         calls[0].target = address(vm);
@@ -106,11 +110,13 @@ contract LiquidityHubExecuteTest is BaseTest {
         uint256 gasAmount = 0;
 
         SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
+        orders[0] =
+            signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
         Call[] memory calls = new Call[](1);
         calls[0].target = address(outToken);
-        calls[0].callData = abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount + 123456);
+        calls[0].callData =
+            abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount + 123456);
 
         hoax(config.admin.owner());
         config.executor.execute(orders, calls);
@@ -127,7 +133,8 @@ contract LiquidityHubExecuteTest is BaseTest {
         outToken = ERC20Mock(address(0));
 
         SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
+        orders[0] =
+            signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
         Call[] memory calls = new Call[](1);
         calls[0].target = address(vm);
@@ -147,16 +154,17 @@ contract LiquidityHubExecuteTest is BaseTest {
         uint256 gasAmount = 0.25 ether;
 
         SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = signedOrder(
-            swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref
-        );
+        orders[0] =
+            signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
         Call[] memory calls = new Call[](2);
         calls[0] = Call({
             target: address(outToken),
             callData: abi.encodeWithSelector(
-                ERC20Mock.mint.selector, address(config.executor), outAmount + gasAmount + 123 // random slippage
-                )
+                ERC20Mock.mint.selector,
+                address(config.executor),
+                outAmount + gasAmount + 123 // random slippage
+            )
         });
         calls[1] = Call({
             target: address(inToken),

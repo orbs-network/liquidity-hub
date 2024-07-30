@@ -10,7 +10,6 @@ import {WETH} from "solmate/src/tokens/WETH.sol";
 import {Consts} from "src/Consts.sol";
 
 contract DeployTestInfra is DeployPermit2 {
-
     function deployTestInfra() public returns (address weth) {
         if (Consts.PERMIT2_ADDRESS.code.length == 0) {
             vm.chainId(137); // needed for permit2
@@ -23,7 +22,7 @@ contract DeployTestInfra is DeployPermit2 {
             require(Consts.MULTICALL_ADDRESS.code.length > 0, "Deploy Multicall3 failed");
         }
 
-        weth = address(new WETH{salt:0}());
+        weth = address(new WETH{salt: 0}());
     }
 
     function _deployMulticall3() private {

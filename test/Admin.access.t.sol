@@ -8,7 +8,6 @@ import {BaseTest} from "test/base/BaseTest.sol";
 import {Admin, IERC20} from "src/Admin.sol";
 
 contract AdminAccessTest is BaseTest {
-
     function test_owned() public {
         assertNotEq(config.admin.owner(), address(0));
     }
@@ -17,13 +16,13 @@ contract AdminAccessTest is BaseTest {
         //init in setUp
         assertNotEq(address(config.admin.weth()), address(0));
     }
-    
+
     function test_revert_admin_init_twice() public {
         hoax(config.admin.owner());
         vm.expectRevert(Admin.Init.selector);
         config.admin.init(address(1));
     }
-    
+
     function test_revert_admin_init() public {
         vm.expectRevert("Ownable: caller is not the owner");
         config.admin.init(address(0));
