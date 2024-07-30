@@ -67,15 +67,13 @@ library PartialOrderLib {
     }
 
     function hash(PartialOutput[] memory outputs) internal pure returns (bytes32) {
-        unchecked {
-            bytes memory packedHashes = new bytes(32 * outputs.length);
-            for (uint256 i = 0; i < outputs.length; i++) {
-                bytes32 outputHash = keccak256(abi.encode(PARTIAL_OUTPUT_TYPE_HASH, outputs[i]));
-                assembly {
-                    mstore(add(add(packedHashes, 0x20), mul(i, 0x20)), outputHash)
-                }
+        bytes memory packedHashes = new bytes(32 * outputs.length);
+        for (uint256 i = 0; i < outputs.length; i++) {
+            bytes32 outputHash = keccak256(abi.encode(PARTIAL_OUTPUT_TYPE_HASH, outputs[i]));
+            assembly {
+                mstore(add(add(packedHashes, 0x20), mul(i, 0x20)), outputHash)
             }
-            return keccak256(packedHashes);
         }
+        return keccak256(packedHashes);
     }
 }

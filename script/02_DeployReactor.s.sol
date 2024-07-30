@@ -16,7 +16,8 @@ contract DeployReactor is BaseScript {
 
         if (reactor.code.length == 0) {
             vm.broadcast();
-            ExclusiveDutchOrderReactor deployed = new ExclusiveDutchOrderReactor{salt: 0}(IPermit2(Consts.PERMIT2_ADDRESS), address(0));
+            ExclusiveDutchOrderReactor deployed =
+                new ExclusiveDutchOrderReactor{salt: 0}(IPermit2(Consts.PERMIT2_ADDRESS), address(0));
             require(reactor == address(deployed), "mismatched address");
         } else {
             console.log("already deployed");

@@ -12,7 +12,7 @@ contract DeployAdmin is BaseScript {
         if (admin.code.length == 0) {
             vm.broadcast();
             Admin deployed = new Admin{salt: 0}(owner);
-            
+
             require(admin == address(deployed), "mismatched address");
 
             vm.broadcast();

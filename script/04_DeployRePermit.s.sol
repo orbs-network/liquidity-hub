@@ -12,7 +12,7 @@ contract DeployRePermit is BaseScript {
 
         if (repermit.code.length == 0) {
             vm.broadcast();
-            require(repermit == address(new RePermit{salt: 0}()), "mismatched address"); 
+            require(repermit == address(new RePermit{salt: 0}()), "mismatched address");
         } else {
             console.log("already deployed");
         }

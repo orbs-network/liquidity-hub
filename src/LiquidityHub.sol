@@ -40,7 +40,8 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         address inToken,
         address outToken,
         uint256 inAmount,
-        uint256 outAmount);
+        uint256 outAmount
+    );
 
     event Excess(address indexed ref, address indexed token, uint256 amount);
 
@@ -77,53 +78,44 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     }
 
     function _approveReactorOutputs(ResolvedOrder[] memory orders) private {
-        unchecked {
-            for (uint256 i = 0; i < orders.length; i++) {
-                ResolvedOrder memory order = orders[i];
+        for (uint256 i = 0; i < orders.length; i++) {
+            ResolvedOrder memory order = orders[i];
 
-                address outToken;
-                uint256 outAmount;
+            address outToken;
+            uint256 outAmount;
 
-                for (uint256 j = 0; j < order.outputs.length; j++) {
-                    uint256 amount = order.outputs[j].amount;
-                    if (amount == 0) continue;
-                    address token = address(order.outputs[j].token);
+            for (uint256 j = 0; j < order.outputs.length; j++) {
+                uint256 amount = order.outputs[j].amount;
+                if (amount == 0) continue;
+                address token = address(order.outputs[j].token);
 
-                    if (token == address(0)) Address.sendValue(payable(address(reactor)), amount);
-                    else IERC20(token).safeIncreaseAllowance(address(reactor), amount);
+                if (token == address(0)) Address.sendValue(payable(address(reactor)), amount);
+                else IERC20(token).safeIncreaseAllowance(address(reactor), amount);
 
-                    if (order.outputs[j].recipient == order.info.swapper) {
-                        if (outToken != address(0) && outToken != token) revert InvalidOrder();
-                        outToken = token;
-                        outAmount += amount;
-                    }
+                if (order.outputs[j].recipient == order.info.swapper) {
+                    if (outToken != address(0) && outToken != token) revert InvalidOrder();
+                    outToken = token;
+                    outAmount += amount;
                 }
-
-                address ref = abi.decode(order.info.additionalValidationData, (address));
-
-                emit Resolved(
-                    order.hash,
-                    order.info.swapper,
-                    ref,
-                    address(order.input.token),
-                    outToken,
-                    order.input.amount,
-                    outAmount);
             }
+
+            address ref = abi.decode(order.info.additionalValidationData, (address));
+
+            emit Resolved(
+                order.hash, order.info.swapper, ref, address(order.input.token), outToken, order.input.amount, outAmount
+            );
         }
     }
 
     function _excess(SignedOrder[] calldata orders) private {
-        unchecked {
-            for (uint256 i = 0; i < orders.length; i++) {
-                ExclusiveDutchOrder memory order = abi.decode(orders[i].order, (ExclusiveDutchOrder));
-                address ref = abi.decode(order.info.additionalValidationData, (address));
+        for (uint256 i = 0; i < orders.length; i++) {
+            ExclusiveDutchOrder memory order = abi.decode(orders[i].order, (ExclusiveDutchOrder));
+            address ref = abi.decode(order.info.additionalValidationData, (address));
 
-                _withdrawExcess(address(order.input.token), ref);
+            _withdrawExcess(address(order.input.token), ref);
 
-                for (uint256 j = 0; j < order.outputs.length; j++) {
-                    _withdrawExcess(address(order.outputs[j].token), ref);
-                }
+            for (uint256 j = 0; j < order.outputs.length; j++) {
+                _withdrawExcess(address(order.outputs[j].token), ref);
             }
         }
     }
