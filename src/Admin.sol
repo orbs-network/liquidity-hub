@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.x;
 
+import {IMulticall3} from "forge-std/interfaces/IMulticall3.sol";
+
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {Consts} from "./Consts.sol";
 import {IWETH} from "./IWETH.sol";
-import {IMulticall, Call} from "./IMulticall.sol";
 
 contract Admin is Ownable {
     using SafeERC20 for IERC20;
@@ -39,9 +40,9 @@ contract Admin is Ownable {
         }
     }
 
-    function execute(Call[] calldata calls) external onlyOwner {
+    function execute(IMulticall3.Call[] calldata calls) external onlyOwner {
         Address.functionDelegateCall(
-            Consts.MULTICALL_ADDRESS, abi.encodeWithSelector(IMulticall.aggregate.selector, calls)
+            Consts.MULTICALL_ADDRESS, abi.encodeWithSelector(IMulticall3.aggregate.selector, calls)
         );
     }
 

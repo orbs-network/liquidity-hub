@@ -7,7 +7,7 @@ import "forge-std/Script.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import {LiquidityHub, IReactor} from "src/LiquidityHub.sol";
-import {Admin, IWETH, Consts, IMulticall, IERC20} from "src/Admin.sol";
+import {Admin, IWETH, Consts, IMulticall3, IERC20} from "src/Admin.sol";
 import {PartialOrderLib, RePermit, RePermitLib, PartialOrderReactor} from "src/PartialOrderReactor.sol";
 import {IEIP712} from "src/RePermit.sol";
 

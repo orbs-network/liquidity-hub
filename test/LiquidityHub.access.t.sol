@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import {BaseTest} from "test/base/BaseTest.sol";
 
-import {LiquidityHub, IReactor, ResolvedOrder, SignedOrder, Call} from "src/LiquidityHub.sol";
+import {LiquidityHub, IReactor, ResolvedOrder, SignedOrder, IMulticall3} from "src/LiquidityHub.sol";
 
 contract LiquidityHubAccessTest is BaseTest {
     address public owner;
@@ -22,12 +22,12 @@ contract LiquidityHubAccessTest is BaseTest {
 
     function test_execute_onlyAllowed() public {
         hoax(owner);
-        uut.execute(new SignedOrder[](0), new Call[](0));
+        uut.execute(new SignedOrder[](0), new IMulticall3.Call[](0));
     }
 
     function test_revert_execute_onlyAllowed() public {
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, address(this)));
-        uut.execute(new SignedOrder[](0), new Call[](0));
+        uut.execute(new SignedOrder[](0), new IMulticall3.Call[](0));
     }
 
     function test_validationCallback_onlySelf_onlyRef() public {
@@ -53,11 +53,11 @@ contract LiquidityHubAccessTest is BaseTest {
 
     function test_reactorCallback_onlyReactor() public {
         hoax(address(config.reactor));
-        config.executor.reactorCallback(new ResolvedOrder[](0), abi.encode(new Call[](0)));
+        config.executor.reactorCallback(new ResolvedOrder[](0), abi.encode(new IMulticall3.Call[](0)));
     }
 
     function test_revert_reactorCallback_onlyReactor() public {
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, address(this)));
-        config.executor.reactorCallback(new ResolvedOrder[](0), abi.encode(new Call[](0)));
+        config.executor.reactorCallback(new ResolvedOrder[](0), abi.encode(new IMulticall3.Call[](0)));
     }
 }

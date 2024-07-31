@@ -3,7 +3,7 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
-import {BaseTest, ERC20Mock, IERC20, SignedOrder, Consts, Call} from "test/base/BaseTest.sol";
+import {BaseTest, ERC20Mock, IERC20, SignedOrder, Consts, IMulticall3} from "test/base/BaseTest.sol";
 
 import {PartialOrderReactor, RePermit, BaseReactor} from "src/PartialOrderReactor.sol";
 
@@ -58,12 +58,12 @@ contract E2ETest is BaseTest {
 
         SignedOrder[] memory orders = new SignedOrder[](1);
         orders[0] = takerOrder;
-        Call[] memory calls = new Call[](2);
-        calls[0] = Call({
+        IMulticall3.Call[] memory calls = new IMulticall3.Call[](2);
+        calls[0] = IMulticall3.Call({
             target: address(weth),
             callData: abi.encodeWithSelector(IERC20.approve.selector, address(config.reactorPartial), wethMakerAmount)
         });
-        calls[1] = Call({
+        calls[1] = IMulticall3.Call({
             target: address(config.reactorPartial),
             callData: abi.encodeWithSelector(BaseReactor.execute.selector, makerOrder)
         });
@@ -101,12 +101,12 @@ contract E2ETest is BaseTest {
 
         SignedOrder[] memory orders = new SignedOrder[](1);
         orders[0] = takerOrder;
-        Call[] memory calls = new Call[](2);
-        calls[0] = Call({
+        IMulticall3.Call[] memory calls = new IMulticall3.Call[](2);
+        calls[0] = IMulticall3.Call({
             target: address(weth),
             callData: abi.encodeWithSelector(IERC20.approve.selector, address(config.reactorPartial), wethMakerAmount)
         });
-        calls[1] = Call({
+        calls[1] = IMulticall3.Call({
             target: address(config.reactorPartial),
             callData: abi.encodeWithSelector(BaseReactor.execute.selector, makerOrder)
         });
@@ -157,12 +157,12 @@ contract E2ETest is BaseTest {
         makerOrders[0] = makerOrder1;
         makerOrders[1] = makerOrder2;
         orders[0] = takerOrder;
-        Call[] memory calls = new Call[](2);
-        calls[0] = Call({
+        IMulticall3.Call[] memory calls = new IMulticall3.Call[](2);
+        calls[0] = IMulticall3.Call({
             target: address(weth),
             callData: abi.encodeWithSelector(IERC20.approve.selector, address(config.reactorPartial), wethMakerAmount * 2)
         });
-        calls[1] = Call({
+        calls[1] = IMulticall3.Call({
             target: address(config.reactorPartial),
             callData: abi.encodeWithSelector(BaseReactor.executeBatch.selector, makerOrders)
         });

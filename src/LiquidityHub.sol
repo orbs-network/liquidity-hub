@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.x;
 
+import {IMulticall3} from "forge-std/interfaces/IMulticall3.sol";
+
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -12,7 +14,6 @@ import {ExclusiveDutchOrder} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
 
 import {Consts} from "./Consts.sol";
 import {Admin} from "./Admin.sol";
-import {IMulticall, Call} from "./IMulticall.sol";
 
 /**
  * LiquidityHub Executor
@@ -58,7 +59,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     /**
      * Entry point
      */
-    function execute(SignedOrder[] calldata orders, Call[] calldata calls) external onlyAllowed {
+    function execute(SignedOrder[] calldata orders, IMulticall3.Call[] calldata calls) external onlyAllowed {
         reactor.executeBatchWithCallback(orders, abi.encode(calls));
         _excess(orders);
     }
@@ -67,13 +68,13 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
      * @dev IReactorCallback
      */
     function reactorCallback(ResolvedOrder[] memory orders, bytes memory callbackData) external override onlyReactor {
-        _executeMulticall(abi.decode(callbackData, (Call[])));
+        _executeMulticall(abi.decode(callbackData, (IMulticall3.Call[])));
         _approveReactorOutputs(orders);
     }
 
-    function _executeMulticall(Call[] memory calls) private {
+    function _executeMulticall(IMulticall3.Call[] memory calls) private {
         Address.functionDelegateCall(
-            Consts.MULTICALL_ADDRESS, abi.encodeWithSelector(IMulticall.aggregate.selector, calls)
+            Consts.MULTICALL_ADDRESS, abi.encodeWithSelector(IMulticall3.aggregate.selector, calls)
         );
     }
 

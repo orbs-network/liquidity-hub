@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import {BaseTest, IERC20, ERC20Mock} from "test/base/BaseTest.sol";
 
-import {Admin, Call} from "src/Admin.sol";
+import {Admin, IMulticall3} from "src/Admin.sol";
 import {IWETH} from "src/IWETH.sol";
 
 contract AdminWithdrawTest is BaseTest {
@@ -56,7 +56,7 @@ contract AdminWithdrawTest is BaseTest {
         ERC20Mock token = new ERC20Mock();
         token.mint(address(admin), 1 ether);
 
-        Call[] memory calls = new Call[](1);
+        IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
         calls[0].target = address(token);
         calls[0].callData = abi.encodeWithSelector(IERC20.transfer.selector, owner, 1 ether);
 

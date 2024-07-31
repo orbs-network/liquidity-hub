@@ -26,7 +26,7 @@ contract RePermit is EIP712, IEIP712 {
     function DOMAIN_SEPARATOR() public view override returns (bytes32) {
         return _domainSeparatorV4();
     }
-    
+
     function cancel(uint256 nonce) external {
         canceled[msg.sender][nonce] = true;
     }

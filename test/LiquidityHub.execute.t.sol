@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import {BaseTest, ERC20Mock, IERC20} from "test/base/BaseTest.sol";
 
-import {LiquidityHub, SignedOrder, Call} from "src/LiquidityHub.sol";
+import {LiquidityHub, SignedOrder, IMulticall3} from "src/LiquidityHub.sol";
 
 contract LiquidityHubExecuteTest is BaseTest {
     address public swapper;
@@ -42,7 +42,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(outToken.balanceOf(swapper), 0);
 
         hoax(config.admin.owner());
-        config.executor.execute(orders, new Call[](0));
+        config.executor.execute(orders, new IMulticall3.Call[](0));
 
         assertEq(inToken.balanceOf(swapper), 10 ether);
         assertEq(outToken.balanceOf(swapper), 0);
@@ -71,7 +71,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(outToken.balanceOf(swapper2), outAmount);
 
         hoax(config.admin.owner());
-        config.executor.execute(orders, new Call[](0));
+        config.executor.execute(orders, new IMulticall3.Call[](0));
 
         assertEq(inToken.balanceOf(swapper), 9 ether);
         assertEq(inToken.balanceOf(swapper2), inAmount);
@@ -90,7 +90,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         orders[0] =
             signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
-        Call[] memory calls = new Call[](1);
+        IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
         calls[0].target = address(vm);
         calls[0].callData = abi.encodeWithSelector(vm.deal.selector, address(config.executor), outAmount);
 
@@ -113,7 +113,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         orders[0] =
             signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
-        Call[] memory calls = new Call[](1);
+        IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
         calls[0].target = address(outToken);
         calls[0].callData =
             abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount + 123456);
@@ -136,7 +136,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         orders[0] =
             signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
-        Call[] memory calls = new Call[](1);
+        IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
         calls[0].target = address(vm);
         calls[0].callData = abi.encodeWithSelector(vm.deal.selector, address(config.executor), outAmount + 123456);
 
@@ -157,8 +157,8 @@ contract LiquidityHubExecuteTest is BaseTest {
         orders[0] =
             signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
-        Call[] memory calls = new Call[](2);
-        calls[0] = Call({
+        IMulticall3.Call[] memory calls = new IMulticall3.Call[](2);
+        calls[0] = IMulticall3.Call({
             target: address(outToken),
             callData: abi.encodeWithSelector(
                 ERC20Mock.mint.selector,
@@ -166,7 +166,7 @@ contract LiquidityHubExecuteTest is BaseTest {
                 outAmount + gasAmount + 123 // random slippage
             )
         });
-        calls[1] = Call({
+        calls[1] = IMulticall3.Call({
             target: address(inToken),
             callData: abi.encodeWithSelector(ERC20Mock.burn.selector, address(config.executor), inAmount)
         });
