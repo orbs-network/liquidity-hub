@@ -14,15 +14,21 @@ contract RePermit is EIP712, IEIP712 {
 
     error InvalidSignature();
     error SignatureExpired();
+    error Canceled();
     error InsufficientAllowance(uint256 spent);
 
     // signer => hash
     mapping(address => mapping(bytes32 => uint256)) public spent;
+    mapping(address => mapping(uint256 => bool)) public canceled;
 
     constructor() EIP712("RePermit", "1") {}
 
     function DOMAIN_SEPARATOR() public view override returns (bytes32) {
         return _domainSeparatorV4();
+    }
+    
+    function cancel(uint256 nonce) external {
+        canceled[msg.sender][nonce] = true;
     }
 
     function repermitWitnessTransferFrom(
@@ -34,6 +40,7 @@ contract RePermit is EIP712, IEIP712 {
         bytes calldata signature
     ) external {
         if (block.timestamp > permit.deadline) revert SignatureExpired();
+        if (canceled[signer][permit.nonce]) revert Canceled();
 
         bytes32 hash = _hashTypedDataV4(RePermitLib.hashWithWitness(permit, witness, witnessTypeString, msg.sender));
         if (!SignatureChecker.isValidSignatureNow(signer, hash, signature)) revert InvalidSignature();

@@ -120,6 +120,16 @@ contract RePermitTest is BaseTest {
         uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
     }
 
+    function test_cancel() public {
+        permit.deadline = block.timestamp;
+        bytes memory signature = signRePermit();
+        hoax(signer);
+        uut.cancel(permit.nonce);
+
+        vm.expectRevert(RePermit.Canceled.selector);
+        uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
+    }
+
     function signRePermit() private view returns (bytes memory signature) {
         bytes32 msgHash = ECDSA.toTypedDataHash(
             uut.DOMAIN_SEPARATOR(), RePermitLib.hashWithWitness(permit, witness, witnessTypeString, address(this))
