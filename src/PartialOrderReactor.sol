@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.x;
 
-import {ResolvedOrder, SignedOrder, InputToken, ERC20, OutputToken} from "uniswapx/src/base/ReactorStructs.sol";
+import {IReactor, IValidationCallback, ResolvedOrder, SignedOrder, InputToken, ERC20, OutputToken} from "uniswapx/src/base/ReactorStructs.sol";
 import {BaseReactor, IPermit2} from "uniswapx/src/reactors/BaseReactor.sol";
 import {ExclusivityOverrideLib} from "uniswapx/src/lib/ExclusivityOverrideLib.sol";
 
 import {Consts} from "./Consts.sol";
 import {RePermit, RePermitLib} from "./RePermit.sol";
 import {PartialOrderLib} from "./PartialOrderLib.sol";
+import {Permit2Lib} from "./Permit2Lib.sol";
 
 contract PartialOrderReactor is BaseReactor {
     RePermit public immutable repermit;
@@ -29,7 +30,12 @@ contract PartialOrderReactor is BaseReactor {
 
         if (order.outputs.length != 1) revert InvalidOrder();
 
-        resolvedOrder.info = order.info;
+        resolvedOrder.info.reactor = IReactor(order.info.reactor);
+        resolvedOrder.info.swapper = order.info.swapper;
+        resolvedOrder.info.nonce = order.info.nonce;
+        resolvedOrder.info.deadline = order.info.deadline;
+        resolvedOrder.info.additionalValidationContract = IValidationCallback(order.info.additionalValidationContract);
+        resolvedOrder.info.additionalValidationData = order.info.additionalValidationData;
         resolvedOrder.input = InputToken({
             token: ERC20(order.input.token),
             amount: (order.input.amount * fill.outAmount) / order.outputs[0].amount,
@@ -50,7 +56,7 @@ contract PartialOrderReactor is BaseReactor {
     function transferInputTokens(ResolvedOrder memory order, address to) internal override {
         repermit.repermitWitnessTransferFrom(
             RePermitLib.RePermitTransferFrom(
-                RePermitLib.TokenPermissions(address(order.input.token), order.input.maxAmount),
+                Permit2Lib.TokenPermissions(address(order.input.token), order.input.maxAmount),
                 order.info.nonce,
                 order.info.deadline
             ),

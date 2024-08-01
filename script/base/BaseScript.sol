@@ -10,6 +10,7 @@ import {LiquidityHub, IReactor} from "src/LiquidityHub.sol";
 import {Admin, IWETH, Consts, IMulticall3, IERC20} from "src/Admin.sol";
 import {PartialOrderLib, RePermit, RePermitLib, PartialOrderReactor} from "src/PartialOrderReactor.sol";
 import {IEIP712} from "src/RePermit.sol";
+import {Permit2Lib} from "src/Permit2Lib.sol";
 
 struct Config {
     Admin admin;
@@ -52,7 +53,7 @@ abstract contract BaseScript is Script {
             config.repermit.DOMAIN_SEPARATOR(),
             RePermitLib.hashWithWitness(
                 RePermitLib.RePermitTransferFrom(
-                    RePermitLib.TokenPermissions(address(order.input.token), order.input.amount),
+                    Permit2Lib.TokenPermissions(address(order.input.token), order.input.amount),
                     order.info.nonce,
                     order.info.deadline
                 ),

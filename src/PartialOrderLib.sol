@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.x;
 
-import {OrderInfoLib, OrderInfo} from "uniswapx/src/lib/OrderInfoLib.sol";
+import {OrderLib} from "./OrderLib.sol";
 import {RePermit, RePermitLib} from "./RePermit.sol";
+import {Permit2Lib} from "./Permit2Lib.sol";
 
 library PartialOrderLib {
     struct PartialFill {
@@ -11,7 +12,7 @@ library PartialOrderLib {
     }
 
     struct PartialOrder {
-        OrderInfo info;
+        OrderLib.OrderInfo info;
         address exclusiveFiller;
         uint256 exclusivityOverrideBps;
         PartialInput input;
@@ -39,17 +40,17 @@ library PartialOrderLib {
         "PartialOrder(OrderInfo info,address exclusiveFiller,uint256 exclusivityOverrideBps,PartialInput input,PartialOutput[] outputs)";
 
     bytes32 internal constant PARTIAL_ORDER_TYPE_HASH = keccak256(
-        abi.encodePacked(PARTIAL_ORDER_TYPE, OrderInfoLib.ORDER_INFO_TYPE, PARTIAL_INPUT_TYPE, PARTIAL_OUTPUT_TYPE)
+        abi.encodePacked(PARTIAL_ORDER_TYPE, OrderLib.ORDER_INFO_TYPE, PARTIAL_INPUT_TYPE, PARTIAL_OUTPUT_TYPE)
     );
 
     string internal constant WITNESS_TYPE = string(
         abi.encodePacked(
             "PartialOrder witness)",
-            OrderInfoLib.ORDER_INFO_TYPE,
+            OrderLib.ORDER_INFO_TYPE,
             PARTIAL_INPUT_TYPE,
             PARTIAL_ORDER_TYPE,
             PARTIAL_OUTPUT_TYPE,
-            RePermitLib.TOKEN_PERMISSIONS_TYPE
+            Permit2Lib.TOKEN_PERMISSIONS_TYPE
         )
     );
 
@@ -57,7 +58,7 @@ library PartialOrderLib {
         return keccak256(
             abi.encode(
                 PARTIAL_ORDER_TYPE_HASH,
-                OrderInfoLib.hash(order.info),
+                OrderLib.hash(order.info),
                 order.exclusiveFiller,
                 order.exclusivityOverrideBps,
                 keccak256(abi.encode(PARTIAL_INPUT_TYPE_HASH, order.input)),
