@@ -30,7 +30,7 @@ library OracleOrderLib {
 
     string internal constant ORACLE_ORDER_TYPE = "OracleOrder(OrderInfo info,Input input,Output[] outputs)";
     bytes32 internal constant ORACLE_ORDER_TYPE_HASH =
-        keccak256(abi.encodePacked(ORACLE_ORDER_TYPE, OrderLib.ORDER_INFO_TYPE, INPUT_TYPE, OUTPUT_TYPE));
+        keccak256(abi.encodePacked(ORACLE_ORDER_TYPE, INPUT_TYPE, OrderLib.ORDER_INFO_TYPE, OUTPUT_TYPE));
 
     string internal constant WITNESS_TYPE = string(
         abi.encodePacked(

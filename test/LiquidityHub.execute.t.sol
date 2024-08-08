@@ -126,6 +126,30 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(outToken.balanceOf(ref), 123456);
     }
 
+    function test_longLimit() public {
+        uint256 inAmount = 1 ether;
+        uint256 outAmount = 0.5 ether;
+        uint256 gasAmount = 0;
+
+        vm.warp(block.timestamp + 10 days); // set deadline to be in the future
+        SignedOrder[] memory orders = new SignedOrder[](1);
+        orders[0] =
+            signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
+        vm.warp(block.timestamp - 10 days);
+
+        IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
+        calls[0].target = address(outToken);
+        calls[0].callData =
+            abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount);
+
+        hoax(config.admin.owner());
+        config.executor.execute(orders, calls);
+
+        assertEq(inToken.balanceOf(swapper), 9 ether);
+        assertEq(inToken.balanceOf(address(config.executor)), 0);
+        assertEq(outToken.balanceOf(swapper), outAmount);
+    }
+
     function test_nativeSlippageToRef() public {
         uint256 inAmount = 1 ether;
         uint256 outAmount = 0.7 ether;
