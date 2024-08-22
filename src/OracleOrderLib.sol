@@ -9,6 +9,10 @@ library OracleOrderLib {
         OrderLib.OrderInfo info;
         Input input;
         Output[] outputs;
+        address oracle;
+        bytes oracleBytes;
+        uint256 minTrigger;
+        uint256 maxTrigger;
     }
 
     struct Input {
