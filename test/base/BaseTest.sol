@@ -54,6 +54,8 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
         });
     }
 
+    uint256 private nonce;
+
     function signedOrder(
         address signer,
         uint256 signerPK,
@@ -63,12 +65,12 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
         uint256 outAmount,
         uint256 outAmountGas,
         address ref
-    ) internal view returns (SignedOrder memory result) {
+    ) internal returns (SignedOrder memory result) {
         ExclusiveDutchOrder memory order;
         {
             order.info.reactor = config.reactor;
             order.info.swapper = signer;
-            order.info.nonce = block.timestamp;
+            order.info.nonce = nonce++;
             order.info.deadline = block.timestamp + 10 minutes;
             order.decayStartTime = order.info.deadline;
             order.decayEndTime = order.info.deadline;
@@ -118,5 +120,16 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
 
         result.sig = signRePermit(signerPK, order);
         result.order = abi.encode(PartialOrderLib.PartialFill(order, fillOutAmount));
+    }
+
+    function wasteGas(uint256 amount) public view {
+        uint256 initialGas = gasleft();
+        while (initialGas - gasleft() < amount) {
+            // Perform some expensive operations
+            for (uint256 i = 0; i < 1000; i++) {
+                uint256 x = i ** 2;
+                require(x >= 0);
+            }
+        }
     }
 }

@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.x;
 
-import {IReactor, IValidationCallback, ResolvedOrder, SignedOrder, InputToken, ERC20, OutputToken} from "uniswapx/src/base/ReactorStructs.sol";
+import {
+    IReactor,
+    IValidationCallback,
+    ResolvedOrder,
+    SignedOrder,
+    InputToken,
+    ERC20,
+    OutputToken
+} from "uniswapx/src/base/ReactorStructs.sol";
 import {BaseReactor, IPermit2} from "uniswapx/src/reactors/BaseReactor.sol";
 import {ExclusivityOverrideLib} from "uniswapx/src/lib/ExclusivityOverrideLib.sol";
 

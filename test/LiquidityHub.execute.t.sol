@@ -65,18 +65,18 @@ contract LiquidityHubExecuteTest is BaseTest {
             signedOrder(swapper2, swapperPK2, address(outToken), address(inToken), outAmount, inAmount, gasAmount, ref);
 
         assertEq(inToken.balanceOf(swapper), 10 ether);
-        assertEq(inToken.balanceOf(swapper2), 0);
-
         assertEq(outToken.balanceOf(swapper), 0);
-        assertEq(outToken.balanceOf(swapper2), outAmount);
+
+        assertEq(inToken.balanceOf(swapper2), 0);
+        assertEq(outToken.balanceOf(swapper2), 2 ether);
 
         hoax(config.admin.owner());
         config.executor.execute(orders, new IMulticall3.Call[](0));
 
         assertEq(inToken.balanceOf(swapper), 9 ether);
-        assertEq(inToken.balanceOf(swapper2), inAmount);
+        assertEq(outToken.balanceOf(swapper), 2 ether);
 
-        assertEq(outToken.balanceOf(swapper), outAmount);
+        assertEq(inToken.balanceOf(swapper2), 1 ether);
         assertEq(outToken.balanceOf(swapper2), 0);
     }
 
@@ -139,8 +139,7 @@ contract LiquidityHubExecuteTest is BaseTest {
 
         IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
         calls[0].target = address(outToken);
-        calls[0].callData =
-            abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount);
+        calls[0].callData = abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount);
 
         hoax(config.admin.owner());
         config.executor.execute(orders, calls);
