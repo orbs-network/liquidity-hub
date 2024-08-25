@@ -25,6 +25,8 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
 
     IReactor public immutable reactor;
     Admin public immutable admin;
+    uint256 public constant KICKBACK = 1000;
+    uint256 public constant BPS = 10_000;
 
     constructor(IReactor _reactor, Admin _admin) {
         reactor = _reactor;
@@ -33,6 +35,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
 
     error InvalidSender(address sender);
     error InvalidOrder();
+    error InvalidLimit(uint256 outAmount);
 
     event Resolved(
         bytes32 indexed orderHash,
@@ -59,17 +62,21 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     /**
      * Entry point
      */
-    function execute(SignedOrder[] calldata orders, IMulticall3.Call[] calldata calls) external onlyAllowed {
-        reactor.executeBatchWithCallback(orders, abi.encode(calls));
-        _excess(orders);
+    function execute(SignedOrder calldata order, IMulticall3.Call[] calldata calls, uint256 limit)
+        external
+        onlyAllowed
+    {
+        reactor.executeWithCallback(order, abi.encode(calls, limit));
+        _excess(order);
     }
 
     /**
      * @dev IReactorCallback
      */
     function reactorCallback(ResolvedOrder[] memory orders, bytes memory callbackData) external override onlyReactor {
-        _executeMulticall(abi.decode(callbackData, (IMulticall3.Call[])));
-        _approveReactorOutputs(orders);
+        (IMulticall3.Call[] memory calls, uint256 limit) = abi.decode(callbackData, (IMulticall3.Call[], uint256));
+        _executeMulticall(calls);
+        _approveReactorOutputs(orders[0], limit);
     }
 
     function _executeMulticall(IMulticall3.Call[] memory calls) private {
@@ -78,62 +85,54 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         );
     }
 
-    function _approveReactorOutputs(ResolvedOrder[] memory orders) private {
-        for (uint256 i = 0; i < orders.length; i++) {
-            ResolvedOrder memory order = orders[i];
+    function _approveReactorOutputs(ResolvedOrder memory order, uint256 limit) private {
+        address outToken;
+        uint256 outAmount;
 
-            address outToken;
-            uint256 outAmount;
+        for (uint256 i = 0; i < order.outputs.length; i++) {
+            uint256 amount = order.outputs[i].amount;
+            if (amount == 0) continue;
+            address token = address(order.outputs[i].token);
 
-            for (uint256 j = 0; j < order.outputs.length; j++) {
-                uint256 amount = order.outputs[j].amount;
-                if (amount == 0) continue;
-                address token = address(order.outputs[j].token);
+            if (token == address(0)) Address.sendValue(payable(address(reactor)), amount);
+            else IERC20(token).safeIncreaseAllowance(address(reactor), amount);
 
-                if (token == address(0)) Address.sendValue(payable(address(reactor)), amount);
-                else IERC20(token).safeIncreaseAllowance(address(reactor), amount);
-
-                if (order.outputs[j].recipient == order.info.swapper) {
-                    if (outToken != address(0) && outToken != token) revert InvalidOrder();
-                    outToken = token;
-                    outAmount += amount;
-                }
+            if (order.outputs[i].recipient == order.info.swapper) {
+                if (outToken != address(0) && outToken != token) revert InvalidOrder();
+                outToken = token;
+                outAmount += amount;
             }
+        }
 
-            address ref = abi.decode(order.info.additionalValidationData, (address));
+        if (outAmount < limit) revert InvalidLimit(outAmount);
 
-            emit Resolved(
-                order.hash, order.info.swapper, ref, address(order.input.token), outToken, order.input.amount, outAmount
-            );
+        address ref = abi.decode(order.info.additionalValidationData, (address));
+
+        emit Resolved(
+            order.hash, order.info.swapper, ref, address(order.input.token), outToken, order.input.amount, outAmount
+        );
+    }
+
+    function _excess(SignedOrder calldata o) private {
+        ExclusiveDutchOrder memory order = abi.decode(o.order, (ExclusiveDutchOrder));
+        address ref = abi.decode(order.info.additionalValidationData, (address));
+
+        uint256 balance = _withdraw(address(order.input.token), ref);
+        emit Excess(ref, address(order.input.token), balance);
+
+        for (uint256 i = 0; i < order.outputs.length; i++) {
+            balance = _withdraw(address(order.outputs[i].token), ref);
+            emit Excess(ref, address(order.outputs[i].token), balance);
         }
     }
 
-    function _excess(SignedOrder[] calldata orders) private {
-        for (uint256 i = 0; i < orders.length; i++) {
-            ExclusiveDutchOrder memory order = abi.decode(orders[i].order, (ExclusiveDutchOrder));
-            address ref = abi.decode(order.info.additionalValidationData, (address));
-
-            _withdrawExcess(address(order.input.token), ref);
-
-            for (uint256 j = 0; j < order.outputs.length; j++) {
-                _withdrawExcess(address(order.outputs[j].token), ref);
-            }
-        }
-    }
-
-    function _withdrawExcess(address token, address ref) private {
+    function _withdraw(address token, address to) private returns (uint256 balance) {
         if (token == address(0)) {
-            uint256 balance = address(this).balance;
-            if (balance > 0) {
-                Address.sendValue(payable(ref), balance);
-                emit Excess(ref, token, balance);
-            }
+            balance = address(this).balance;
+            if (balance > 0) Address.sendValue(payable(to), balance);
         } else {
-            uint256 balance = IERC20(token).balanceOf(address(this));
-            if (balance > 0) {
-                IERC20(token).safeTransfer(ref, balance);
-                emit Excess(ref, token, balance);
-            }
+            balance = IERC20(token).balanceOf(address(this));
+            if (balance > 0) IERC20(token).safeTransfer(to, balance);
         }
     }
 

@@ -16,6 +16,11 @@ contract UpdateWhitelist is BaseScript {
 
         address[] memory list = _readList();
 
+        if (config.admin.allowed(list[0]) && config.admin.allowed(list[list.length - 1])) {
+            console.log("already updated");
+            return;
+        }
+
         for (uint256 i = 0; i < list.length; i += BATCH_SIZE) {
             uint256 size = i + BATCH_SIZE < list.length ? BATCH_SIZE : list.length - i;
 
