@@ -35,7 +35,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
 
     error InvalidSender(address sender);
     error InvalidOrder();
-    error InvalidLimit(uint256 outAmount);
+    error InvalidSwapperLimit(uint256 outAmount);
 
     event Resolved(
         bytes32 indexed orderHash,
@@ -62,11 +62,11 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     /**
      * Entry point
      */
-    function execute(SignedOrder calldata order, IMulticall3.Call[] calldata calls, uint256 limit)
+    function execute(SignedOrder calldata order, IMulticall3.Call[] calldata calls, uint256 swapperLimit)
         external
         onlyAllowed
     {
-        reactor.executeWithCallback(order, abi.encode(calls, limit));
+        reactor.executeWithCallback(order, abi.encode(calls, swapperLimit));
         _excess(order);
     }
 
@@ -74,9 +74,20 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
      * @dev IReactorCallback
      */
     function reactorCallback(ResolvedOrder[] memory orders, bytes memory callbackData) external override onlyReactor {
-        (IMulticall3.Call[] memory calls, uint256 limit) = abi.decode(callbackData, (IMulticall3.Call[], uint256));
+        ResolvedOrder memory order = orders[0];
+        (IMulticall3.Call[] memory calls, uint256 swapperLimit) =
+            abi.decode(callbackData, (IMulticall3.Call[], uint256));
+
         _executeMulticall(calls);
-        _approveReactorOutputs(orders[0], limit);
+        (address outToken, uint256 outAmount) = _approveReactorOutputs(order);
+
+        if (outAmount < swapperLimit) revert InvalidSwapperLimit(outAmount);
+
+        address ref = abi.decode(order.info.additionalValidationData, (address));
+
+        emit Resolved(
+            order.hash, order.info.swapper, ref, address(order.input.token), outToken, order.input.amount, outAmount
+        );
     }
 
     function _executeMulticall(IMulticall3.Call[] memory calls) private {
@@ -85,10 +96,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         );
     }
 
-    function _approveReactorOutputs(ResolvedOrder memory order, uint256 limit) private {
-        address outToken;
-        uint256 outAmount;
-
+    function _approveReactorOutputs(ResolvedOrder memory order) private returns (address outToken, uint256 outAmount) {
         for (uint256 i = 0; i < order.outputs.length; i++) {
             uint256 amount = order.outputs[i].amount;
             if (amount == 0) continue;
@@ -103,14 +111,6 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
                 outAmount += amount;
             }
         }
-
-        if (outAmount < limit) revert InvalidLimit(outAmount);
-
-        address ref = abi.decode(order.info.additionalValidationData, (address));
-
-        emit Resolved(
-            order.hash, order.info.swapper, ref, address(order.input.token), outToken, order.input.amount, outAmount
-        );
     }
 
     function _excess(SignedOrder calldata o) private {
