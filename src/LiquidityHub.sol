@@ -13,7 +13,6 @@ import {ResolvedOrder, SignedOrder} from "uniswapx/src/base/ReactorStructs.sol";
 import {ExclusiveDutchOrder} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
 
 import {Consts} from "./Consts.sol";
-import {Admin} from "./Admin.sol";
 
 /**
  * LiquidityHub Executor
@@ -24,13 +23,12 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     uint8 public constant VERSION = 5;
 
     IReactor public immutable reactor;
-    Admin public immutable admin;
-    uint256 public constant KICKBACK = 1000;
+    IAllowed public immutable allowed;
     uint256 public constant BPS = 10_000;
 
-    constructor(IReactor _reactor, Admin _admin) {
+    constructor(IReactor _reactor, IAllowed _allowed) {
         reactor = _reactor;
-        admin = _admin;
+        allowed = _allowed;
     }
 
     error InvalidSender(address sender);
@@ -50,7 +48,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     event Excess(address indexed ref, address indexed token, uint256 amount);
 
     modifier onlyAllowed() {
-        if (!admin.allowed(msg.sender)) revert InvalidSender(msg.sender);
+        if (!allowed.allowed(msg.sender)) revert InvalidSender(msg.sender);
         _;
     }
 
@@ -97,7 +95,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     }
 
     function _approveReactorOutputs(ResolvedOrder memory order) private returns (address outToken, uint256 outAmount) {
-        for (uint256 i = 0; i < order.outputs.length; i++) {
+        for (uint256 i = 0; i < order.outputs.length;) {
             uint256 amount = order.outputs[i].amount;
             if (amount == 0) continue;
             address token = address(order.outputs[i].token);
@@ -110,6 +108,10 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
                 outToken = token;
                 outAmount += amount;
             }
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -120,9 +122,13 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         uint256 balance = _withdraw(address(order.input.token), ref);
         emit Excess(ref, address(order.input.token), balance);
 
-        for (uint256 i = 0; i < order.outputs.length; i++) {
+        for (uint256 i = 0; i < order.outputs.length;) {
             balance = _withdraw(address(order.outputs[i].token), ref);
             emit Excess(ref, address(order.outputs[i].token), balance);
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -141,10 +147,14 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
      */
     function validate(address filler, ResolvedOrder calldata order) external view override {
         if (filler != address(this)) revert InvalidSender(filler);
-        if (order.info.additionalValidationData.length < 20) revert InvalidOrder();
+        if (order.info.additionalValidationData.length < 8) revert InvalidOrder();
     }
 
     receive() external payable {
         // accept ETH
     }
+}
+
+interface IAllowed {
+    function allowed(address) external view returns (bool);
 }

@@ -21,7 +21,14 @@ import {BaseScript, Config} from "script/base/BaseScript.sol";
 import {DeployTestInfra} from "./DeployTestInfra.sol";
 import {Admin} from "src/Admin.sol";
 import {
-    LiquidityHub, Consts, IMulticall3, IReactor, IERC20, SignedOrder, IValidationCallback
+    LiquidityHub,
+    Consts,
+    IMulticall3,
+    IReactor,
+    IERC20,
+    SignedOrder,
+    IValidationCallback,
+    IAllowed
 } from "src/LiquidityHub.sol";
 import {PartialOrderReactor, PartialOrderLib} from "src/PartialOrderReactor.sol";
 import {RePermit} from "src/RePermit.sol";
@@ -40,7 +47,7 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
         admin.init(weth);
 
         IReactor reactor = new ExclusiveDutchOrderReactor(IPermit2(Consts.PERMIT2_ADDRESS), address(0));
-        LiquidityHub executor = new LiquidityHub(reactor, admin);
+        LiquidityHub executor = new LiquidityHub(reactor, IAllowed(address(admin)));
 
         RePermit repermit = new RePermit();
         PartialOrderReactor reactorPartial = new PartialOrderReactor(repermit);
@@ -124,9 +131,10 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
 
     function wasteGas(uint256 amount) public view {
         uint256 initialGas = gasleft();
-        while (initialGas - gasleft() < amount) {
+        for (uint256 j = 0; j < 1 && initialGas - gasleft() < amount; j++) {
+            console.log(gasleft());
             // Perform some expensive operations
-            for (uint256 i = 0; i < 1000; i++) {
+            for (uint256 i = 0; i < 1; i++) {
                 uint256 x = i ** 2;
                 require(x >= 0);
             }

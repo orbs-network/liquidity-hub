@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 
 import {BaseScript} from "script/base/BaseScript.sol";
 
-import {LiquidityHub} from "src/LiquidityHub.sol";
+import {LiquidityHub, IAllowed} from "src/LiquidityHub.sol";
 
 contract DeployExecutor is BaseScript {
     function run() public returns (address executor) {
@@ -15,7 +15,7 @@ contract DeployExecutor is BaseScript {
 
         if (executor.code.length == 0) {
             vm.broadcast();
-            LiquidityHub deployed = new LiquidityHub{salt: 0}(config.reactor, config.admin);
+            LiquidityHub deployed = new LiquidityHub{salt: 0}(config.reactor, IAllowed(address(config.admin)));
             require(executor == address(deployed), "mismatched address");
         } else {
             console.log("already deployed");

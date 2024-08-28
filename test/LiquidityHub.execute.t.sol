@@ -34,50 +34,17 @@ contract LiquidityHubExecuteTest is BaseTest {
         uint256 outAmount = 1 ether;
         uint256 gasAmount = 0;
 
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] =
+        SignedOrder memory order =
             signedOrder(swapper, swapperPK, address(inToken), address(inToken), inAmount, outAmount, gasAmount, ref);
 
         assertEq(inToken.balanceOf(swapper), 10 ether);
         assertEq(outToken.balanceOf(swapper), 0);
 
         hoax(config.admin.owner());
-        config.executor.execute(orders, new IMulticall3.Call[](0));
+        config.executor.execute(order, new IMulticall3.Call[](0), 0);
 
         assertEq(inToken.balanceOf(swapper), 10 ether);
         assertEq(outToken.balanceOf(swapper), 0);
-    }
-
-    function test_mirrorOrders() public {
-        uint256 inAmount = 1 ether;
-        uint256 outAmount = 2 ether;
-        uint256 gasAmount = 0;
-        (address swapper2, uint256 swapperPK2) = makeAddrAndKey("swapper2");
-
-        outToken.mint(swapper2, outAmount);
-        hoax(swapper2);
-        outToken.approve(PERMIT2_ADDRESS, outAmount);
-
-        SignedOrder[] memory orders = new SignedOrder[](2);
-        orders[0] =
-            signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
-        orders[1] =
-            signedOrder(swapper2, swapperPK2, address(outToken), address(inToken), outAmount, inAmount, gasAmount, ref);
-
-        assertEq(inToken.balanceOf(swapper), 10 ether);
-        assertEq(outToken.balanceOf(swapper), 0);
-
-        assertEq(inToken.balanceOf(swapper2), 0);
-        assertEq(outToken.balanceOf(swapper2), 2 ether);
-
-        hoax(config.admin.owner());
-        config.executor.execute(orders, new IMulticall3.Call[](0));
-
-        assertEq(inToken.balanceOf(swapper), 9 ether);
-        assertEq(outToken.balanceOf(swapper), 2 ether);
-
-        assertEq(inToken.balanceOf(swapper2), 1 ether);
-        assertEq(outToken.balanceOf(swapper2), 0);
     }
 
     function test_nativeOutput() public {
@@ -86,8 +53,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         uint256 gasAmount = 0;
         outToken = ERC20Mock(address(0));
 
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] =
+        SignedOrder memory order =
             signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
         IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
@@ -98,7 +64,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(swapper.balance, 0);
 
         hoax(config.admin.owner());
-        config.executor.execute(orders, calls);
+        config.executor.execute(order, calls, 0);
 
         assertEq(inToken.balanceOf(swapper), 9 ether);
         assertEq(swapper.balance, outAmount);
@@ -109,8 +75,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         uint256 outAmount = 0.5 ether;
         uint256 gasAmount = 0;
 
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] =
+        SignedOrder memory order =
             signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
         IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
@@ -119,7 +84,7 @@ contract LiquidityHubExecuteTest is BaseTest {
             abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount + 123456);
 
         hoax(config.admin.owner());
-        config.executor.execute(orders, calls);
+        config.executor.execute(order, calls, 0);
 
         assertEq(inToken.balanceOf(swapper), 9 ether);
         assertEq(inToken.balanceOf(address(config.executor)), 0);
@@ -132,8 +97,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         uint256 gasAmount = 0;
 
         vm.warp(block.timestamp + 10 days); // set deadline to be in the future
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] =
+        SignedOrder memory order =
             signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
         vm.warp(block.timestamp - 10 days);
 
@@ -142,7 +106,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         calls[0].callData = abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount);
 
         hoax(config.admin.owner());
-        config.executor.execute(orders, calls);
+        config.executor.execute(order, calls, 0);
 
         assertEq(inToken.balanceOf(swapper), 9 ether);
         assertEq(inToken.balanceOf(address(config.executor)), 0);
@@ -155,8 +119,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         uint256 gasAmount = 0;
         outToken = ERC20Mock(address(0));
 
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] =
+        SignedOrder memory order =
             signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
         IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
@@ -164,7 +127,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         calls[0].callData = abi.encodeWithSelector(vm.deal.selector, address(config.executor), outAmount + 123456);
 
         hoax(config.admin.owner());
-        config.executor.execute(orders, calls);
+        config.executor.execute(order, calls, 0);
 
         assertEq(swapper.balance, outAmount);
         assertEq(address(config.executor).balance, 0);
@@ -176,8 +139,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         uint256 outAmount = 0.5 ether;
         uint256 gasAmount = 0.25 ether;
 
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] =
+        SignedOrder memory order =
             signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
         IMulticall3.Call[] memory calls = new IMulticall3.Call[](2);
@@ -195,7 +157,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         });
 
         hoax(config.admin.owner());
-        config.executor.execute(orders, calls);
+        config.executor.execute(order, calls, 0);
 
         assertEq(outToken.balanceOf(swapper), outAmount, "swapper outToken");
         assertEq(outToken.balanceOf(address(config.executor)), 0, "no dust");

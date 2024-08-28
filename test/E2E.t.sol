@@ -56,8 +56,6 @@ contract E2ETest is BaseTest {
             maker, makerPK, address(usdc), address(weth), usdcMakerAmount, wethMakerAmount, wethMakerAmount
         );
 
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = takerOrder;
         IMulticall3.Call[] memory calls = new IMulticall3.Call[](2);
         calls[0] = IMulticall3.Call({
             target: address(weth),
@@ -69,7 +67,7 @@ contract E2ETest is BaseTest {
         });
 
         hoax(config.admin.owner());
-        config.executor.execute(orders, calls);
+        config.executor.execute(takerOrder, calls, 0);
 
         assertEq(weth.balanceOf(taker), wethTakerStartBalance - wethTakerAmount, "weth taker balance");
         assertEq(usdc.balanceOf(taker), usdcTakerAmount, "usdc taker balance");
@@ -99,8 +97,6 @@ contract E2ETest is BaseTest {
             maker, makerPK, address(usdc), address(weth), usdcMakerAmount, wethMakerAmount, wethTakerAmount
         );
 
-        SignedOrder[] memory orders = new SignedOrder[](1);
-        orders[0] = takerOrder;
         IMulticall3.Call[] memory calls = new IMulticall3.Call[](2);
         calls[0] = IMulticall3.Call({
             target: address(weth),
@@ -112,7 +108,7 @@ contract E2ETest is BaseTest {
         });
 
         hoax(config.admin.owner());
-        config.executor.execute(orders, calls);
+        config.executor.execute(takerOrder, calls, 0);
 
         assertEq(weth.balanceOf(taker), wethTakerStartBalance - wethTakerAmount, "weth taker balance");
         assertEq(usdc.balanceOf(taker), usdcTakerAmount, "usdc taker balance");
@@ -151,12 +147,9 @@ contract E2ETest is BaseTest {
             maker2, maker2PK, address(usdc), address(weth), usdcMakerAmount, wethMakerAmount, wethMakerAmount
         );
 
-        SignedOrder[] memory orders = new SignedOrder[](1);
-
         SignedOrder[] memory makerOrders = new SignedOrder[](2);
         makerOrders[0] = makerOrder1;
         makerOrders[1] = makerOrder2;
-        orders[0] = takerOrder;
         IMulticall3.Call[] memory calls = new IMulticall3.Call[](2);
         calls[0] = IMulticall3.Call({
             target: address(weth),
@@ -168,7 +161,7 @@ contract E2ETest is BaseTest {
         });
 
         hoax(config.admin.owner());
-        config.executor.execute(orders, calls);
+        config.executor.execute(takerOrder, calls, 0);
 
         assertEq(weth.balanceOf(taker), wethTakerStartBalance - wethTakerAmount, "weth taker balance");
         assertEq(usdc.balanceOf(taker), usdcTakerAmount, "usdc taker balance");

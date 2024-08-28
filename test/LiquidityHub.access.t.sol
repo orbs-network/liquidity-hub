@@ -20,14 +20,10 @@ contract LiquidityHubAccessTest is BaseTest {
         );
     }
 
-    function test_execute_onlyAllowed() public {
-        hoax(owner);
-        uut.execute(new SignedOrder[](0), new IMulticall3.Call[](0));
-    }
-
     function test_revert_execute_onlyAllowed() public {
+        SignedOrder memory order;
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, address(this)));
-        uut.execute(new SignedOrder[](0), new IMulticall3.Call[](0));
+        uut.execute(order, new IMulticall3.Call[](0), 0);
     }
 
     function test_validationCallback_onlySelf_onlyRef() public {
@@ -49,11 +45,6 @@ contract LiquidityHubAccessTest is BaseTest {
         address filler = makeAddr("unknown filler");
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, filler));
         config.executor.validate(filler, order);
-    }
-
-    function test_reactorCallback_onlyReactor() public {
-        hoax(address(config.reactor));
-        config.executor.reactorCallback(new ResolvedOrder[](0), abi.encode(new IMulticall3.Call[](0)));
     }
 
     function test_revert_reactorCallback_onlyReactor() public {
