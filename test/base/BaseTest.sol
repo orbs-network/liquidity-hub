@@ -130,14 +130,11 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
     }
 
     function wasteGas(uint256 amount) public view {
+        uint256 x;
         uint256 initialGas = gasleft();
-        for (uint256 j = 0; j < 1 && initialGas - gasleft() < amount; j++) {
-            console.log(gasleft());
-            // Perform some expensive operations
-            for (uint256 i = 0; i < 1; i++) {
-                uint256 x = i ** 2;
-                require(x >= 0);
-            }
+        while (initialGas - gasleft() < amount) {
+            x = x ** 2;
+            require(x >= 0);
         }
     }
 }
