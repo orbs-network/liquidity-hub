@@ -97,16 +97,18 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     function _approveReactorOutputs(ResolvedOrder memory order) private returns (address outToken, uint256 outAmount) {
         for (uint256 i = 0; i < order.outputs.length;) {
             uint256 amount = order.outputs[i].amount;
-            if (amount == 0) continue;
-            address token = address(order.outputs[i].token);
 
-            if (token == address(0)) Address.sendValue(payable(address(reactor)), amount);
-            else IERC20(token).safeIncreaseAllowance(address(reactor), amount);
+            if (amount > 0) {
+                address token = address(order.outputs[i].token);
 
-            if (order.outputs[i].recipient == order.info.swapper) {
-                if (outToken != address(0) && outToken != token) revert InvalidOrder();
-                outToken = token;
-                outAmount += amount;
+                if (token == address(0)) Address.sendValue(payable(address(reactor)), amount);
+                else IERC20(token).safeIncreaseAllowance(address(reactor), amount);
+
+                if (order.outputs[i].recipient == order.info.swapper) {
+                    if (outToken != address(0) && outToken != token) revert InvalidOrder();
+                    outToken = token;
+                    outAmount += amount;
+                }
             }
 
             unchecked {

@@ -35,11 +35,11 @@ contract GasTest is BaseTest {
         SignedOrder memory order =
             signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
-        IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
+        IMulticall3.Call[] memory calls = new IMulticall3.Call[](2);
         calls[0].target = address(outToken);
         calls[0].callData = abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount);
-        //        calls[1].target = address(this);
-        //       calls[1].callData = abi.encodeWithSelector(BaseTest.wasteGas.selector, 500_000);
+        calls[1].target = address(this);
+        calls[1].callData = abi.encodeWithSelector(BaseTest.wasteGas.selector, 500_000);
 
         hoax(config.admin.owner());
         config.executor.execute(order, calls, 0);
