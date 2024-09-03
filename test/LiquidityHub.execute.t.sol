@@ -34,33 +34,43 @@ contract LiquidityHubExecuteTest is BaseTest {
         inToken.approve(PERMIT2_ADDRESS, type(uint256).max);
     }
 
+    function _order() private returns (SignedOrder memory) {
+        return signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
+    }
+
+    function _mockSwap() private view returns (IMulticall3.Call[] memory calls) {
+        calls = new IMulticall3.Call[](2);
+        calls[0].target = address(inToken);
+        calls[0].callData = abi.encodeWithSelector(ERC20Mock.burn.selector, address(config.executor), inAmount);
+        calls[1].target = (address(outToken) == address(0)) ? address(vm) : address(outToken);
+        calls[1].callData = abi.encodeWithSelector(
+            (address(outToken) == address(0)) ? vm.deal.selector : ERC20Mock.mint.selector,
+            address(config.executor),
+            outAmount + gasAmount + slippage
+        );
+    }
+
     function test_gas() public {
         vm.pauseGasMetering();
 
-        SignedOrder memory order =
-            signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
+        SignedOrder memory order = _order();
+
         outToken.mint(address(config.executor), outAmount + gasAmount + slippage);
 
         IMulticall3.Call[] memory calls = new IMulticall3.Call[](0);
+
         hoax(config.admin.owner());
         vm.resumeGasMetering();
-
         config.executor.execute(order, calls, 0);
+        assertEq(outToken.balanceOf(swapper), outAmount);
     }
 
     function test_nativeOutput() public {
         outToken = ERC20Mock(address(0));
 
-        SignedOrder memory order =
-            signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
+        SignedOrder memory order = _order();
 
-        IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
-        calls[0].target = address(vm);
-        calls[0].callData =
-            abi.encodeWithSelector(vm.deal.selector, address(config.executor), outAmount + gasAmount + slippage);
-
-        assertEq(inToken.balanceOf(swapper), 10 ether);
-        assertEq(swapper.balance, 0);
+        IMulticall3.Call[] memory calls = _mockSwap();
 
         hoax(config.admin.owner());
         config.executor.execute(order, calls, 0);
@@ -70,13 +80,9 @@ contract LiquidityHubExecuteTest is BaseTest {
     }
 
     function test_slippageToRef() public {
-        SignedOrder memory order =
-            signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
+        SignedOrder memory order = _order();
 
-        IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
-        calls[0].target = address(outToken);
-        calls[0].callData =
-            abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount + gasAmount + slippage);
+        IMulticall3.Call[] memory calls = _mockSwap();
 
         hoax(config.admin.owner());
         config.executor.execute(order, calls, 0);
@@ -88,14 +94,10 @@ contract LiquidityHubExecuteTest is BaseTest {
 
     function test_longLimit() public {
         vm.warp(block.timestamp + 10 days); // set deadline to be in the future
-        SignedOrder memory order =
-            signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
+        SignedOrder memory order = _order();
         vm.warp(block.timestamp - 10 days);
 
-        IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
-        calls[0].target = address(outToken);
-        calls[0].callData =
-            abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount + gasAmount + slippage);
+        IMulticall3.Call[] memory calls = _mockSwap();
 
         hoax(config.admin.owner());
         config.executor.execute(order, calls, 0);
@@ -107,13 +109,9 @@ contract LiquidityHubExecuteTest is BaseTest {
     function test_nativeSlippageToRef() public {
         outToken = ERC20Mock(address(0));
 
-        SignedOrder memory order =
-            signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
+        SignedOrder memory order = _order();
 
-        IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
-        calls[0].target = address(vm);
-        calls[0].callData =
-            abi.encodeWithSelector(vm.deal.selector, address(config.executor), outAmount + gasAmount + slippage);
+        IMulticall3.Call[] memory calls = _mockSwap();
 
         hoax(config.admin.owner());
         config.executor.execute(order, calls, 0);
@@ -124,27 +122,22 @@ contract LiquidityHubExecuteTest is BaseTest {
     }
 
     function test_gasToAdmin() public {
-        SignedOrder memory order =
-            signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
+        SignedOrder memory order = _order();
 
-        IMulticall3.Call[] memory calls = new IMulticall3.Call[](2);
-        calls[0] = IMulticall3.Call({
-            target: address(outToken),
-            callData: abi.encodeWithSelector(
-                ERC20Mock.mint.selector, address(config.executor), outAmount + gasAmount + slippage
-            )
-        });
-        calls[1] = IMulticall3.Call({
-            target: address(inToken),
-            callData: abi.encodeWithSelector(ERC20Mock.burn.selector, address(config.executor), inAmount)
-        });
+        IMulticall3.Call[] memory calls = _mockSwap();
 
         hoax(config.admin.owner());
         config.executor.execute(order, calls, 0);
+        assertEq(outToken.balanceOf(address(config.admin)), gasAmount);
+    }
 
-        assertEq(outToken.balanceOf(swapper), outAmount, "swapper outToken");
-        assertEq(outToken.balanceOf(address(config.executor)), 0, "no dust");
-        assertEq(outToken.balanceOf(address(config.admin)), gasAmount, "gas fee");
-        assertEq(outToken.balanceOf(ref), slippage, "slippage");
+    function test_swapperLimit() public {
+        SignedOrder memory order = _order();
+
+        IMulticall3.Call[] memory calls = _mockSwap();
+
+        hoax(config.admin.owner());
+        vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSwapperLimit.selector, outAmount));
+        config.executor.execute(order, calls, outAmount + 1);
     }
 }
