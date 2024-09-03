@@ -137,6 +137,17 @@ contract LiquidityHubExecuteTest is BaseTest {
         IMulticall3.Call[] memory calls = _mockSwap();
 
         hoax(config.admin.owner());
+        config.executor.execute(order, calls, outAmount);
+
+        assertEq(outToken.balanceOf(swapper), outAmount);
+    }
+
+    function test_revert_swapperLimit() public {
+        SignedOrder memory order = _order();
+
+        IMulticall3.Call[] memory calls = _mockSwap();
+
+        hoax(config.admin.owner());
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSwapperLimit.selector, outAmount));
         config.executor.execute(order, calls, outAmount + 1);
     }
