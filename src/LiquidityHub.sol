@@ -73,6 +73,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
      */
     function reactorCallback(ResolvedOrder[] memory orders, bytes memory callbackData) external override onlyReactor {
         ResolvedOrder memory order = orders[0];
+
         (IMulticall3.Call[] memory calls, uint256 swapperLimit) =
             abi.decode(callbackData, (IMulticall3.Call[], uint256));
 
@@ -95,24 +96,19 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     }
 
     function _approveReactorOutputs(ResolvedOrder memory order) private returns (address outToken, uint256 outAmount) {
-        for (uint256 i = 0; i < order.outputs.length;) {
+        for (uint256 i = 0; i < order.outputs.length; i++) {
             uint256 amount = order.outputs[i].amount;
+            if (amount == 0) continue;
 
-            if (amount > 0) {
-                address token = address(order.outputs[i].token);
+            address token = address(order.outputs[i].token);
 
-                if (token == address(0)) Address.sendValue(payable(address(reactor)), amount);
-                else IERC20(token).safeIncreaseAllowance(address(reactor), amount);
+            if (token == address(0)) Address.sendValue(payable(address(reactor)), amount);
+            else IERC20(token).safeIncreaseAllowance(address(reactor), amount);
 
-                if (order.outputs[i].recipient == order.info.swapper) {
-                    if (outToken != address(0) && outToken != token) revert InvalidOrder();
-                    outToken = token;
-                    outAmount += amount;
-                }
-            }
-
-            unchecked {
-                ++i;
+            if (order.outputs[i].recipient == order.info.swapper) {
+                if (outToken != address(0) && outToken != token) revert InvalidOrder();
+                outToken = token;
+                outAmount += amount;
             }
         }
     }
@@ -122,25 +118,17 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         address ref = abi.decode(order.info.additionalValidationData, (address));
 
         uint256 balance = _withdraw(address(order.input.token), ref);
-        emit Excess(ref, address(order.input.token), balance);
 
-        for (uint256 i = 0; i < order.outputs.length;) {
+        for (uint256 i = 0; i < order.outputs.length; i++) {
             balance = _withdraw(address(order.outputs[i].token), ref);
-            emit Excess(ref, address(order.outputs[i].token), balance);
-
-            unchecked {
-                ++i;
-            }
         }
     }
 
     function _withdraw(address token, address to) private returns (uint256 balance) {
-        if (token == address(0)) {
-            balance = address(this).balance;
-            if (balance > 0) Address.sendValue(payable(to), balance);
-        } else {
-            balance = IERC20(token).balanceOf(address(this));
-            if (balance > 0) IERC20(token).safeTransfer(to, balance);
+        balance = (token == address(0)) ? address(this).balance : IERC20(token).balanceOf(address(this));
+        if (balance > 0) {
+            (token == address(0)) ? Address.sendValue(payable(to), balance) : IERC20(token).safeTransfer(to, balance);
+            emit Excess(to, token, balance);
         }
     }
 

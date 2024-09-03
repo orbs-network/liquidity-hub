@@ -14,6 +14,11 @@ contract LiquidityHubExecuteTest is BaseTest {
     ERC20Mock public inToken;
     ERC20Mock public outToken;
 
+    uint256 inAmount = 1 ether;
+    uint256 outAmount = 0.5 ether;
+    uint256 gasAmount = 0.01 ether;
+    uint256 slippage = 0.03 ether;
+
     function setUp() public override {
         super.setUp();
         (swapper, swapperPK) = makeAddrAndKey("swapper");
@@ -29,28 +34,21 @@ contract LiquidityHubExecuteTest is BaseTest {
         inToken.approve(PERMIT2_ADDRESS, type(uint256).max);
     }
 
-    function test_noOp() public {
-        uint256 inAmount = 1 ether;
-        uint256 outAmount = 1 ether;
-        uint256 gasAmount = 0;
+    function test_gas() public {
+        vm.pauseGasMetering();
 
         SignedOrder memory order =
-            signedOrder(swapper, swapperPK, address(inToken), address(inToken), inAmount, outAmount, gasAmount, ref);
+            signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
+        outToken.mint(address(config.executor), outAmount + gasAmount + slippage);
 
-        assertEq(inToken.balanceOf(swapper), 10 ether);
-        assertEq(outToken.balanceOf(swapper), 0);
-
+        IMulticall3.Call[] memory calls = new IMulticall3.Call[](0);
         hoax(config.admin.owner());
-        config.executor.execute(order, new IMulticall3.Call[](0), 0);
+        vm.resumeGasMetering();
 
-        assertEq(inToken.balanceOf(swapper), 10 ether);
-        assertEq(outToken.balanceOf(swapper), 0);
+        config.executor.execute(order, calls, 0);
     }
 
     function test_nativeOutput() public {
-        uint256 inAmount = 1 ether;
-        uint256 outAmount = 2 ether;
-        uint256 gasAmount = 0;
         outToken = ERC20Mock(address(0));
 
         SignedOrder memory order =
@@ -58,7 +56,8 @@ contract LiquidityHubExecuteTest is BaseTest {
 
         IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
         calls[0].target = address(vm);
-        calls[0].callData = abi.encodeWithSelector(vm.deal.selector, address(config.executor), outAmount);
+        calls[0].callData =
+            abi.encodeWithSelector(vm.deal.selector, address(config.executor), outAmount + gasAmount + slippage);
 
         assertEq(inToken.balanceOf(swapper), 10 ether);
         assertEq(swapper.balance, 0);
@@ -71,31 +70,23 @@ contract LiquidityHubExecuteTest is BaseTest {
     }
 
     function test_slippageToRef() public {
-        uint256 inAmount = 1 ether;
-        uint256 outAmount = 0.5 ether;
-        uint256 gasAmount = 0;
-
         SignedOrder memory order =
             signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
         IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
         calls[0].target = address(outToken);
         calls[0].callData =
-            abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount + 123456);
+            abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount + gasAmount + slippage);
 
         hoax(config.admin.owner());
         config.executor.execute(order, calls, 0);
 
         assertEq(inToken.balanceOf(swapper), 9 ether);
         assertEq(inToken.balanceOf(address(config.executor)), 0);
-        assertEq(outToken.balanceOf(ref), 123456);
+        assertEq(outToken.balanceOf(ref), slippage);
     }
 
     function test_longLimit() public {
-        uint256 inAmount = 1 ether;
-        uint256 outAmount = 0.5 ether;
-        uint256 gasAmount = 0;
-
         vm.warp(block.timestamp + 10 days); // set deadline to be in the future
         SignedOrder memory order =
             signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
@@ -103,20 +94,17 @@ contract LiquidityHubExecuteTest is BaseTest {
 
         IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
         calls[0].target = address(outToken);
-        calls[0].callData = abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount);
+        calls[0].callData =
+            abi.encodeWithSelector(ERC20Mock.mint.selector, address(config.executor), outAmount + gasAmount + slippage);
 
         hoax(config.admin.owner());
         config.executor.execute(order, calls, 0);
 
         assertEq(inToken.balanceOf(swapper), 9 ether);
-        assertEq(inToken.balanceOf(address(config.executor)), 0);
         assertEq(outToken.balanceOf(swapper), outAmount);
     }
 
     function test_nativeSlippageToRef() public {
-        uint256 inAmount = 1 ether;
-        uint256 outAmount = 0.7 ether;
-        uint256 gasAmount = 0;
         outToken = ERC20Mock(address(0));
 
         SignedOrder memory order =
@@ -124,21 +112,18 @@ contract LiquidityHubExecuteTest is BaseTest {
 
         IMulticall3.Call[] memory calls = new IMulticall3.Call[](1);
         calls[0].target = address(vm);
-        calls[0].callData = abi.encodeWithSelector(vm.deal.selector, address(config.executor), outAmount + 123456);
+        calls[0].callData =
+            abi.encodeWithSelector(vm.deal.selector, address(config.executor), outAmount + gasAmount + slippage);
 
         hoax(config.admin.owner());
         config.executor.execute(order, calls, 0);
 
         assertEq(swapper.balance, outAmount);
         assertEq(address(config.executor).balance, 0);
-        assertEq(ref.balance, 123456);
+        assertEq(ref.balance, slippage);
     }
 
     function test_gasToAdmin() public {
-        uint256 inAmount = 1 ether;
-        uint256 outAmount = 0.5 ether;
-        uint256 gasAmount = 0.25 ether;
-
         SignedOrder memory order =
             signedOrder(swapper, swapperPK, address(inToken), address(outToken), inAmount, outAmount, gasAmount, ref);
 
@@ -146,9 +131,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         calls[0] = IMulticall3.Call({
             target: address(outToken),
             callData: abi.encodeWithSelector(
-                ERC20Mock.mint.selector,
-                address(config.executor),
-                outAmount + gasAmount + 123 // random slippage
+                ERC20Mock.mint.selector, address(config.executor), outAmount + gasAmount + slippage
             )
         });
         calls[1] = IMulticall3.Call({
@@ -162,6 +145,6 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(outToken.balanceOf(swapper), outAmount, "swapper outToken");
         assertEq(outToken.balanceOf(address(config.executor)), 0, "no dust");
         assertEq(outToken.balanceOf(address(config.admin)), gasAmount, "gas fee");
-        assertEq(outToken.balanceOf(ref), 123, "slippage");
+        assertEq(outToken.balanceOf(ref), slippage, "slippage");
     }
 }

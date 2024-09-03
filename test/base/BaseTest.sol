@@ -128,13 +128,4 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
         result.sig = signRePermit(signerPK, order);
         result.order = abi.encode(PartialOrderLib.PartialFill(order, fillOutAmount));
     }
-
-    function wasteGas(uint256 amount) public view {
-        uint256 x;
-        uint256 initialGas = gasleft();
-        while (initialGas - gasleft() < amount) {
-            x = x ** 2;
-            require(x >= 0);
-        }
-    }
 }
