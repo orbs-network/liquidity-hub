@@ -24,7 +24,6 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
 
     IReactor public immutable reactor;
     IAllowed public immutable allowed;
-    uint256 public constant BPS = 10_000;
 
     constructor(IReactor _reactor, IAllowed _allowed) {
         reactor = _reactor;
@@ -45,7 +44,14 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         uint256 outAmount
     );
 
-    event Excess(address indexed ref, address indexed token, uint256 amount);
+    event Surplus(
+        bytes32 indexed orderHash,
+        address indexed swapper,
+        address indexed ref,
+        address token,
+        uint256 amount,
+        uint8 share
+    );
 
     modifier onlyAllowed() {
         if (!allowed.allowed(msg.sender)) revert InvalidSender(msg.sender);
@@ -115,20 +121,27 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
 
     function _excess(SignedOrder calldata o) private {
         ExclusiveDutchOrder memory order = abi.decode(o.order, (ExclusiveDutchOrder));
-        address ref = abi.decode(order.info.additionalValidationData, (address));
+        (address ref, uint8 share) = abi.decode(order.info.additionalValidationData, (address, uint8));
+        bytes32 orderHash = order.hash();
 
-        uint256 balance = _withdraw(address(order.input.token), ref);
+        _surplus(order.hash, order.info.swapper, ref, address(order.input.token), share);
 
         for (uint256 i = 0; i < order.outputs.length; i++) {
-            balance = _withdraw(address(order.outputs[i].token), ref);
+            _surplus(order.info.hash, order.info.swapper, ref, address(order.outputs[i].token), share);
         }
     }
 
-    function _withdraw(address token, address to) private returns (uint256 balance) {
-        balance = (token == address(0)) ? address(this).balance : IERC20(token).balanceOf(address(this));
+    function _surplus(bytes32 orderHash, address swapper, address ref, address token, uint8 share) private {
+        uint256 balance = (token == address(0)) ? address(this).balance : IERC20(token).balanceOf(address(this));
         if (balance > 0) {
-            (token == address(0)) ? Address.sendValue(payable(to), balance) : IERC20(token).safeTransfer(to, balance);
-            emit Excess(to, token, balance);
+            uint256 refshare = balance * share / 100;
+            (token == address(0))
+                ? Address.sendValue(payable(ref), refshare)
+                : IERC20(token).safeTransfer(ref, refshare);
+            (token == address(0))
+                ? Address.sendValue(payable(swapper), address(this).balance)
+                : IERC20(token).safeTransfer(swapper, IERC20(token).balanceOf(address(this)));
+            emit Surplus(orderHash, swapper, ref, token, balance, share);
         }
     }
 

@@ -151,4 +151,17 @@ contract LiquidityHubExecuteTest is BaseTest {
         vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSwapperLimit.selector, outAmount));
         config.executor.execute(order, calls, outAmount + 1);
     }
+
+    function test_decayOnNegativeSlippage() public {
+        SignedOrder memory order = _order();
+
+        IMulticall3.Call[] memory calls = _mockSwap(); // 50% max negative, 1m decayStart, 2m decayEnd
+
+        vm.warp(block.timestamp + 1.5 minutes); // 50% decay to 50% slippage = -25%
+
+        hoax(config.admin.owner());
+        config.executor.execute(order, calls, 0);
+
+        assertEq(outToken.balanceOf(swapper), outAmount * 75 / 100);
+    }
 }

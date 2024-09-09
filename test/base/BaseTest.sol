@@ -78,20 +78,20 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
             order.info.reactor = config.reactor;
             order.info.swapper = signer;
             order.info.nonce = nonce++;
-            order.info.deadline = block.timestamp + 10 minutes;
-            order.decayStartTime = order.info.deadline;
+            order.info.deadline = block.timestamp + 2 minutes;
+            order.decayStartTime = block.timestamp + 1 minutes;
             order.decayEndTime = order.info.deadline;
 
             order.exclusiveFiller = address(config.executor);
             order.info.additionalValidationContract = IValidationCallback(config.executor);
-            order.info.additionalValidationData = abi.encode(ref);
+            order.info.additionalValidationData = abi.encode(ref, 90);
 
             order.input.token = ERC20(inToken);
             order.input.startAmount = inAmount;
             order.input.endAmount = inAmount;
 
             order.outputs = new DutchOutput[](2);
-            order.outputs[0] = DutchOutput(outToken, outAmount, outAmount, signer);
+            order.outputs[0] = DutchOutput(outToken, outAmount, outAmount / 2, signer);
             order.outputs[1] = DutchOutput(outToken, outAmountGas, outAmountGas, address(config.admin));
         }
 
