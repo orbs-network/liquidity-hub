@@ -16,13 +16,11 @@ contract PartialOrderE2ETest is BaseTest {
     ERC20Mock public usdc;
     uint256 public wethTakerStartBalance = 10 ether;
     uint256 public usdcMakerStartBalance = 25_000 * 10 ** 6;
-    address public ref;
 
     function setUp() public override {
         super.setUp();
         (taker, takerPK) = makeAddrAndKey("taker");
         (maker, makerPK) = makeAddrAndKey("maker");
-        ref = makeAddr("ref");
 
         weth = new ERC20Mock();
         usdc = new ERC20Mock();
@@ -49,9 +47,8 @@ contract PartialOrderE2ETest is BaseTest {
         uint256 usdcAmountGas = 1 * 10 ** 6;
         uint256 expectedSlippage = 9 * 10 ** 6;
 
-        SignedOrder memory takerOrder = signedOrder(
-            taker, takerPK, address(weth), address(usdc), wethTakerAmount, usdcTakerAmount, usdcAmountGas, ref
-        );
+        SignedOrder memory takerOrder =
+            signedOrder(taker, takerPK, address(weth), address(usdc), wethTakerAmount, usdcTakerAmount, usdcAmountGas);
 
         SignedOrder memory makerOrder = signedPartialOrder(
             maker, makerPK, address(usdc), address(weth), usdcMakerAmount, wethMakerAmount, wethMakerAmount
@@ -71,13 +68,13 @@ contract PartialOrderE2ETest is BaseTest {
         config.executor.execute(takerOrder, calls, 0);
 
         assertEq(weth.balanceOf(taker), wethTakerStartBalance - wethTakerAmount, "weth taker balance");
-        assertEq(usdc.balanceOf(taker), usdcTakerAmount + (expectedSlippage / 10), "usdc taker balance");
+        assertEq(usdc.balanceOf(taker), usdcTakerAmount + (expectedSlippage / (100 - refshare)), "usdc taker balance");
         assertEq(weth.balanceOf(maker), wethTakerAmount, "weth maker balance");
         assertEq(usdc.balanceOf(maker), usdcMakerStartBalance - usdcMakerAmount, "usdc maker balance");
         assertEq(usdc.balanceOf(address(config.admin)), usdcAmountGas, "gas fee");
         assertEq(weth.balanceOf(address(config.executor)), 0, "no weth leftovers");
         assertEq(usdc.balanceOf(address(config.executor)), 0, "no usdc leftovers");
-        assertEq(usdc.balanceOf(ref), expectedSlippage * 9 / 10, "usdc positive slippage share");
+        assertEq(usdc.balanceOf(ref), expectedSlippage * refshare / 100, "usdc positive slippage share");
         assertEq(weth.balanceOf(ref), 0, "weth positive slippage");
     }
 
@@ -91,9 +88,8 @@ contract PartialOrderE2ETest is BaseTest {
         uint256 usdcAmountGas = 1 * 10 ** 6;
         uint256 expectedSlippage = 9 * 10 ** 6;
 
-        SignedOrder memory takerOrder = signedOrder(
-            taker, takerPK, address(weth), address(usdc), wethTakerAmount, usdcTakerAmount, usdcAmountGas, ref
-        );
+        SignedOrder memory takerOrder =
+            signedOrder(taker, takerPK, address(weth), address(usdc), wethTakerAmount, usdcTakerAmount, usdcAmountGas);
 
         SignedOrder memory makerOrder = signedPartialOrder(
             maker, makerPK, address(usdc), address(weth), usdcMakerAmount, wethMakerAmount, wethTakerAmount
@@ -113,13 +109,13 @@ contract PartialOrderE2ETest is BaseTest {
         config.executor.execute(takerOrder, calls, 0);
 
         assertEq(weth.balanceOf(taker), wethTakerStartBalance - wethTakerAmount, "weth taker balance");
-        assertEq(usdc.balanceOf(taker), usdcTakerAmount + (expectedSlippage / 10), "usdc taker balance");
+        assertEq(usdc.balanceOf(taker), usdcTakerAmount + (expectedSlippage / (100 - refshare)), "usdc taker balance");
         assertEq(weth.balanceOf(maker), 1 ether, "maker bought 1 eth");
         assertEq(usdcMakerStartBalance - usdc.balanceOf(maker), 2510 * 10 ** 6, "maker paid $2510");
         assertEq(usdc.balanceOf(address(config.admin)), usdcAmountGas, "gas fee");
         assertEq(weth.balanceOf(address(config.executor)), 0, "no weth leftovers");
         assertEq(usdc.balanceOf(address(config.executor)), 0, "no usdc leftovers");
-        assertEq(usdc.balanceOf(ref), expectedSlippage * 9 / 10, "usdc positive slippage");
+        assertEq(usdc.balanceOf(ref), expectedSlippage * refshare / 100, "usdc positive slippage");
         assertEq(weth.balanceOf(ref), 0, "weth no slippage");
     }
 
@@ -138,9 +134,8 @@ contract PartialOrderE2ETest is BaseTest {
         uint256 usdcAmountGas = 1 * 10 ** 6;
         uint256 expectedSlippage = 9 * 10 ** 6;
 
-        SignedOrder memory takerOrder = signedOrder(
-            taker, takerPK, address(weth), address(usdc), wethTakerAmount, usdcTakerAmount, usdcAmountGas, ref
-        );
+        SignedOrder memory takerOrder =
+            signedOrder(taker, takerPK, address(weth), address(usdc), wethTakerAmount, usdcTakerAmount, usdcAmountGas);
 
         SignedOrder memory makerOrder1 = signedPartialOrder(
             maker, makerPK, address(usdc), address(weth), usdcMakerAmount, wethMakerAmount, wethMakerAmount
@@ -167,7 +162,7 @@ contract PartialOrderE2ETest is BaseTest {
         config.executor.execute(takerOrder, calls, 0);
 
         assertEq(weth.balanceOf(taker), wethTakerStartBalance - wethTakerAmount, "weth taker balance");
-        assertEq(usdc.balanceOf(taker), usdcTakerAmount + (expectedSlippage / 10), "usdc taker balance");
+        assertEq(usdc.balanceOf(taker), usdcTakerAmount + (expectedSlippage / (100 - refshare)), "usdc taker balance");
         assertEq(weth.balanceOf(maker), 0.5 ether, "weth maker balance");
         assertEq(weth.balanceOf(maker2), 0.5 ether, "weth maker2 balance");
         assertEq(usdcMakerStartBalance - usdc.balanceOf(maker), 1255 * 10 ** 6, "maker paid $1255");
@@ -175,7 +170,7 @@ contract PartialOrderE2ETest is BaseTest {
         assertEq(usdc.balanceOf(address(config.admin)), usdcAmountGas, "gas fee");
         assertEq(weth.balanceOf(address(config.executor)), 0, "no weth leftovers");
         assertEq(usdc.balanceOf(address(config.executor)), 0, "no usdc leftovers");
-        assertEq(usdc.balanceOf(ref), expectedSlippage * 9 / 10, "usdc positive slippage");
+        assertEq(usdc.balanceOf(ref), expectedSlippage * refshare / 100, "usdc positive slippage");
         assertEq(weth.balanceOf(ref), 0 ether, "weth positive slippage");
     }
 }

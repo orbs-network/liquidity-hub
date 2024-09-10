@@ -62,6 +62,9 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
     }
 
     uint256 private nonce;
+    address public ref = makeAddr("ref");
+    uint8 public refshare = 90;
+    uint8 public maxdecay = 50;
 
     function signedOrder(
         address signer,
@@ -70,8 +73,7 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
         address outToken,
         uint256 inAmount,
         uint256 outAmount,
-        uint256 outAmountGas,
-        address ref
+        uint256 outAmountGas
     ) internal returns (SignedOrder memory result) {
         ExclusiveDutchOrder memory order;
         {
@@ -84,14 +86,14 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
 
             order.exclusiveFiller = address(config.executor);
             order.info.additionalValidationContract = IValidationCallback(config.executor);
-            order.info.additionalValidationData = abi.encode(ref, uint8(90));
+            order.info.additionalValidationData = abi.encode(ref, refshare);
 
             order.input.token = ERC20(inToken);
             order.input.startAmount = inAmount;
             order.input.endAmount = inAmount;
 
             order.outputs = new DutchOutput[](2);
-            order.outputs[0] = DutchOutput(outToken, outAmount, outAmount / 2, signer);
+            order.outputs[0] = DutchOutput(outToken, outAmount, outAmount * maxdecay / 100, signer);
             order.outputs[1] = DutchOutput(outToken, outAmountGas, outAmountGas, address(config.admin));
         }
 
