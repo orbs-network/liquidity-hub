@@ -44,14 +44,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         uint256 outAmount
     );
 
-    event Surplus(
-        bytes32 indexed orderHash,
-        address indexed swapper,
-        address indexed ref,
-        address token,
-        uint256 amount,
-        uint8 share
-    );
+    event Surplus(address indexed swapper, address indexed ref, address token, uint256 amount, uint8 share);
 
     modifier onlyAllowed() {
         if (!allowed.allowed(msg.sender)) revert InvalidSender(msg.sender);
@@ -122,16 +115,15 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     function _excess(SignedOrder calldata o) private {
         ExclusiveDutchOrder memory order = abi.decode(o.order, (ExclusiveDutchOrder));
         (address ref, uint8 share) = abi.decode(order.info.additionalValidationData, (address, uint8));
-        bytes32 orderHash = order.hash();
 
-        _surplus(order.hash, order.info.swapper, ref, address(order.input.token), share);
+        _surplus(order.info.swapper, ref, address(order.input.token), share);
 
         for (uint256 i = 0; i < order.outputs.length; i++) {
-            _surplus(order.info.hash, order.info.swapper, ref, address(order.outputs[i].token), share);
+            _surplus(order.info.swapper, ref, address(order.outputs[i].token), share);
         }
     }
 
-    function _surplus(bytes32 orderHash, address swapper, address ref, address token, uint8 share) private {
+    function _surplus(address swapper, address ref, address token, uint8 share) private {
         uint256 balance = (token == address(0)) ? address(this).balance : IERC20(token).balanceOf(address(this));
         if (balance > 0) {
             uint256 refshare = balance * share / 100;
@@ -141,7 +133,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
             (token == address(0))
                 ? Address.sendValue(payable(swapper), address(this).balance)
                 : IERC20(token).safeTransfer(swapper, IERC20(token).balanceOf(address(this)));
-            emit Surplus(orderHash, swapper, ref, token, balance, share);
+            emit Surplus(swapper, ref, token, balance, share);
         }
     }
 

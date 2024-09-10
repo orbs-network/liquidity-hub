@@ -62,7 +62,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         hoax(config.admin.owner());
         vm.resumeGasMetering();
         config.executor.execute(order, calls, 0);
-        assertEq(outToken.balanceOf(swapper), outAmount);
+        assertEq(outToken.balanceOf(swapper), outAmount + (slippage / 10));
     }
 
     function test_nativeOutput() public {
@@ -76,7 +76,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         config.executor.execute(order, calls, 0);
 
         assertEq(inToken.balanceOf(swapper), 9 ether);
-        assertEq(swapper.balance, outAmount);
+        assertEq(swapper.balance, outAmount + (slippage / 10));
     }
 
     function test_slippageToRef() public {
@@ -89,7 +89,7 @@ contract LiquidityHubExecuteTest is BaseTest {
 
         assertEq(inToken.balanceOf(swapper), 9 ether);
         assertEq(inToken.balanceOf(address(config.executor)), 0);
-        assertEq(outToken.balanceOf(ref), slippage);
+        assertEq(outToken.balanceOf(ref), slippage * 9 / 10);
     }
 
     function test_longLimit() public {
@@ -103,7 +103,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         config.executor.execute(order, calls, 0);
 
         assertEq(inToken.balanceOf(swapper), 9 ether);
-        assertEq(outToken.balanceOf(swapper), outAmount);
+        assertEq(outToken.balanceOf(swapper), outAmount + (slippage / 10));
     }
 
     function test_nativeSlippageToRef() public {
@@ -116,9 +116,9 @@ contract LiquidityHubExecuteTest is BaseTest {
         hoax(config.admin.owner());
         config.executor.execute(order, calls, 0);
 
-        assertEq(swapper.balance, outAmount);
+        assertEq(swapper.balance, outAmount + (slippage / 10));
         assertEq(address(config.executor).balance, 0);
-        assertEq(ref.balance, slippage);
+        assertEq(ref.balance, slippage * 9 / 10);
     }
 
     function test_gasToAdmin() public {
@@ -139,7 +139,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         hoax(config.admin.owner());
         config.executor.execute(order, calls, outAmount);
 
-        assertEq(outToken.balanceOf(swapper), outAmount);
+        assertEq(outToken.balanceOf(swapper), outAmount + (slippage / 10));
     }
 
     function test_revert_swapperLimit() public {
@@ -162,6 +162,10 @@ contract LiquidityHubExecuteTest is BaseTest {
         hoax(config.admin.owner());
         config.executor.execute(order, calls, 0);
 
-        assertEq(outToken.balanceOf(swapper), outAmount * 75 / 100);
+        uint256 expectedMinOutAmount = outAmount * 75 / 100;
+        uint256 expectedTotalSlippage = (outAmount + slippage) - expectedMinOutAmount;
+        uint256 expectedSlippage = expectedTotalSlippage / 10;
+        assertEq(outToken.balanceOf(swapper), expectedMinOutAmount + expectedSlippage);
+        assertEq(outToken.balanceOf(ref), expectedTotalSlippage - expectedSlippage);
     }
 }

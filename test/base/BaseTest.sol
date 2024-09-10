@@ -84,7 +84,7 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
 
             order.exclusiveFiller = address(config.executor);
             order.info.additionalValidationContract = IValidationCallback(config.executor);
-            order.info.additionalValidationData = abi.encode(ref, 90);
+            order.info.additionalValidationData = abi.encode(ref, uint8(90));
 
             order.input.token = ERC20(inToken);
             order.input.startAmount = inAmount;
