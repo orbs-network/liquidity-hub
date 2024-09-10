@@ -5,7 +5,8 @@ import "forge-std/Test.sol";
 
 import {BaseTest, ERC20Mock, IERC20} from "test/base/BaseTest.sol";
 
-import {LiquidityHub, SignedOrder, IMulticall3} from "src/LiquidityHub.sol";
+import {LiquidityHubLib, SignedOrder, IMulticall3} from "src/LiquidityHub.sol";
+import {ExclusiveDutchOrder, ExclusiveDutchOrderLib} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
 
 contract LiquidityHubExecuteTest is BaseTest {
     address public swapper;
@@ -146,7 +147,7 @@ contract LiquidityHubExecuteTest is BaseTest {
         IMulticall3.Call[] memory calls = _mockSwap();
 
         hoax(config.admin.owner());
-        vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSwapperLimit.selector, outAmount));
+        vm.expectRevert(abi.encodeWithSelector(LiquidityHubLib.InvalidSwapperLimit.selector, outAmount));
         config.executor.execute(order, calls, outAmount + 1);
     }
 
@@ -165,5 +166,44 @@ contract LiquidityHubExecuteTest is BaseTest {
         uint256 expectedSlippage = expectedTotalSlippage / (100 - refshare);
         assertEq(outToken.balanceOf(swapper), expectedMinOutAmount + expectedSlippage);
         assertEq(outToken.balanceOf(ref), expectedTotalSlippage - expectedSlippage);
+    }
+
+    function test_inTokenSlippage() public {
+        SignedOrder memory order = _order();
+        uint256 inTokenSlippage = 0.123 ether;
+        inAmount -= inTokenSlippage;
+        IMulticall3.Call[] memory calls = _mockSwap();
+        inAmount += inTokenSlippage;
+
+        hoax(config.admin.owner());
+        config.executor.execute(order, calls, 0);
+
+        uint256 expectedInSlippage = inTokenSlippage / (100 - refshare);
+        assertEq(inToken.balanceOf(swapper), 9 ether + expectedInSlippage);
+        assertEq(inToken.balanceOf(address(config.executor)), 0);
+        assertEq(inToken.balanceOf(ref), inTokenSlippage - expectedInSlippage);
+        assertEq(outToken.balanceOf(ref), slippage * refshare / 100);
+    }
+
+    function test_emitEvents() public {
+        SignedOrder memory order = _order();
+        IMulticall3.Call[] memory calls = _mockSwap();
+        ExclusiveDutchOrder memory o = abi.decode(order.order, (ExclusiveDutchOrder));
+
+        hoax(config.admin.owner());
+
+        vm.expectEmit();
+        emit LiquidityHubLib.Resolved(
+            ExclusiveDutchOrderLib.hash(o),
+            o.info.swapper,
+            ref,
+            address(inToken),
+            address(outToken),
+            inAmount,
+            outAmount
+        );
+        emit LiquidityHubLib.Surplus(o.info.swapper, ref, address(outToken), inAmount, refshare);
+
+        config.executor.execute(order, calls, 0);
     }
 }

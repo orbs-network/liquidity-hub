@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import {BaseTest} from "test/base/BaseTest.sol";
 
-import {LiquidityHub, IReactor, ResolvedOrder, SignedOrder, IMulticall3} from "src/LiquidityHub.sol";
+import {LiquidityHub, LiquidityHubLib, IReactor, ResolvedOrder, SignedOrder, IMulticall3} from "src/LiquidityHub.sol";
 
 contract LiquidityHubAccessTest is BaseTest {
     address public owner;
@@ -22,25 +22,25 @@ contract LiquidityHubAccessTest is BaseTest {
 
     function test_revert_execute_onlyAllowed() public {
         SignedOrder memory order;
-        vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, address(this)));
+        vm.expectRevert(abi.encodeWithSelector(LiquidityHubLib.InvalidSender.selector, address(this)));
         uut.execute(order, new IMulticall3.Call[](0), 0);
     }
 
     function test_revert_validationCallback_noRef() public {
         ResolvedOrder memory order;
-        vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidOrder.selector));
+        vm.expectRevert(abi.encodeWithSelector(LiquidityHubLib.InvalidOrder.selector));
         uut.validate(address(uut), order);
     }
 
     function test_revert_validationCallback_onlySelf() public {
         ResolvedOrder memory order;
         address filler = makeAddr("unknown filler");
-        vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, filler));
+        vm.expectRevert(abi.encodeWithSelector(LiquidityHubLib.InvalidSender.selector, filler));
         config.executor.validate(filler, order);
     }
 
     function test_revert_reactorCallback_onlyReactor() public {
-        vm.expectRevert(abi.encodeWithSelector(LiquidityHub.InvalidSender.selector, address(this)));
+        vm.expectRevert(abi.encodeWithSelector(LiquidityHubLib.InvalidSender.selector, address(this)));
         config.executor.reactorCallback(new ResolvedOrder[](0), abi.encode(new IMulticall3.Call[](0)));
     }
 }
