@@ -192,7 +192,7 @@ contract LiquidityHubExecuteTest is BaseTest {
 
         hoax(config.admin.owner());
 
-        vm.expectEmit();
+        vm.expectEmit(address(config.executor));
         emit LiquidityHubLib.Resolved(
             ExclusiveDutchOrderLib.hash(o),
             o.info.swapper,
@@ -202,7 +202,7 @@ contract LiquidityHubExecuteTest is BaseTest {
             inAmount,
             outAmount
         );
-        emit LiquidityHubLib.Surplus(o.info.swapper, ref, address(outToken), inAmount, refshare);
+        emit LiquidityHubLib.Surplus(o.info.swapper, ref, address(outToken), slippage, refshare);
 
         config.executor.execute(order, calls, 0);
     }
