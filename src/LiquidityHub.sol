@@ -44,12 +44,19 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     /**
      * Entry point
      */
-    function execute(SignedOrder calldata order, IMulticall3.Call[] calldata calls, uint256 swapperLimit)
+    function execute(SignedOrder calldata order, IMulticall3.Call[] calldata calls, uint256 outAmountSwapper)
         external
         onlyAllowed
     {
-        reactor.executeWithCallback(order, abi.encode(calls, swapperLimit));
-        _excess(order);
+        reactor.executeWithCallback(order, abi.encode(calls, outAmountSwapper));
+
+        ExclusiveDutchOrder memory o = abi.decode(order.order, (ExclusiveDutchOrder));
+        (address ref, uint8 share) = abi.decode(o.info.additionalValidationData, (address, uint8));
+
+        _surplus(o.info.swapper, ref, address(o.input.token), share);
+        for (uint256 i = 0; i < o.outputs.length; i++) {
+            _surplus(o.info.swapper, ref, address(o.outputs[i].token), share);
+        }
     }
 
     /**
@@ -58,13 +65,12 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     function reactorCallback(ResolvedOrder[] memory orders, bytes memory callbackData) external override onlyReactor {
         ResolvedOrder memory order = orders[0];
 
-        (IMulticall3.Call[] memory calls, uint256 swapperLimit) =
+        (IMulticall3.Call[] memory calls, uint256 outAmountSwapper) =
             abi.decode(callbackData, (IMulticall3.Call[], uint256));
 
         _executeMulticall(calls);
         (address outToken, uint256 outAmount) = _approveReactorOutputs(order);
-
-        if (outAmount < swapperLimit) revert LiquidityHubLib.InvalidSwapperLimit(outAmount);
+        _verifyOutAmountSwapper(order.info.swapper, outToken, outAmount, outAmountSwapper);
 
         address ref = abi.decode(order.info.additionalValidationData, (address));
 
@@ -97,29 +103,31 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         }
     }
 
-    function _excess(SignedOrder calldata o) private {
-        ExclusiveDutchOrder memory order = abi.decode(o.order, (ExclusiveDutchOrder));
-        (address ref, uint8 share) = abi.decode(order.info.additionalValidationData, (address, uint8));
-
-        _surplus(order.info.swapper, ref, address(order.input.token), share);
-
-        for (uint256 i = 0; i < order.outputs.length; i++) {
-            _surplus(order.info.swapper, ref, address(order.outputs[i].token), share);
+    function _verifyOutAmountSwapper(address swapper, address token, uint256 outAmount, uint256 outAmountSwapper)
+        private
+    {
+        uint256 balance = (token == address(0)) ? address(this).balance : IERC20(token).balanceOf(address(this));
+        if (outAmountSwapper > balance) revert LiquidityHubLib.InvalidOutAmountSwapper(balance);
+        if (outAmountSwapper > outAmount) {
+            if (token == address(0)) Address.sendValue(payable(swapper), outAmountSwapper - outAmount);
+            else IERC20(token).safeTransfer(swapper, outAmountSwapper - outAmount);
         }
     }
 
     function _surplus(address swapper, address ref, address token, uint8 share) private {
         uint256 balance = (token == address(0)) ? address(this).balance : IERC20(token).balanceOf(address(this));
-        if (balance > 0) {
-            uint256 refshare = balance * share / 100;
-            (token == address(0))
-                ? Address.sendValue(payable(ref), refshare)
-                : IERC20(token).safeTransfer(ref, refshare);
-            (token == address(0))
-                ? Address.sendValue(payable(swapper), address(this).balance)
-                : IERC20(token).safeTransfer(swapper, IERC20(token).balanceOf(address(this)));
-            emit LiquidityHubLib.Surplus(swapper, ref, token, balance, share);
+        if (balance == 0) return;
+
+        uint256 refshare = balance * share / 100;
+        if (token == address(0)) {
+            Address.sendValue(payable(ref), refshare);
+            Address.sendValue(payable(swapper), address(this).balance);
+        } else {
+            IERC20(token).safeTransfer(ref, refshare);
+            IERC20(token).safeTransfer(swapper, IERC20(token).balanceOf(address(this)));
         }
+
+        emit LiquidityHubLib.Surplus(swapper, ref, token, balance, refshare);
     }
 
     /**

@@ -4,7 +4,7 @@ pragma solidity 0.8.x;
 library LiquidityHubLib {
     error InvalidSender(address sender);
     error InvalidOrder();
-    error InvalidSwapperLimit(uint256 outAmount);
+    error InvalidOutAmountSwapper(uint256 actual);
 
     event Resolved(
         bytes32 indexed orderHash,
@@ -16,7 +16,9 @@ library LiquidityHubLib {
         uint256 outAmount
     );
 
-    event Surplus(address indexed swapper, address indexed ref, address token, uint256 amount, uint8 share);
+    event Surplus(
+        address indexed swapper, address indexed ref, address indexed token, uint256 amount, uint256 refshare
+    );
 }
 
 interface IAllowed {
