@@ -69,7 +69,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
             abi.decode(callbackData, (IMulticall3.Call[], uint256));
 
         _executeMulticall(calls);
-        (address outToken, uint256 outAmount) = _approveReactorOutputs(order);
+        (address outToken, uint256 outAmount) = _handleOrderOutputs(order);
         _verifyOutAmountSwapper(order.info.swapper, outToken, outAmount, outAmountSwapper);
 
         address ref = abi.decode(order.info.additionalValidationData, (address));
@@ -85,20 +85,19 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         );
     }
 
-    function _approveReactorOutputs(ResolvedOrder memory order) private returns (address outToken, uint256 outAmount) {
+    function _handleOrderOutputs(ResolvedOrder memory order) private returns (address outToken, uint256 outAmount) {
         for (uint256 i = 0; i < order.outputs.length; i++) {
             uint256 amount = order.outputs[i].amount;
-            if (amount == 0) continue;
 
-            address token = address(order.outputs[i].token);
+            if (amount > 0) {
+                address token = address(order.outputs[i].token);
+                _approveReactor(token, amount);
 
-            if (token == address(0)) Address.sendValue(payable(address(reactor)), amount);
-            else IERC20(token).safeIncreaseAllowance(address(reactor), amount);
-
-            if (order.outputs[i].recipient == order.info.swapper) {
-                if (outToken != address(0) && outToken != token) revert LiquidityHubLib.InvalidOrder();
-                outToken = token;
-                outAmount += amount;
+                if (order.outputs[i].recipient == order.info.swapper) {
+                    if (outToken != address(0) && outToken != token) revert LiquidityHubLib.InvalidOrder();
+                    outToken = token;
+                    outAmount += amount;
+                }
             }
         }
     }
@@ -106,28 +105,34 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     function _verifyOutAmountSwapper(address swapper, address token, uint256 outAmount, uint256 outAmountSwapper)
         private
     {
-        uint256 balance = (token == address(0)) ? address(this).balance : IERC20(token).balanceOf(address(this));
+        uint256 balance = _balanceOf(token, address(this));
         if (outAmountSwapper > balance) revert LiquidityHubLib.InvalidOutAmountSwapper(balance);
-        if (outAmountSwapper > outAmount) {
-            if (token == address(0)) Address.sendValue(payable(swapper), outAmountSwapper - outAmount);
-            else IERC20(token).safeTransfer(swapper, outAmountSwapper - outAmount);
-        }
+        if (outAmountSwapper > outAmount) _transfer(token, swapper, outAmountSwapper - outAmount);
     }
 
     function _surplus(address swapper, address ref, address token, uint8 share) private {
-        uint256 balance = (token == address(0)) ? address(this).balance : IERC20(token).balanceOf(address(this));
+        uint256 balance = _balanceOf(token, address(this));
         if (balance == 0) return;
 
         uint256 refshare = balance * share / 100;
-        if (token == address(0)) {
-            Address.sendValue(payable(ref), refshare);
-            Address.sendValue(payable(swapper), address(this).balance);
-        } else {
-            IERC20(token).safeTransfer(ref, refshare);
-            IERC20(token).safeTransfer(swapper, IERC20(token).balanceOf(address(this)));
-        }
+        _transfer(token, ref, refshare);
+        _transfer(token, swapper, _balanceOf(token, address(this)));
 
         emit LiquidityHubLib.Surplus(swapper, ref, token, balance, refshare);
+    }
+
+    function _approveReactor(address token, uint256 amount) private {
+        if (token == address(0)) Address.sendValue(payable(address(reactor)), amount);
+        else IERC20(token).safeIncreaseAllowance(address(reactor), amount);
+    }
+
+    function _transfer(address token, address to, uint256 amount) private {
+        if (token == address(0)) Address.sendValue(payable(to), amount);
+        else IERC20(token).safeTransfer(to, amount);
+    }
+
+    function _balanceOf(address token, address who) private view returns (uint256) {
+        return (token == address(0)) ? who.balance : IERC20(token).balanceOf(who);
     }
 
     /**
