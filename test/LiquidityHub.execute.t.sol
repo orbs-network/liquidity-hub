@@ -147,8 +147,10 @@ contract LiquidityHubExecuteTest is BaseTest {
         IMulticall3.Call[] memory calls = _mockSwap();
 
         hoax(config.admin.owner());
-        vm.expectRevert(abi.encodeWithSelector(LiquidityHubLib.InvalidOutAmountSwapper.selector, outAmount));
-        config.executor.execute(order, calls, outAmount + (slippage / (100 - refshare)) + 1);
+        vm.expectRevert(
+            abi.encodeWithSelector(LiquidityHubLib.InvalidOutAmountSwapper.selector, outAmount + slippage + gasAmount)
+        );
+        config.executor.execute(order, calls, outAmount + slippage + gasAmount + 1);
     }
 
     function test_swapperLimitRespectsSurplus() public {
@@ -156,10 +158,14 @@ contract LiquidityHubExecuteTest is BaseTest {
 
         IMulticall3.Call[] memory calls = _mockSwap();
 
-        hoax(config.admin.owner());
-        config.executor.execute(order, calls, outAmount + 0.001 ether);
+        uint256 outAmountSwapper = outAmount + 0.001 ether;
+        uint256 expectedSlippage = slippage - 0.001 ether;
+        uint256 expectedSwapperSlippage = expectedSlippage / (100 - refshare);
 
-        assertEq(outToken.balanceOf(swapper), outAmount + 0.001 ether + ((slippage - 0.001 ether) / (100 - refshare)));
+        hoax(config.admin.owner());
+        config.executor.execute(order, calls, outAmountSwapper);
+
+        assertEq(outToken.balanceOf(swapper), outAmountSwapper + expectedSwapperSlippage);
     }
 
     function test_decayOnNegativeSlippage() public {
