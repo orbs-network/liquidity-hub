@@ -6,12 +6,15 @@ import "forge-std/Script.sol";
 import {BaseScript, Admin} from "script/base/BaseScript.sol";
 
 contract DeployAdmin is BaseScript {
-    function run(address owner, address weth) public returns (address admin) {
-        admin = computeCreate2Address(0, hashInitCode(type(Admin).creationCode, abi.encode(owner)));
+    function run() public returns (address admin) {
+        address deployer = vm.envAddress("DEPLOYER");
+        address weth = vm.envAddress("WETH");
+
+        admin = computeCreate2Address(0, hashInitCode(type(Admin).creationCode, abi.encode(deployer)));
 
         if (admin.code.length == 0) {
             vm.broadcast();
-            Admin deployed = new Admin{salt: 0}(owner);
+            Admin deployed = new Admin{salt: 0}(deployer);
 
             require(admin == address(deployed), "mismatched address");
 
