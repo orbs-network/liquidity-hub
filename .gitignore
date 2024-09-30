@@ -2,6 +2,9 @@
 cache/
 broadcast/
 broadcast/**
+out/*
+!out/LiquidityHub.sol/*
+
 
 # Created by https://www.toptal.com/developers/gitignore/api/node,macos,react,sublimetext,intellij+all,visualstudiocode,solidity,soliditytruffle
 # Edit at https://www.toptal.com/developers/gitignore?templates=node,macos,react,sublimetext,intellij+all,visualstudiocode,solidity,soliditytruffle
@@ -57,9 +60,6 @@ cmake-build-*/
 
 # File-based project format
 *.iws
-
-# IntelliJ
-out/
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/
@@ -215,7 +215,6 @@ web_modules/
 
 # Next.js build output
 .next
-out
 
 # Nuxt.js build / generate output
 .nuxt
