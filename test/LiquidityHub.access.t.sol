@@ -26,12 +26,6 @@ contract LiquidityHubAccessTest is BaseTest {
         uut.execute(order, new IMulticall3.Call[](0), 0);
     }
 
-    function test_revert_validationCallback_noRef() public {
-        ResolvedOrder memory order;
-        vm.expectRevert(abi.encodeWithSelector(LiquidityHubLib.InvalidOrder.selector));
-        uut.validate(address(uut), order);
-    }
-
     function test_revert_validationCallback_onlySelf() public {
         ResolvedOrder memory order;
         address filler = makeAddr("unknown filler");
