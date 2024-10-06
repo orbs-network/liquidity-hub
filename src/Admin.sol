@@ -13,14 +13,6 @@ import {IWETH} from "./IWETH.sol";
 contract Admin is Ownable {
     using SafeERC20 for IERC20;
 
-    error NotAllowed(address sender);
-    error Init();
-
-    modifier onlyAllowed() {
-        if (!allowed[msg.sender]) revert NotAllowed(msg.sender);
-        _;
-    }
-
     mapping(address => bool) public allowed;
     IWETH public weth;
 
@@ -30,7 +22,7 @@ contract Admin is Ownable {
     }
 
     function init(address _weth) external onlyOwner {
-        if (address(weth) != address(0)) revert Init();
+        if (address(weth) != address(0)) revert();
         weth = IWETH(_weth);
     }
 

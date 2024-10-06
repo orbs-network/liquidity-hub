@@ -19,7 +19,7 @@ contract AdminAccessTest is BaseTest {
 
     function test_revert_admin_init_twice() public {
         hoax(config.admin.owner());
-        vm.expectRevert(Admin.Init.selector);
+        vm.expectRevert();
         config.admin.init(address(1));
     }
 
