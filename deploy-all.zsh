@@ -4,7 +4,7 @@ set -euo pipefail
 
 trap chain EXIT
 
-chains=(eth arb bnb matic ftm op linea)
+chains=(eth arb bnb matic ftm op linea blast base zkevm)
 
 echo $chains | tr ' ' '\n' | parallel "\
     echo \"🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗 🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀 {}\";\
