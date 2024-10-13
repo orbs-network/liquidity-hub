@@ -47,6 +47,7 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
         admin.init(weth);
 
         IReactor reactor = new ExclusiveDutchOrderReactor(IPermit2(Consts.PERMIT2_ADDRESS), address(0));
+        IReactor reactor2 = new ExclusiveDutchOrderReactor(IPermit2(Consts.PERMIT2_ADDRESS), address(0));
         LiquidityHub executor = new LiquidityHub(reactor, IAllowed(address(admin)));
 
         RePermit repermit = new RePermit();
@@ -56,6 +57,7 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
             admin: admin,
             executor: executor,
             reactor: reactor,
+            reactor2: reactor2,
             reactorPartial: reactorPartial,
             repermit: repermit
         });

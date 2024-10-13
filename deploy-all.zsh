@@ -8,6 +8,6 @@ chains=(eth arb bnb matic ftm op linea blast base zkevm)
 
 echo $chains | tr ' ' '\n' | parallel "\
     echo \"🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗 🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀 {}\";\
-    source setchain {};\
+    chain {};\
     forge script Deploy --broadcast --verify --retries 100"
 

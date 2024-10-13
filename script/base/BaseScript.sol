@@ -16,6 +16,7 @@ struct Config {
     Admin admin;
     LiquidityHub executor;
     IReactor reactor;
+    IReactor reactor2;
     PartialOrderReactor reactorPartial;
     RePermit repermit;
 }
@@ -34,6 +35,7 @@ abstract contract BaseScript is Script {
         vm.label(address(config.admin), "admin");
         vm.label(address(config.executor), "executor");
         vm.label(address(config.reactor), "reactor");
+        vm.label(address(config.reactor2), "reactor2");
         vm.label(address(config.reactorPartial), "reactorPartial");
         vm.label(address(config.repermit), "repermit");
     }
