@@ -1,145 +1,146 @@
 {
-  "domain": {
-    "name": "RePermit",
-    "chainId": "<CHAINID>",
-    "verifyingContract": "<REPERMIT>"
-  },
-  "types": {
-    "RePermitWitnessTransferFrom": [
-      {
-        "name": "permitted",
-        "type": "TokenPermissions"
-      },
-      {
-        "name": "spender",
-        "type": "address"
-      },
-      {
-        "name": "nonce",
-        "type": "uint256"
-      },
-      {
-        "name": "deadline",
-        "type": "uint256"
-      },
-      {
-        "name": "witness",
-        "type": "PartialOrder"
-      }
-    ],
-    "OrderInfo": [
-      {
-        "name": "reactor",
-        "type": "address"
-      },
-      {
-        "name": "swapper",
-        "type": "address"
-      },
-      {
-        "name": "nonce",
-        "type": "uint256"
-      },
-      {
-        "name": "deadline",
-        "type": "uint256"
-      },
-      {
-        "name": "additionalValidationContract",
-        "type": "address"
-      },
-      {
-        "name": "additionalValidationData",
-        "type": "bytes"
-      }
-    ],
-    "PartialInput": [
-      {
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "PartialOrder": [
-      {
-        "name": "info",
-        "type": "OrderInfo"
-      },
-      {
-        "name": "exclusiveFiller",
-        "type": "address"
-      },
-      {
-        "name": "exclusivityOverrideBps",
-        "type": "uint256"
-      },
-      {
-        "name": "input",
-        "type": "PartialInput"
-      },
-      {
-        "name": "outputs",
-        "type": "PartialOutput[]"
-      }
-    ],
-    "PartialOutput": [
-      {
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "name": "recipient",
-        "type": "address"
-      }
-    ],
-    "TokenPermissions": [
-      {
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "name": "amount",
-        "type": "uint256"
-      }
-    ]
-  },
-  "values": {
-    "permitted": {
-      "token": "<INTOKEN>",
-      "amount": "<INAMOUNT>"
+    "domain": {
+        "name": "RePermit",
+        "version": "1",
+        "chainId": "<CHAINID>",
+        "verifyingContract": "<REPERMIT>"
     },
-    "spender": "<REACTOR>",
-    "nonce": "<NONCE>",
-    "deadline": "<DEADLINE>",
-    "witness": {
-      "info": {
-        "reactor": "<REACTOR>",
-        "swapper": "<SWAPPER>",
+    "types": {
+        "RePermitWitnessTransferFrom": [
+            {
+                "name": "permitted",
+                "type": "TokenPermissions"
+            },
+            {
+                "name": "spender",
+                "type": "address"
+            },
+            {
+                "name": "nonce",
+                "type": "uint256"
+            },
+            {
+                "name": "deadline",
+                "type": "uint256"
+            },
+            {
+                "name": "witness",
+                "type": "PartialOrder"
+            }
+        ],
+        "OrderInfo": [
+            {
+                "name": "reactor",
+                "type": "address"
+            },
+            {
+                "name": "swapper",
+                "type": "address"
+            },
+            {
+                "name": "nonce",
+                "type": "uint256"
+            },
+            {
+                "name": "deadline",
+                "type": "uint256"
+            },
+            {
+                "name": "additionalValidationContract",
+                "type": "address"
+            },
+            {
+                "name": "additionalValidationData",
+                "type": "bytes"
+            }
+        ],
+        "PartialInput": [
+            {
+                "name": "token",
+                "type": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "PartialOrder": [
+            {
+                "name": "info",
+                "type": "OrderInfo"
+            },
+            {
+                "name": "exclusiveFiller",
+                "type": "address"
+            },
+            {
+                "name": "exclusivityOverrideBps",
+                "type": "uint256"
+            },
+            {
+                "name": "input",
+                "type": "PartialInput"
+            },
+            {
+                "name": "outputs",
+                "type": "PartialOutput[]"
+            }
+        ],
+        "PartialOutput": [
+            {
+                "name": "token",
+                "type": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "name": "recipient",
+                "type": "address"
+            }
+        ],
+        "TokenPermissions": [
+            {
+                "name": "token",
+                "type": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256"
+            }
+        ]
+    },
+    "message": {
+        "permitted": {
+            "token": "<INTOKEN>",
+            "amount": "<INAMOUNT>"
+        },
+        "spender": "<REACTOR>",
         "nonce": "<NONCE>",
         "deadline": "<DEADLINE>",
-        "additionalValidationContract": "0x0000000000000000000000000000000000000000",
-        "additionalValidationData": "0x"
-      },
-      "exclusiveFiller": "<EXECUTOR>",
-      "exclusivityOverrideBps": "0",
-      "input": {
-        "token": "<INTOKEN>",
-        "amount": "<TOTALINAMOUNT>"
-      },
-      "outputs": [
-        {
-          "token": "<OUTTOKEN>",
-          "amount": "<OUTAMOUNTSWAPPER>",
-          "recipient": "<SWAPPER>"
+        "witness": {
+            "info": {
+                "reactor": "<REACTOR>",
+                "swapper": "<SWAPPER>",
+                "nonce": "<NONCE>",
+                "deadline": "<DEADLINE>",
+                "additionalValidationContract": "0x0000000000000000000000000000000000000000",
+                "additionalValidationData": "0x"
+            },
+            "exclusiveFiller": "<EXECUTOR>",
+            "exclusivityOverrideBps": "0",
+            "input": {
+                "token": "<INTOKEN>",
+                "amount": "<TOTALINAMOUNT>"
+            },
+            "outputs": [
+                {
+                    "token": "<OUTTOKEN>",
+                    "amount": "<OUTAMOUNTSWAPPER>",
+                    "recipient": "<SWAPPER>"
+                }
+            ]
         }
-      ]
     }
-  }
 }
