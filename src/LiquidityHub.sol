@@ -69,8 +69,9 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
             abi.decode(callbackData, (IMulticall3.Call[], uint256));
 
         _executeMulticall(calls);
+
         (address outToken, uint256 outAmount) = _handleOrderOutputs(order);
-        _verifyOutAmountSwapper(order.info.swapper, outToken, outAmount, outAmountSwapper);
+        if (outAmountSwapper > outAmount) _transfer(outToken, order.info.swapper, outAmountSwapper - outAmount);
 
         address ref = abi.decode(order.info.additionalValidationData, (address));
 
@@ -91,7 +92,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
 
             if (amount > 0) {
                 address token = address(order.outputs[i].token);
-                _approveReactor(token, amount);
+                _outputReactor(token, amount);
 
                 if (order.outputs[i].recipient == order.info.swapper) {
                     if (outToken != address(0) && outToken != token) revert LiquidityHubLib.InvalidOrder();
@@ -100,14 +101,6 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
                 }
             }
         }
-    }
-
-    function _verifyOutAmountSwapper(address swapper, address token, uint256 outAmount, uint256 outAmountSwapper)
-        private
-    {
-        uint256 balance = _balanceOf(token, address(this));
-        if (outAmountSwapper > balance) revert LiquidityHubLib.InvalidOutAmountSwapper(balance);
-        if (outAmountSwapper > outAmount) _transfer(token, swapper, outAmountSwapper - outAmount);
     }
 
     function _surplus(address swapper, address ref, address token, uint8 share) private {
@@ -122,7 +115,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         emit LiquidityHubLib.Surplus(swapper, ref, token, balance, refshare);
     }
 
-    function _approveReactor(address token, uint256 amount) private {
+    function _outputReactor(address token, uint256 amount) private {
         if (token == address(0)) Address.sendValue(payable(address(reactor)), amount);
         else IERC20(token).safeIncreaseAllowance(address(reactor), amount);
     }

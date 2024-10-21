@@ -167,15 +167,27 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(outToken.balanceOf(swapper), outAmount + (slippage / (100 - refshare)));
     }
 
+    function test_nativeOutputSwapperLimit() public {
+        outToken = ERC20Mock(address(0));
+
+        SignedOrder memory order = _order();
+
+        IMulticall3.Call[] memory calls = _mockSwap();
+
+        hoax(config.admin.owner());
+        config.executor.execute(order, calls, outAmount);
+
+        assertEq(inToken.balanceOf(swapper), 9 ether);
+        assertEq(swapper.balance, outAmount + (slippage / (100 - refshare)));
+    }
+
     function test_revert_swapperLimit() public {
         SignedOrder memory order = _order();
 
         IMulticall3.Call[] memory calls = _mockSwap();
 
         hoax(config.admin.owner());
-        vm.expectRevert(
-            abi.encodeWithSelector(LiquidityHubLib.InvalidOutAmountSwapper.selector, outAmount + slippage + gasAmount)
-        );
+        vm.expectRevert();
         config.executor.execute(order, calls, outAmount + slippage + gasAmount + 1);
     }
 
