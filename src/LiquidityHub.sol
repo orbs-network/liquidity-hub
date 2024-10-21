@@ -107,10 +107,10 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         uint256 balance = _balanceOf(token, address(this));
         if (balance == 0) return;
 
-        uint256 refshare = balance * share / 100;
+        uint256 refshare = (ref != address(0)) ? balance * share / 100 : 0;
 
-        if (ref != address(0) && refshare > 0) _transfer(token, ref, refshare);
-        _transfer(token, swapper, _balanceOf(token, address(this)));
+        if (refshare > 0) _transfer(token, ref, refshare);
+        _transfer(token, swapper, balance - refshare);
 
         emit LiquidityHubLib.Surplus(swapper, ref, token, balance, refshare);
     }
