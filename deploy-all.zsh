@@ -1,5 +1,4 @@
 #!/bin/zsh
-
 set -euo pipefail
 
 trap chain EXIT
