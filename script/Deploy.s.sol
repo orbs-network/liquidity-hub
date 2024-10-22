@@ -22,7 +22,7 @@ contract Deploy is BaseScript {
             address reactor2,
             address executor,
             address repermit,
-            address partialreactor
+            address reactorPartial
         )
     {
         address owner = vm.envAddress("OWNER");
@@ -37,7 +37,7 @@ contract Deploy is BaseScript {
         executor = _executor(reactor, admin);
 
         repermit = _repermit();
-        partialreactor = _partialreactor(repermit);
+        reactorPartial = _partialreactor(repermit);
     }
 
     function _admin(address owner, address weth, bytes32 salt) private returns (address admin) {
