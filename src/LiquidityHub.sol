@@ -22,6 +22,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     using SafeERC20 for IERC20;
 
     uint8 public constant VERSION = 5;
+    address public constant INVALID_ADDRESS = address(1);
 
     IReactor public immutable reactor;
     IAllowed public immutable allowed;
@@ -87,6 +88,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     }
 
     function _handleOrderOutputs(ResolvedOrder memory order) private returns (address outToken, uint256 outAmount) {
+        outToken = INVALID_ADDRESS;
         for (uint256 i = 0; i < order.outputs.length; i++) {
             uint256 amount = order.outputs[i].amount;
 
@@ -95,7 +97,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
                 _outputReactor(token, amount);
 
                 if (order.outputs[i].recipient == order.info.swapper) {
-                    if (outToken != address(0) && outToken != token) revert LiquidityHubLib.InvalidOrder();
+                    if (outToken != INVALID_ADDRESS && outToken != token) revert LiquidityHubLib.InvalidOrder();
                     outToken = token;
                     outAmount += amount;
                 }
