@@ -13,7 +13,6 @@ import {ResolvedOrder, SignedOrder} from "uniswapx/src/base/ReactorStructs.sol";
 import {ExclusiveDutchOrder} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
 
 import {Consts} from "./Consts.sol";
-import {IAllowed, LiquidityHubLib} from "./LiquidityHubLib.sol";
 
 /**
  * LiquidityHub Executor
@@ -21,7 +20,24 @@ import {IAllowed, LiquidityHubLib} from "./LiquidityHubLib.sol";
 contract LiquidityHub is IReactorCallback, IValidationCallback {
     using SafeERC20 for IERC20;
 
-    uint8 public constant VERSION = 5;
+    error InvalidSender(address sender);
+    error InvalidOrder();
+
+    event Resolved(
+        bytes32 indexed orderHash,
+        address indexed swapper,
+        address indexed ref,
+        address inToken,
+        address outToken,
+        uint256 inAmount,
+        uint256 outAmount
+    );
+
+    event ExtraOut(address indexed recipient, address token, uint256 amount);
+
+    event Surplus(address indexed ref, address swapper, address token, uint256 amount, uint256 refshare);
+
+    uint8 public constant VERSION = 6;
     address public constant INVALID_ADDRESS = address(1);
 
     IReactor public immutable reactor;
@@ -33,12 +49,12 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     }
 
     modifier onlyAllowed() {
-        if (!allowed.allowed(msg.sender)) revert LiquidityHubLib.InvalidSender(msg.sender);
+        if (!allowed.allowed(msg.sender)) revert InvalidSender(msg.sender);
         _;
     }
 
     modifier onlyReactor() {
-        if (msg.sender != address(reactor)) revert LiquidityHubLib.InvalidSender(msg.sender);
+        if (msg.sender != address(reactor)) revert InvalidSender(msg.sender);
         _;
     }
 
@@ -54,9 +70,9 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         ExclusiveDutchOrder memory o = abi.decode(order.order, (ExclusiveDutchOrder));
         (address ref, uint8 share) = abi.decode(o.info.additionalValidationData, (address, uint8));
 
-        _surplus(o.info.swapper, ref, address(o.input.token), share);
+        _surplus(ref, o.info.swapper, address(o.input.token), share);
         for (uint256 i = 0; i < o.outputs.length; i++) {
-            _surplus(o.info.swapper, ref, address(o.outputs[i].token), share);
+            _surplus(ref, o.info.swapper, address(o.outputs[i].token), share);
         }
     }
 
@@ -76,7 +92,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
 
         address ref = abi.decode(order.info.additionalValidationData, (address));
 
-        emit LiquidityHubLib.Resolved(
+        emit Resolved(
             order.hash, order.info.swapper, ref, address(order.input.token), outToken, order.input.amount, outAmount
         );
     }
@@ -97,15 +113,17 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
                 _outputReactor(token, amount);
 
                 if (order.outputs[i].recipient == order.info.swapper) {
-                    if (outToken != INVALID_ADDRESS && outToken != token) revert LiquidityHubLib.InvalidOrder();
+                    if (outToken != INVALID_ADDRESS && outToken != token) revert InvalidOrder();
                     outToken = token;
                     outAmount += amount;
+                } else {
+                    emit ExtraOut(order.outputs[i].recipient, token, amount);
                 }
             }
         }
     }
 
-    function _surplus(address swapper, address ref, address token, uint8 share) private {
+    function _surplus(address ref, address swapper, address token, uint8 share) private {
         uint256 balance = _balanceOf(token, address(this));
         if (balance == 0) return;
 
@@ -114,7 +132,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         if (refshare > 0) _transfer(token, ref, refshare);
         _transfer(token, swapper, balance - refshare);
 
-        emit LiquidityHubLib.Surplus(swapper, ref, token, balance, refshare);
+        emit Surplus(ref, swapper, token, balance, refshare);
     }
 
     function _outputReactor(address token, uint256 amount) private {
@@ -135,10 +153,14 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
      * @dev IValidationCallback
      */
     function validate(address filler, ResolvedOrder calldata) external view override {
-        if (filler != address(this)) revert LiquidityHubLib.InvalidSender(filler);
+        if (filler != address(this)) revert InvalidSender(filler);
     }
 
     receive() external payable {
         // accept ETH
     }
+}
+
+interface IAllowed {
+    function allowed(address) external view returns (bool);
 }

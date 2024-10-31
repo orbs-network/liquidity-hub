@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import {BaseTest, ERC20Mock, IERC20} from "test/base/BaseTest.sol";
 
-import {LiquidityHubLib, SignedOrder, IMulticall3} from "src/LiquidityHub.sol";
+import {SignedOrder, IMulticall3} from "src/LiquidityHub.sol";
 import {ExclusiveDutchOrder, ExclusiveDutchOrderLib} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
 
 contract LiquidityHubExecuteTest is BaseTest {
@@ -248,7 +248,10 @@ contract LiquidityHubExecuteTest is BaseTest {
         hoax(config.admin.owner());
 
         vm.expectEmit(address(config.executor));
-        emit LiquidityHubLib.Resolved(
+        emit ExtraOut(address(config.admin), address(outToken), gasAmount);
+
+        vm.expectEmit(address(config.executor));
+        emit Resolved(
             ExclusiveDutchOrderLib.hash(o),
             o.info.swapper,
             ref,
@@ -257,8 +260,24 @@ contract LiquidityHubExecuteTest is BaseTest {
             inAmount,
             outAmount
         );
-        emit LiquidityHubLib.Surplus(o.info.swapper, ref, address(outToken), slippage, refshare);
+
+        vm.expectEmit(address(config.executor));
+        emit Surplus(ref, o.info.swapper, address(outToken), slippage, slippage * refshare / 100);
 
         config.executor.execute(order, calls, 0);
     }
+
+    event Resolved(
+        bytes32 indexed orderHash,
+        address indexed swapper,
+        address indexed ref,
+        address inToken,
+        address outToken,
+        uint256 inAmount,
+        uint256 outAmount
+    );
+
+    event Surplus(address indexed ref, address swapper, address token, uint256 amount, uint256 refshare);
+
+    event ExtraOut(address indexed recipient, address token, uint256 amount);
 }
