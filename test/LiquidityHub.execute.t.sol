@@ -104,6 +104,22 @@ contract LiquidityHubExecuteTest is BaseTest {
         assertEq(swapper.balance, outAmount + (slippage / (100 - refshare)));
     }
 
+    function test_usdtOutput() public {
+        if (block.chainid != 1) return;
+
+        outToken = ERC20Mock(0xdAC17F958D2ee523a2206206994597C13D831ec7);
+
+        SignedOrder memory order = _order();
+        deal(address(outToken), address(config.executor), outAmount + gasAmount + slippage);
+
+        IMulticall3.Call[] memory calls = new IMulticall3.Call[](0);
+        hoax(config.admin.owner());
+        config.executor.execute(order, calls, 0);
+
+        assertEq(inToken.balanceOf(swapper), 9 ether);
+        assertEq(swapper.balance, outAmount + (slippage / (100 - refshare)));
+    }
+
     function test_slippageToRef() public {
         SignedOrder memory order = _order();
 

@@ -136,8 +136,13 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     }
 
     function _outputReactor(address token, uint256 amount) private {
-        if (token == address(0)) Address.sendValue(payable(address(reactor)), amount);
-        else IERC20(token).safeIncreaseAllowance(address(reactor), amount);
+        if (token == address(0)) {
+            Address.sendValue(payable(address(reactor)), amount);
+        } else {
+            uint256 allowance = IERC20(token).allowance(address(this), address(reactor));
+            IERC20(token).safeApprove(address(reactor), 0);
+            IERC20(token).safeApprove(address(reactor), allowance + amount);
+        }
     }
 
     function _transfer(address token, address to, uint256 amount) private {
