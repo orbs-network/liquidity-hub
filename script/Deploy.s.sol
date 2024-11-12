@@ -18,6 +18,7 @@ contract Deploy is BaseScript {
         public
         returns (
             address admin,
+            address fee00,
             address reactor,
             address reactor2,
             address executor,
@@ -30,6 +31,8 @@ contract Deploy is BaseScript {
 
         admin = _admin(owner, weth, bytes32(uint256(0x9563)));
         _whitelist(Admin(payable(admin)));
+
+        fee00 = _admin(owner, weth, 0x55669ad6a3db66a4a3bbfe640c9faa64095a75a5228cf52464f4a449257ee6c5);
 
         reactor = _reactor(bytes32(uint256(0)));
         reactor2 = _reactor(bytes32(uint256(1)));

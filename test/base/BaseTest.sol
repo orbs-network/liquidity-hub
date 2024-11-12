@@ -55,6 +55,7 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
 
         config = Config({
             admin: admin,
+            fee00: admin,
             executor: executor,
             reactor: reactor,
             reactor2: reactor2,
