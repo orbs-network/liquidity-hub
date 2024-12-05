@@ -19,9 +19,11 @@ contract Deploy is BaseScript {
         returns (
             address admin,
             address fee00,
+            address fee01,
             address reactor,
             address reactor2,
             address executor,
+            address executorPCX,
             address repermit,
             address reactorPartial
         )
@@ -33,11 +35,13 @@ contract Deploy is BaseScript {
         _whitelist(Admin(payable(admin)));
 
         fee00 = _admin(owner, weth, 0x55669ad6a3db66a4a3bbfe640c9faa64095a75a5228cf52464f4a449257ee6c5);
+        fee01 = _admin(owner, weth, 0xab1462bd378a47c5676f45ed8b1f1de08ddf212e2525b6c82e7c2c11c41590d2);
 
         reactor = _reactor(bytes32(uint256(0)));
         reactor2 = _reactor(bytes32(uint256(1)));
 
         executor = _executor(reactor, admin);
+        executorPCX = _executor(0xDB9D365b50E62fce747A90515D2bd1254A16EbB9, admin);
 
         repermit = _repermit();
         reactorPartial = _partialreactor(repermit);
