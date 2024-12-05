@@ -14,8 +14,8 @@ import {Permit2Lib} from "src/Permit2Lib.sol";
 
 struct Config {
     Admin admin;
-    Admin fee00;
     LiquidityHub executor;
+    Admin fee00;
     IReactor reactor;
     IReactor reactor2;
     PartialOrderReactor reactorPartial;
@@ -34,8 +34,8 @@ abstract contract BaseScript is Script {
             vm.parseJson(vm.readFile(string.concat(vm.projectRoot(), "/script/input/config.json"))), (Config)
         );
         vm.label(address(config.admin), "admin");
-        vm.label(address(config.fee00), "fee00");
         vm.label(address(config.executor), "executor");
+        vm.label(address(config.fee00), "fee00");
         vm.label(address(config.reactor), "reactor");
         vm.label(address(config.reactor2), "reactor2");
         vm.label(address(config.reactorPartial), "reactorPartial");
