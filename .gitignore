@@ -3,6 +3,7 @@ cache/
 broadcast/
 broadcast/**
 out/*
+zkout/*
 !out/LiquidityHub.sol/*
 
 
