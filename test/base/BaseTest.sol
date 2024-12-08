@@ -49,7 +49,6 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
         IReactor reactor = new ExclusiveDutchOrderReactor(IPermit2(Consts.PERMIT2_ADDRESS), address(0));
         IReactor reactor2 = new ExclusiveDutchOrderReactor(IPermit2(Consts.PERMIT2_ADDRESS), address(0));
         LiquidityHub executor = new LiquidityHub(reactor, IAllowed(address(admin)));
-        LiquidityHub executorPCX = new LiquidityHub(IReactor(makeAddr("reactorPCX")), IAllowed(address(admin)));
 
         RePermit repermit = new RePermit();
         PartialOrderReactor reactorPartial = new PartialOrderReactor(repermit);
@@ -57,9 +56,6 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
         config = Config({
             admin: admin,
             executor: executor,
-            executorPCX: executorPCX,
-            fee00: admin,
-            fee01: admin,
             reactor: reactor,
             reactor2: reactor2,
             reactorPartial: reactorPartial,
