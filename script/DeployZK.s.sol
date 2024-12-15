@@ -18,12 +18,9 @@ contract DeployZK is BaseScript {
         public
         returns (
             address admin,
-            address fee00,
-            address fee01,
             address reactor,
             address reactor2,
             address executor,
-            address executorPCX,
             address repermit,
             address reactorPartial
         )
