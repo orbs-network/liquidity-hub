@@ -18,17 +18,18 @@ contract Deploy is BaseScript {
         address owner = vm.envAddress("OWNER");
         address weth = vm.envAddress("WETH");
 
-        admin = _admin(owner, weth, bytes32(uint256(0x9563)));
-        _whitelist(Admin(payable(admin)));
+        //admin = _admin(owner, weth, bytes32(uint256(0x9563)));
+        //_whitelist(Admin(payable(admin)));
 
-        // fee00 = _admin(owner, weth, 0x55669ad6a3db66a4a3bbfe640c9faa64095a75a5228cf52464f4a449257ee6c5);
-        // fee01 = _admin(owner, weth, 0xab1462bd378a47c5676f45ed8b1f1de08ddf212e2525b6c82e7c2c11c41590d2);
+        //address fee00 = _admin(owner, weth, 0x55669ad6a3db66a4a3bbfe640c9faa64095a75a5228cf52464f4a449257ee6c5);
+        //address fee01 = _admin(owner, weth, 0xab1462bd378a47c5676f45ed8b1f1de08ddf212e2525b6c82e7c2c11c41590d2);
         //address fee02 = _admin(owner, weth, 0x668fa19c8dfec98130ebcc64b727ecf11105987af78936a05550a1f6679b16cc);
+        //address fee03 = _admin(owner, weth, 0x7622f2bb307bda72700fbabe78b8f2bc76c8d4f214e47ca34aa96b4e980947ce);
 
-        reactor = _reactor(bytes32(uint256(0)));
-        reactor2 = _reactor(bytes32(uint256(1)));
+        //reactor = _reactor(bytes32(uint256(0)));
+        //reactor2 = _reactor(bytes32(uint256(1)));
 
-        executor = _executor(reactor, admin);
+        //executor = _executor(reactor, admin);
         //executor = _executor(0x35db01D1425685789dCc9228d47C7A5C049388d8, 0x000066320a467dE62B1548f46465abBB82662331);
 
         //repermit = _repermit();
