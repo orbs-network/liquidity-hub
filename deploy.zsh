@@ -5,7 +5,7 @@ config=script/input/config.json
 
 trap chain EXIT
 
-chains=(eth arb bnb matic ftm op linea blast base zkevm manta sei sonic)
+chains=(eth arb bnb matic ftm op linea blast base zkevm manta sei sonic zircuit)
 
 echo $chains | tr ' ' '\n' | parallel --keep-order "
     echo \"\n🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗 {} 🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀\n\";
