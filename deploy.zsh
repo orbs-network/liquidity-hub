@@ -10,7 +10,7 @@ chains=(eth arb bnb matic ftm op linea blast base zkevm manta sei sonic zircuit)
 echo $chains | tr ' ' '\n' | parallel --keep-order "
     echo \"\n🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗 {} 🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀\n\";
     chain {};
-    forge script Deploy --broadcast --verify \
+    forge script Deploy --broadcast  \
         \$([[ -n \$VERIFIER ]] && echo --verifier \$VERIFIER)" |
     tee >(
         grep ': address ' | sed 's/: address / /' | while read c a; do;
