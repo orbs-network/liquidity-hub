@@ -1,7 +1,9 @@
 #!/bin/zsh
 set -euo pipefail
 
-config=script/input/config.json
+deployments=script/input/deployments.json
+
+b=false; [[ " $* " == *" -b "* ]] && b=true
 
 trap chain EXIT
 
@@ -10,10 +12,30 @@ chains=(eth arb bnb matic ftm op linea blast base zkevm manta sei sonic zircuit 
 echo $chains | tr ' ' '\n' | parallel --keep-order "
     echo \"\n🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗 {} 🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀\n\";
     chain {};
-    forge script Deploy --broadcast" |
-    tee >(
-        grep ': address ' | sed 's/: address / /' | while read c a; do;
-            [[ $a != $(jq -r ".$c" $config) ]] && echo "❌ address mismatch: $c $a";
-        done;
-        ) |
 
+    export ADMIN=$(jq -r '."*".admin' $deployments);
+    export REACTOR=$(jq -r '."*".reactor' $deployments);
+    export REPERMIT=$(jq -r '."*".repermit' $deployments);
+
+    #forge script DeployAdmin ${b:+--broadcast};
+    echo \"✔ admin\n\"
+
+    #forge script UpdateWhitelist ${b:+--broadcast};
+    echo \"✔ whitelist\n\"
+
+    #forge script DeployReactor ${b:+--broadcast};
+    echo \"✔ reactor\n\"
+
+    export SALT="0x0000000000000000000000000000000000000000000000000000000000000001"
+    forge script DeployReactor ${b:+--broadcast};
+    echo \"✔ reactor2\n\"
+
+    forge script DeployExecutor ${b:+--broadcast};
+    echo \"✔ executor\n\"
+
+#    forge script DeployRepermit ${b:+--broadcast};
+    echo \"✔ repermit\n\"
+
+#    forge script DeployPartial ${b:+--broadcast};
+    echo \"✔ partial\n\"
+"

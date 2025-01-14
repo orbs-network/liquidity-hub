@@ -1,5 +1,11 @@
 {
     "*": {
+        "admin": "0x000066320a467dE62B1548f46465abBB82662331",
+        "executor": "0x9B350b26B82F3c088e1C0C345a904ee5EB655E15",
+        "reactor": "0xc19E284C8f5ccef721a761d0CA18dc8E9a612aFd",
+        "reactor2": "0x41EECa1CAccD83757c84ad6531B935F4600AA094",
+        "reactorPartial": "0x733aB5c10ad6D5183a135C733C135F9aBD4Ef0EA",
+        "repermit": "0xbBa2344A886D66f43AC0E9ed980Cc14c82715aEC",
         "fee00": "0xfeE0000a55d378afbcbBAEAEf29b58F8872b7F02",
         "fee01": "0xFee01004A4f90978Fe64153fB5014bfa134D1eE6",
         "fee02": "0xfEE02006B7F684B5234bBd6837C628A03A753C0e",
@@ -10,8 +16,5 @@
     },
     "42161": {
         "executorPCSX": "0xBa10965C42940a18a700a96D4Eb2eEba476a1532"
-    },
-    "": {
-        "executorPCSX": ""
     }
 }
