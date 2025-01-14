@@ -17,25 +17,44 @@ echo $chains | tr ' ' '\n' | parallel --keep-order "
     export REACTOR=$(jq -r '."*".reactor' $deployments);
     export REPERMIT=$(jq -r '."*".repermit' $deployments);
 
-    #forge script DeployAdmin ${b:+--broadcast};
+    forge script DeployAdmin ${b:+--broadcast};
     echo \"✔ admin\n\"
 
-    #forge script UpdateWhitelist ${b:+--broadcast};
+    export SALT="0x55669ad6a3db66a4a3bbfe640c9faa64095a75a5228cf52464f4a449257ee6c5"
+    forge script DeployAdmin ${b:+--broadcast};
+    echo \"✔ admin fee0\n\"
+
+    export SALT="0xab1462bd378a47c5676f45ed8b1f1de08ddf212e2525b6c82e7c2c11c41590d2"
+    forge script DeployAdmin ${b:+--broadcast};
+    echo \"✔ admin fee1\n\"
+
+    export SALT="0x668fa19c8dfec98130ebcc64b727ecf11105987af78936a05550a1f6679b16cc"
+    forge script DeployAdmin ${b:+--broadcast};
+    echo \"✔ admin fee2\n\"
+
+    export SALT="0x7622f2bb307bda72700fbabe78b8f2bc76c8d4f214e47ca34aa96b4e980947ce"
+    forge script DeployAdmin ${b:+--broadcast};
+    echo \"✔ admin fee3\n\"
+    unset SALT
+
+    forge script UpdateWhitelist ${b:+--broadcast};
     echo \"✔ whitelist\n\"
 
-    #forge script DeployReactor ${b:+--broadcast};
+    forge script DeployReactor ${b:+--broadcast};
     echo \"✔ reactor\n\"
 
     export SALT="0x0000000000000000000000000000000000000000000000000000000000000001"
     forge script DeployReactor ${b:+--broadcast};
     echo \"✔ reactor2\n\"
+    unset SALT
 
     forge script DeployExecutor ${b:+--broadcast};
     echo \"✔ executor\n\"
 
 #    forge script DeployRepermit ${b:+--broadcast};
-    echo \"✔ repermit\n\"
+#    echo \"✔ repermit\n\"
 
 #    forge script DeployPartial ${b:+--broadcast};
-    echo \"✔ partial\n\"
+#    echo \"✔ partial\n\"
+
 "
