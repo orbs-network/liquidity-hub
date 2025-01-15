@@ -8,6 +8,7 @@ b=false; [[ " $* " == *" -b "* ]] && b=true
 trap chain EXIT
 
 chains=(eth arb bnb matic ftm op linea blast base zkevm manta sei sonic zircuit scroll)
+chains=( cronos-zkevm-testnet )
 
 echo $chains | tr ' ' '\n' | parallel --keep-order "
     echo \"\n🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗🔗 {} 🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀\n\";
@@ -17,44 +18,48 @@ echo $chains | tr ' ' '\n' | parallel --keep-order "
     export REACTOR=$(jq -r '."*".reactor' $deployments);
     export REPERMIT=$(jq -r '."*".repermit' $deployments);
 
-    forge script DeployAdmin ${b:+--broadcast};
-    echo \"✔ admin\n\"
 
-    export SALT="0x55669ad6a3db66a4a3bbfe640c9faa64095a75a5228cf52464f4a449257ee6c5"
     forge script DeployAdmin ${b:+--broadcast};
-    echo \"✔ admin fee0\n\"
+    echo ✔ admin\n
 
-    export SALT="0xab1462bd378a47c5676f45ed8b1f1de08ddf212e2525b6c82e7c2c11c41590d2"
-    forge script DeployAdmin ${b:+--broadcast};
-    echo \"✔ admin fee1\n\"
+    SALT=0x55669ad6a3db66a4a3bbfe640c9faa64095a75a5228cf52464f4a449257ee6c5 forge script DeployAdmin ${b:+--broadcast};
+    echo ✔ admin fee0\n
 
-    export SALT="0x668fa19c8dfec98130ebcc64b727ecf11105987af78936a05550a1f6679b16cc"
-    forge script DeployAdmin ${b:+--broadcast};
-    echo \"✔ admin fee2\n\"
+    SALT=0xab1462bd378a47c5676f45ed8b1f1de08ddf212e2525b6c82e7c2c11c41590d2 forge script DeployAdmin ${b:+--broadcast};
+    echo ✔ admin fee1\n
 
-    export SALT="0x7622f2bb307bda72700fbabe78b8f2bc76c8d4f214e47ca34aa96b4e980947ce"
-    forge script DeployAdmin ${b:+--broadcast};
-    echo \"✔ admin fee3\n\"
-    unset SALT
+    SALT=0x668fa19c8dfec98130ebcc64b727ecf11105987af78936a05550a1f6679b16cc forge script DeployAdmin ${b:+--broadcast};
+    echo ✔ admin fee2\n
+
+    SALT=0x7622f2bb307bda72700fbabe78b8f2bc76c8d4f214e47ca34aa96b4e980947ce forge script DeployAdmin ${b:+--broadcast};
+    echo ✔ admin fee3\n
+
+    SALT=0xb1aac588046056d5c6f36a411101a7a1cb65133199af7f4a67f8b1321cd9443e forge script DeployAdmin ${b:+--broadcast};
+    echo ✔ admin fee4\n
+
+    SALT=0x2e90075fd552fee96f1a8ad975cf9dd850ad7562f1f69c0e4a89ee37759df870 forge script DeployAdmin ${b:+--broadcast};
+    echo ✔ admin fee4\n
+
 
     forge script UpdateWhitelist ${b:+--broadcast};
-    echo \"✔ whitelist\n\"
+    echo ✔ whitelist\n
 
     forge script DeployReactor ${b:+--broadcast};
-    echo \"✔ reactor\n\"
+    echo ✔ reactor\n
 
-    export SALT="0x0000000000000000000000000000000000000000000000000000000000000001"
-    forge script DeployReactor ${b:+--broadcast};
-    echo \"✔ reactor2\n\"
-    unset SALT
+    SALT=0x0000000000000000000000000000000000000000000000000000000000000001 forge script DeployReactor ${b:+--broadcast};
+    echo ✔ reactor2\n
 
     forge script DeployExecutor ${b:+--broadcast};
-    echo \"✔ executor\n\"
+    echo ✔ executor\n
+
+    REACTOR=0x35db01D1425685789dCc9228d47C7A5C049388d8 forge script DeployExecutor ${b:+--broadcast};
+    echo ✔ executorPCSX\n
 
 #    forge script DeployRepermit ${b:+--broadcast};
-#    echo \"✔ repermit\n\"
+#    echo ✔ repermit\n
 
 #    forge script DeployPartial ${b:+--broadcast};
-#    echo \"✔ partial\n\"
+#    echo ✔ partial\n
 
 "

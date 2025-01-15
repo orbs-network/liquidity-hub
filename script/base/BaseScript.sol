@@ -24,21 +24,7 @@ struct Config {
 abstract contract BaseScript is Script {
     Config public config;
 
-    function setUp() public virtual {
-        initProductionConfig();
-    }
-
-    function initProductionConfig() public {
-        config = abi.decode(
-            vm.parseJson(vm.readFile(string.concat(vm.projectRoot(), "/script/input/config.json"))), (Config)
-        );
-        vm.label(address(config.admin), "admin");
-        vm.label(address(config.executor), "executor");
-        vm.label(address(config.reactor), "reactor");
-        vm.label(address(config.reactor2), "reactor2");
-        vm.label(address(config.reactorPartial), "reactorPartial");
-        vm.label(address(config.repermit), "repermit");
-    }
+    function setUp() public virtual {}
 
     function signPermit2(uint256 privateKey, bytes32 orderHash) internal view returns (bytes memory sig) {
         bytes32 msgHash = ECDSA.toTypedDataHash(IEIP712(Consts.PERMIT2_ADDRESS).DOMAIN_SEPARATOR(), orderHash);
