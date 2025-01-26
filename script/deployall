@@ -6,7 +6,8 @@ export deployments=script/input/deployments.json
 
 trap chain EXIT
 
-chains=(eth arb bnb matic ftm op linea blast base zkevm manta sei sonic zircuit scroll)
+chains=( eth arb bnb matic ftm op linea blast base zkevm manta sei sonic zircuit scroll )
+chains=( cronos-zkevm )
 
 echo $chains | tr ' ' '\n' | parallel --keep-order '
     echo
@@ -17,63 +18,67 @@ echo $chains | tr ' ' '\n' | parallel --keep-order '
 
     flags="${b:+--broadcast --verify --verifier-url $EXPLORER_URL --verifier-api-key $EXPLORER_API_KEY}"
 
+    f=forge
+    [[ $CHAIN_TYPE == zksync ]] && f="forge-zksync" && flags="--zksync${flags:+ $flags}"
+
     export ADMIN=$(jq -r ".\"*\".admin" $deployments);
     export REACTOR=$(jq -r ".\"*\".reactor" $deployments);
     export REPERMIT=$(jq -r ".\"*\".repermit" $deployments);
 
     echo "===================== admin on {} ====================="
-    forge script DeployAdmin $flags;
+    $f script DeployAdmin $flags;
     echo "✔ admin"
 
+    exit
     echo "===================== fee00 on {} ====================="
-    SALT=0x55669ad6a3db66a4a3bbfe640c9faa64095a75a5228cf52464f4a449257ee6c5 forge script DeployAdmin $flags;
+    SALT=0x55669ad6a3db66a4a3bbfe640c9faa64095a75a5228cf52464f4a449257ee6c5 $f script DeployAdmin $flags;
     echo "✔ admin fee00"
 
     echo "===================== fee01 on {} ====================="
-    SALT=0xab1462bd378a47c5676f45ed8b1f1de08ddf212e2525b6c82e7c2c11c41590d2 forge script DeployAdmin $flags;
+    SALT=0xab1462bd378a47c5676f45ed8b1f1de08ddf212e2525b6c82e7c2c11c41590d2 $f script DeployAdmin $flags;
     echo "✔ admin fee01"
 
     echo "===================== fee02 on {} ====================="
-    SALT=0x668fa19c8dfec98130ebcc64b727ecf11105987af78936a05550a1f6679b16cc forge script DeployAdmin $flags;
+    SALT=0x668fa19c8dfec98130ebcc64b727ecf11105987af78936a05550a1f6679b16cc $f script DeployAdmin $flags;
     echo "✔ admin fee02"
 
     echo "===================== fee03 on {} ====================="
-    SALT=0x7622f2bb307bda72700fbabe78b8f2bc76c8d4f214e47ca34aa96b4e980947ce forge script DeployAdmin $flags;
+    SALT=0x7622f2bb307bda72700fbabe78b8f2bc76c8d4f214e47ca34aa96b4e980947ce $f script DeployAdmin $flags;
     echo "✔ admin fee03"
 
     echo "===================== fee04 on {} ====================="
-    SALT=0xb1aac588046056d5c6f36a411101a7a1cb65133199af7f4a67f8b1321cd9443e forge script DeployAdmin $flags;
+    SALT=0xb1aac588046056d5c6f36a411101a7a1cb65133199af7f4a67f8b1321cd9443e $f script DeployAdmin $flags;
     echo "✔ admin fee04"
 
     echo "===================== fee05 on {} ====================="
-    SALT=0x2e90075fd552fee96f1a8ad975cf9dd850ad7562f1f69c0e4a89ee37759df870 forge script DeployAdmin $flags;
+    SALT=0x2e90075fd552fee96f1a8ad975cf9dd850ad7562f1f69c0e4a89ee37759df870 $f script DeployAdmin $flags;
     echo "✔ admin fee05"
 
 
     echo "===================== whitelist on {} ====================="
-    forge script UpdateWhitelist $flags;
+    $f script UpdateWhitelist $flags;
     echo "✔ whitelist"
 
     echo "===================== reactor on {} ====================="
-    forge script DeployReactor $flags;
+    $f script DeployReactor $flags;
     echo "✔ reactor"
 
     echo "===================== reactor2 on {} ====================="
-    SALT=0x0000000000000000000000000000000000000000000000000000000000000001 forge script DeployReactor $flags;
+    SALT=0x0000000000000000000000000000000000000000000000000000000000000001 $f script DeployReactor $flags;
     echo "✔ reactor2"
 
     echo "===================== executor on {} ====================="
-    forge script DeployExecutor $flags;
+    $f script DeployExecutor $flags;
     echo "✔ executor"
 
     echo "===================== executorPCSX on {} ====================="
-    [[ {} == arb ]] && REACTOR=0x35db01D1425685789dCc9228d47C7A5C049388d8 forge script DeployExecutor $flags;
+    [[ {} == arb ]] && REACTOR=0x35db01D1425685789dCc9228d47C7A5C049388d8 $f script DeployExecutor $flags;
     echo "✔ executorPCSX"
 
-#    forge script DeployRepermit $flags;
+#    $f script DeployRepermit $flags;
 #    echo "✔ repermit"
 
-#    forge script DeployPartial $flags;
+#    $f script DeployPartial $flags;
 #    echo "✔ partial"
 
 '

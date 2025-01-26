@@ -10,16 +10,15 @@ contract DeployAdmin is BaseScript {
         address owner = vm.envAddress("OWNER");
         address weth = vm.envAddress("WETH");
         bytes32 salt = vm.envOr("SALT", bytes32(uint256(0x9563)));
+        admin = vm.envAddress("ADMIN");
 
         bytes32 initCodeHash = hashInitCode(type(Admin).creationCode, abi.encode(owner));
         console.logBytes32(initCodeHash);
 
-        admin = computeCreate2Address(salt, initCodeHash);
-
         if (admin.code.length == 0) {
             vm.broadcast();
             Admin deployed = new Admin{salt: salt}(owner);
-            require(admin == address(deployed), "admin mismatched address");
+            admin = address(deployed);
 
             vm.broadcast();
             deployed.init(weth);
