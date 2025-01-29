@@ -10,8 +10,9 @@ contract DeployExecutor is BaseScript {
     function run() public returns (address executor) {
         address reactor = vm.envAddress("REACTOR");
         address admin = vm.envAddress("ADMIN");
+        executor = vm.envAddress("EXECUTOR");
 
-        executor = computeCreate2Address(0, hashInitCode(type(LiquidityHub).creationCode, abi.encode(reactor, admin)));
+        console.logBytes32(hashInitCode(type(LiquidityHub).creationCode, abi.encode(reactor, admin)));
 
         if (executor.code.length == 0) {
             vm.broadcast();

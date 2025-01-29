@@ -20,6 +20,8 @@
         "executorPCSX": "0xBa10965C42940a18a700a96D4Eb2eEba476a1532"
     },
     "388": {
-        "admin": "0x308367dc4B2D4548966557b819D61b40612927d1"
+        "admin": "0x308367dc4B2D4548966557b819D61b40612927d1",
+        "reactor": "0x1c41B7337eeBbe27Ddfe140DAf8ef09F6E3fa266",
+        "executor": "0xE5aC5FC7C9C63393A3aD52DA89808C6b2dEFFa9d"
     }
 }

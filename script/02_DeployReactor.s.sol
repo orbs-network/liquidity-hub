@@ -10,12 +10,11 @@ import {ExclusiveDutchOrderReactor, IPermit2} from "uniswapx/src/reactors/Exclus
 contract DeployReactor is BaseScript {
     function run() public returns (address reactor) {
         bytes32 salt = vm.envOr("SALT", bytes32(uint256(0)));
+        reactor = vm.envAddress("REACTOR");
 
-        bytes32 initCodeHash =
-            hashInitCode(type(ExclusiveDutchOrderReactor).creationCode, abi.encode(Consts.PERMIT2_ADDRESS, address(0)));
-        console.logBytes32(initCodeHash);
-
-        reactor = computeCreate2Address(salt, initCodeHash);
+        console.logBytes32(
+            hashInitCode(type(ExclusiveDutchOrderReactor).creationCode, abi.encode(Consts.PERMIT2_ADDRESS, address(0)))
+        );
 
         if (reactor.code.length == 0) {
             vm.broadcast();

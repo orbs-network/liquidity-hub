@@ -12,8 +12,7 @@ contract DeployAdmin is BaseScript {
         bytes32 salt = vm.envOr("SALT", bytes32(uint256(0x9563)));
         admin = vm.envAddress("ADMIN");
 
-        bytes32 initCodeHash = hashInitCode(type(Admin).creationCode, abi.encode(owner));
-        console.logBytes32(initCodeHash);
+        console.logBytes32(hashInitCode(type(Admin).creationCode, abi.encode(owner)));
 
         if (admin.code.length == 0) {
             vm.broadcast();
