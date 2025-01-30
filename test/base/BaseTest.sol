@@ -7,6 +7,7 @@ import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
 
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
 import {WETH} from "solmate/src/tokens/WETH.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 
 import {PermitSignature} from "uniswapx/test/util/PermitSignature.sol";
 import {
