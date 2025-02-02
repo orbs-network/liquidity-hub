@@ -3,11 +3,11 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
-import {BaseTest, IERC20, Consts, MockERC20} from "test/base/BaseTest.sol";
+import {BaseTest, IERC20, Consts, MockERC20, LiquidityHub} from "test/base/BaseTest.sol";
 
 import {Executor, SignedOrder, IMulticall3} from "src/Executor.sol";
 
-contract LiquidityHubExecuteTest is BaseTest {
+contract ExecutorTest is BaseTest {
     address public swapper;
     uint256 public swapperPK;
     address public inToken;
@@ -21,6 +21,7 @@ contract LiquidityHubExecuteTest is BaseTest {
     function setUp() public override {
         super.setUp();
         executor = new Executor(Consts.MULTICALL_ADDRESS, config.reactor);
+        config.executor = LiquidityHub(payable(executor));
 
         (swapper, swapperPK) = makeAddrAndKey("swapper");
 
@@ -51,18 +52,46 @@ contract LiquidityHubExecuteTest is BaseTest {
         calls[1].callData = abi.encodeWithSelector(this.mintOutToken.selector);
     }
 
-    function test_gas() public {
+    function test_execute() public {
         vm.pauseGasMetering();
 
         SignedOrder memory order = _order();
-
-        deal(outToken, address(config.executor), outAmount);
 
         IMulticall3.Call[] memory calls = _mockSwap();
 
         hoax(config.admin.owner());
         vm.resumeGasMetering();
         executor.execute(order, abi.encode(calls));
+        assertEq(IERC20(outToken).balanceOf(swapper), outAmount);
+    }
+
+    function test_nativeOutput() public {
+        outToken = address(0);
+
+        SignedOrder memory order = _order();
+
+        IMulticall3.Call[] memory calls = _mockSwap();
+
+        hoax(config.admin.owner());
+        executor.execute(order, abi.encode(calls));
+
+        assertEq(IERC20(inToken).balanceOf(swapper), 9 ether);
+        assertEq(swapper.balance, outAmount);
+    }
+
+    function test_usdtOutput() public {
+        if (block.chainid != 1) return;
+
+        outToken = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+
+        SignedOrder memory order = _order();
+        deal(address(outToken), address(config.executor), outAmount);
+
+        IMulticall3.Call[] memory calls = new IMulticall3.Call[](0);
+        hoax(config.admin.owner());
+        executor.execute(order, abi.encode(calls));
+
+        assertEq(IERC20(inToken).balanceOf(swapper), 9 ether);
         assertEq(IERC20(outToken).balanceOf(swapper), outAmount);
     }
 }

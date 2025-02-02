@@ -15,8 +15,6 @@ import {ResolvedOrder, SignedOrder} from "uniswapx/src/base/ReactorStructs.sol";
  * LiquidityHub Executor
  */
 contract Executor is IReactorCallback, IValidationCallback {
-    error InvalidSender(address sender);
-
     address public immutable multicall;
     IReactor public immutable reactor;
 
@@ -82,4 +80,6 @@ contract Executor is IReactorCallback, IValidationCallback {
     receive() external payable {
         // accept ETH
     }
+
+    error InvalidSender(address sender);
 }
