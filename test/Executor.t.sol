@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import {BaseTest, IERC20, Consts, MockERC20, LiquidityHub} from "test/base/BaseTest.sol";
 
-import {Executor, SignedOrder, IMulticall3} from "src/Executor.sol";
+import {Executor, IAllowed, SignedOrder, IMulticall3} from "src/Executor.sol";
 
 contract ExecutorTest is BaseTest {
     address public swapper;
@@ -20,7 +20,7 @@ contract ExecutorTest is BaseTest {
 
     function setUp() public override {
         super.setUp();
-        executor = new Executor(Consts.MULTICALL_ADDRESS, config.reactor);
+        executor = new Executor(Consts.MULTICALL_ADDRESS, config.reactor, IAllowed(payable(config.admin)));
         config.executor = LiquidityHub(payable(executor));
 
         (swapper, swapperPK) = makeAddrAndKey("swapper");

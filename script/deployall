@@ -7,7 +7,7 @@ export deployments=script/input/deployments.json
 trap chain EXIT
 
 chains=( eth arb bnb matic ftm op linea blast base zkevm manta sei sonic zircuit scroll )
-chains=( cronos-zkevm )
+chains=( arb )
 
 echo $chains | tr ' ' '\n' | parallel --keep-order '
     echo
@@ -45,7 +45,7 @@ echo $chains | tr ' ' '\n' | parallel --keep-order '
 
     [[ {} == arb ]] && {
         echo "===================== executorPCSX on {} ====================="
-        REACTOR=0x35db01D1425685789dCc9228d47C7A5C049388d8 $f script DeployExecutor $flags;
+        SALT=0xa7e61fa158c57ec093db9ec16608fed6232787132d7dc855e783a0ca4bef9b9c EXECUTOR=0x999000832a3DDe0168880D8b3884EAa31AE2f99d REACTOR=0x35db01D1425685789dCc9228d47C7A5C049388d8 $f script DeployExecutor $flags;
         echo "✔ executorPCSX"
     }
 

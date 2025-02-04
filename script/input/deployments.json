@@ -13,11 +13,8 @@
         "fee04": "0xFee0400aC051cF145D4e684407F208E64041e966",
         "fee05": "0xFee0500aa89e27c80985A6B041763f5Dcc8721a7"
     },
-    "56": {
-        "executorPCSX": "0xE9aC98F3B25c15B3a47c53639FfdCB090eEe49D4"
-    },
     "42161": {
-        "executorPCSX": "0xBa10965C42940a18a700a96D4Eb2eEba476a1532"
+        "executorPCSX": "0x999000832a3DDe0168880D8b3884EAa31AE2f99d"
     },
     "388": {
         "admin": "0x308367dc4B2D4548966557b819D61b40612927d1",

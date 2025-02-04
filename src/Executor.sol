@@ -12,15 +12,22 @@ import {IValidationCallback} from "uniswapx/src/interfaces/IValidationCallback.s
 import {ResolvedOrder, SignedOrder} from "uniswapx/src/base/ReactorStructs.sol";
 
 /**
- * LiquidityHub Executor
+ * Executor
  */
 contract Executor is IReactorCallback, IValidationCallback {
     address public immutable multicall;
     IReactor public immutable reactor;
+    IAllowed public immutable allowed;
 
-    constructor(address _multicall, IReactor _reactor) {
+    constructor(address _multicall, IReactor _reactor, IAllowed _allowed) {
         multicall = _multicall;
         reactor = _reactor;
+        allowed = _allowed;
+    }
+
+    modifier onlyAllowed() {
+        if (!allowed.allowed(msg.sender)) revert InvalidSender(msg.sender);
+        _;
     }
 
     modifier onlyReactor() {
@@ -28,7 +35,7 @@ contract Executor is IReactorCallback, IValidationCallback {
         _;
     }
 
-    function execute(SignedOrder calldata order, bytes calldata callbackData) external {
+    function execute(SignedOrder calldata order, bytes calldata callbackData) external onlyAllowed {
         reactor.executeWithCallback(order, callbackData);
     }
 
@@ -82,4 +89,8 @@ contract Executor is IReactorCallback, IValidationCallback {
     }
 
     error InvalidSender(address sender);
+}
+
+interface IAllowed {
+    function allowed(address) external view returns (bool);
 }
