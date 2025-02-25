@@ -10,9 +10,9 @@ contract DeployAdmin is BaseScript {
         address owner = vm.envAddress("OWNER");
         address weth = vm.envAddress("WETH");
         bytes32 salt = vm.envOr("SALT", bytes32(uint256(0x9563)));
-        admin = vm.envAddress("ADMIN");
-
         console.logBytes32(hashInitCode(type(Admin).creationCode, abi.encode(owner)));
+
+        admin = vm.envAddress("ADMIN");
 
         if (admin.code.length == 0) {
             vm.broadcast();
