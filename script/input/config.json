@@ -33,6 +33,9 @@
         "executorPCSX_salt": "0xa7e61fa158c57ec093db9ec16608fed6232787132d7dc855e783a0ca4bef9b9c",
         "executorPCSX": "0x999000832a3DDe0168880D8b3884EAa31AE2f99d"
     },
+    "8453": {
+        "delta-executor": "0x260922357Ea26cd5cB5d9A75f742fDF235847620"
+    },
     "388": {
         "admin": "0x308367dc4B2D4548966557b819D61b40612927d1",
         "reactor": "0x1c41B7337eeBbe27Ddfe140DAf8ef09F6E3fa266",

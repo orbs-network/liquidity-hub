@@ -22,8 +22,8 @@ contract DeltaExecutor is IReactorCallback, IValidationCallback {
     IWETH public immutable weth;
     mapping(address => bool) public allowed;
 
-    constructor(IReactor _reactor, address _weth, address[] memory _allowed) {
-        reactor = _reactor;
+    constructor(address _reactor, address _weth, address[] memory _allowed) {
+        reactor = IReactor(_reactor);
         weth = IWETH(_weth);
         for (uint256 i = 0; i < _allowed.length; ++i) {
             allowed[_allowed[i]] = true;
