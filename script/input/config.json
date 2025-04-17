@@ -41,6 +41,9 @@
         "reactor": "0x1c41B7337eeBbe27Ddfe140DAf8ef09F6E3fa266",
         "executor": "0xE5aC5FC7C9C63393A3aD52DA89808C6b2dEFFa9d"
     },
+    "324": {
+        "admin": "0x689eE3373F7DFFE83E5E6E1b9818F0138b0f2313"
+    },
     "chains": [
         "eth",
         "arb",
