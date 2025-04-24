@@ -41,29 +41,29 @@ contract DeltaExecutor is IReactorCallback, IValidationCallback {
     }
 
     function execute(bytes calldata signedOrder) external onlyAllowed {
-        reactor.executeWithCallback(abi.decode(signedOrder, (SignedOrder)), new bytes(0));
+        reactor.executeWithCallback(abi.decode(signedOrder, (SignedOrder)), abi.encode(msg.sender));
     }
 
     /**
      * @dev IReactorCallback
      */
-    function reactorCallback(ResolvedOrder[] memory orders, bytes memory) external override onlyReactor {
+    function reactorCallback(ResolvedOrder[] memory orders, bytes memory data) external override onlyReactor {
         if (orders.length != 1) revert InvalidOrder();
         ResolvedOrder memory order = orders[0];
         if (order.outputs.length != 1) revert InvalidOrder();
 
-        _handleInput(address(order.input.token), order.info.additionalValidationData);
+        _handleInput(address(order.input.token), order.info.additionalValidationData, abi.decode(data, (address)));
         _handleOutput(address(order.outputs[0].token), order.outputs[0].amount);
     }
 
-    function _handleInput(address token, bytes memory additionalValidationData) private {
+    function _handleInput(address token, bytes memory additionalValidationData, address recipient) private {
         bool shouldUnwrap = abi.decode(additionalValidationData, (bool));
         uint256 balance = IERC20(token).balanceOf(address(this));
         if (shouldUnwrap) {
             IWETH(address(token)).withdraw(balance);
-            Address.sendValue(payable(msg.sender), balance);
+            Address.sendValue(payable(recipient), balance);
         } else {
-            IERC20(token).transfer(msg.sender, balance);
+            IERC20(token).transfer(recipient, balance);
         }
     }
 
