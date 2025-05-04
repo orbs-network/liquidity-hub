@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.x;
 
-import {Permit2Lib} from "./Permit2Lib.sol";
-
 library RePermitLib {
     struct RePermitTransferFrom {
-        Permit2Lib.TokenPermissions permitted;
+        TokenPermissions permitted;
         uint256 nonce;
         uint256 deadline;
     }
@@ -15,6 +13,13 @@ library RePermitLib {
         uint256 amount;
     }
 
+    struct TokenPermissions {
+        address token;
+        uint256 amount;
+    }
+
+    string internal constant TOKEN_PERMISSIONS_TYPE = "TokenPermissions(address token,uint256 amount)";
+    bytes32 internal constant TOKEN_PERMISSIONS_TYPE_HASH = keccak256(bytes(TOKEN_PERMISSIONS_TYPE));
     string internal constant REPERMIT_WITNESS_TRANSFER_FROM_TYPE_PREFIX =
         "RePermitWitnessTransferFrom(TokenPermissions permitted,address spender,uint256 nonce,uint256 deadline,";
 
@@ -27,7 +32,7 @@ library RePermitLib {
         return keccak256(
             abi.encode(
                 keccak256(bytes(string.concat(REPERMIT_WITNESS_TRANSFER_FROM_TYPE_PREFIX, witnessTypeString))),
-                keccak256(abi.encode(Permit2Lib.TOKEN_PERMISSIONS_TYPE_HASH, permit.permitted)),
+                keccak256(abi.encode(TOKEN_PERMISSIONS_TYPE_HASH, permit.permitted)),
                 spender,
                 permit.nonce,
                 permit.deadline,

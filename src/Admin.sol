@@ -7,16 +7,17 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {Consts} from "./Consts.sol";
-import {IWETH} from "./IWETH.sol";
+import {IWETH} from "src/interface/IWETH.sol";
 
 contract Admin is Ownable {
     using SafeERC20 for IERC20;
 
-    mapping(address => bool) public allowed;
+    address public immutable multicall;
     IWETH public weth;
+    mapping(address => bool) public allowed;
 
-    constructor(address _owner) Ownable() {
+    constructor(address _multicall, address _owner) Ownable() {
+        multicall = _multicall;
         allowed[_owner] = true;
         transferOwnership(_owner);
     }
@@ -32,22 +33,18 @@ contract Admin is Ownable {
         }
     }
 
-    function execute(IMulticall3.Call[] calldata calls) external onlyOwner {
-        Address.functionDelegateCall(
-            Consts.MULTICALL_ADDRESS, abi.encodeWithSelector(IMulticall3.aggregate.selector, calls)
-        );
+    function execute(IMulticall3.Call3Value[] calldata calls) external onlyOwner {
+        Address.functionDelegateCall(multicall, abi.encodeWithSelector(IMulticall3.aggregate3Value.selector, calls));
     }
 
-    function withdraw(IERC20[] calldata tokens) external onlyOwner {
-        uint256 balance = weth.balanceOf(address(this));
-        if (balance > 0) weth.withdraw(balance);
-
-        for (uint256 i = 0; i < tokens.length; i++) {
-            balance = tokens[i].balanceOf(address(this));
-            if (balance > 0) tokens[i].safeTransfer(owner(), balance);
+    function transfer(address token, address recipient) external onlyOwner {
+        if (token == address(0)) {
+            uint256 amount = address(this).balance;
+            if (amount > 0) Address.sendValue(payable(recipient), amount);
+        } else {
+            uint256 amount = IERC20(token).balanceOf(address(this));
+            if (amount > 0) SafeERC20.safeTransfer(IERC20(token), recipient, amount);
         }
-
-        Address.sendValue(payable(owner()), address(this).balance);
     }
 
     receive() external payable {

@@ -12,8 +12,6 @@ import {IValidationCallback} from "uniswapx/src/interfaces/IValidationCallback.s
 import {ResolvedOrder, SignedOrder} from "uniswapx/src/base/ReactorStructs.sol";
 import {ExclusiveDutchOrder} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
 
-import {Consts} from "./Consts.sol";
-
 /**
  * LiquidityHub Executor
  */
@@ -40,10 +38,12 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     uint8 public constant VERSION = 6;
     address public constant INVALID_ADDRESS = address(1);
 
+    address public immutable multicall;
     IReactor public immutable reactor;
     IAllowed public immutable allowed;
 
-    constructor(IReactor _reactor, IAllowed _allowed) {
+    constructor(address _multicall, IReactor _reactor, IAllowed _allowed) {
+        multicall = _multicall;
         reactor = _reactor;
         allowed = _allowed;
     }

@@ -11,7 +11,7 @@ import {
     OutputToken
 } from "uniswapx/src/base/ReactorStructs.sol";
 import {BaseReactor, IPermit2} from "uniswapx/src/reactors/BaseReactor.sol";
-import {ExclusivityOverrideLib} from "uniswapx/src/lib/ExclusivityOverrideLib.sol";
+import {ExclusivityLib} from "uniswapx/src/lib/ExclusivityLib.sol";
 
 import {Consts} from "./Consts.sol";
 import {RePermit, RePermitLib} from "./RePermit.sol";
@@ -27,7 +27,7 @@ contract PartialOrderReactor is BaseReactor {
         repermit = _repermit;
     }
 
-    function resolve(SignedOrder calldata signedOrder)
+    function _resolve(SignedOrder calldata signedOrder)
         internal
         view
         override
@@ -56,12 +56,12 @@ contract PartialOrderReactor is BaseReactor {
         resolvedOrder.outputs[0] =
             OutputToken({token: order.outputs[0].token, amount: fill.outAmount, recipient: order.outputs[0].recipient});
 
-        ExclusivityOverrideLib.handleOverride(
+        ExclusivityLib.handleExclusiveOverride(
             resolvedOrder, order.exclusiveFiller, order.info.deadline, order.exclusivityOverrideBps
         );
     }
 
-    function transferInputTokens(ResolvedOrder memory order, address to) internal override {
+    function _transferInputTokens(ResolvedOrder memory order, address to) internal override {
         repermit.repermitWitnessTransferFrom(
             RePermitLib.RePermitTransferFrom(
                 Permit2Lib.TokenPermissions(address(order.input.token), order.input.maxAmount),
