@@ -7,8 +7,8 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import {BaseTest, ERC20Mock, IERC20} from "test/base/BaseTest.sol";
 
-import {LiquidityHub, SignedOrder, IMulticall3, Consts} from "src/LiquidityHub.sol";
-import {RePermit, RePermitLib} from "src/RePermit.sol";
+import {LiquidityHub, SignedOrder, IMulticall3} from "src/executor/LiquidityHub.sol";
+import {RePermit, RePermitLib} from "src/repermit/RePermit.sol";
 
 contract RePermitTest is BaseTest {
     RePermit public uut;

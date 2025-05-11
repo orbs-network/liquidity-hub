@@ -3,8 +3,8 @@ pragma solidity 0.8.x;
 
 import "forge-std/Script.sol";
 
-import {BaseScript, Admin, Consts} from "script/base/BaseScript.sol";
-import {RePermit} from "src/RePermit.sol";
+import {BaseScript, Admin} from "script/base/BaseScript.sol";
+import {RePermit} from "src/repermit/RePermit.sol";
 
 contract DeployRepermit is BaseScript {
     function run() public returns (address repermit) {

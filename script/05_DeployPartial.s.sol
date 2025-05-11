@@ -3,9 +3,9 @@ pragma solidity 0.8.x;
 
 import "forge-std/Script.sol";
 
-import {BaseScript, Admin, Consts} from "script/base/BaseScript.sol";
-import {PartialOrderReactor} from "src/PartialOrderReactor.sol";
-import {RePermit} from "src/RePermit.sol";
+import {BaseScript, Admin} from "script/base/BaseScript.sol";
+import {PartialOrderReactor} from "src/reactor/PartialOrderReactor.sol";
+import {RePermit} from "src/repermit/RePermit.sol";
 
 contract DeployPartial is BaseScript {
     function run() public returns (address reactorPartial) {

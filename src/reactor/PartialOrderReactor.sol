@@ -13,17 +13,15 @@ import {
 import {BaseReactor, IPermit2} from "uniswapx/src/reactors/BaseReactor.sol";
 import {ExclusivityLib} from "uniswapx/src/lib/ExclusivityLib.sol";
 
-import {Consts} from "./Consts.sol";
-import {RePermit, RePermitLib} from "./RePermit.sol";
-import {PartialOrderLib} from "./PartialOrderLib.sol";
-import {Permit2Lib} from "./Permit2Lib.sol";
+import {RePermit, RePermitLib} from "src/repermit/RePermit.sol";
+import {PartialOrderLib} from "src/reactor/PartialOrderLib.sol";
 
 contract PartialOrderReactor is BaseReactor {
     RePermit public immutable repermit;
 
     error InvalidOrder();
 
-    constructor(RePermit _repermit) BaseReactor(IPermit2(Consts.PERMIT2_ADDRESS), address(0)) {
+    constructor(RePermit _repermit) BaseReactor(IPermit2(address(0)), address(0)) {
         repermit = _repermit;
     }
 
@@ -64,7 +62,7 @@ contract PartialOrderReactor is BaseReactor {
     function _transferInputTokens(ResolvedOrder memory order, address to) internal override {
         repermit.repermitWitnessTransferFrom(
             RePermitLib.RePermitTransferFrom(
-                Permit2Lib.TokenPermissions(address(order.input.token), order.input.maxAmount),
+                RePermitLib.TokenPermissions(address(order.input.token), order.input.maxAmount),
                 order.info.nonce,
                 order.info.deadline
             ),

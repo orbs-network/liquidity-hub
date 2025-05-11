@@ -19,7 +19,9 @@ import {
 import {ExclusiveDutchOrderReactor, IPermit2} from "uniswapx/src/reactors/ExclusiveDutchOrderReactor.sol";
 
 import {BaseScript, Config} from "script/base/BaseScript.sol";
+
 import {DeployTestInfra} from "./DeployTestInfra.sol";
+
 import {Admin} from "src/Admin.sol";
 import {
     LiquidityHub,
@@ -29,9 +31,9 @@ import {
     SignedOrder,
     IValidationCallback,
     IAllowed
-} from "src/LiquidityHub.sol";
-import {PartialOrderReactor, PartialOrderLib} from "src/PartialOrderReactor.sol";
-import {RePermit} from "src/RePermit.sol";
+} from "src/executor/LiquidityHub.sol";
+import {PartialOrderReactor, PartialOrderLib} from "src/reactor/PartialOrderReactor.sol";
+import {RePermit} from "src/repermit/RePermit.sol";
 
 abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
     function setUp() public virtual override {
@@ -40,15 +42,15 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
     }
 
     function initTestConfig() public {
-        address weth = deployTestInfra();
+        (address permit2, address multicall, address weth) = deployTestInfra();
 
-        Admin admin = new Admin(msg.sender);
+        Admin admin = new Admin(multicall, msg.sender);
         hoax(msg.sender);
         admin.init(weth);
 
-        IReactor reactor = new ExclusiveDutchOrderReactor(IPermit2(Consts.PERMIT2_ADDRESS), address(0));
-        IReactor reactor2 = new ExclusiveDutchOrderReactor(IPermit2(Consts.PERMIT2_ADDRESS), address(0));
-        LiquidityHub executor = new LiquidityHub(reactor, IAllowed(address(admin)));
+        IReactor reactor = new ExclusiveDutchOrderReactor(IPermit2(permit2), address(0));
+        IReactor reactor2 = new ExclusiveDutchOrderReactor(IPermit2(permit2), address(0));
+        LiquidityHub executor = new LiquidityHub(multicall, reactor, IAllowed(address(admin)));
 
         RePermit repermit = new RePermit();
         PartialOrderReactor reactorPartial = new PartialOrderReactor(repermit);
@@ -59,7 +61,9 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
             reactor: reactor,
             reactor2: reactor2,
             reactorPartial: reactorPartial,
-            repermit: repermit
+            repermit: repermit,
+            permit2: permit2,
+            multicall: multicall
         });
     }
 

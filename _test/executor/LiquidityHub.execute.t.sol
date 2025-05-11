@@ -3,10 +3,11 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
+import {ExclusiveDutchOrder, ExclusiveDutchOrderLib} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
+
 import {BaseTest, ERC20Mock, IERC20} from "test/base/BaseTest.sol";
 
-import {SignedOrder, IMulticall3} from "src/LiquidityHub.sol";
-import {ExclusiveDutchOrder, ExclusiveDutchOrderLib} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
+import {SignedOrder, IMulticall3} from "src/executor/LiquidityHub.sol";
 
 contract LiquidityHubExecuteTest is BaseTest {
     address public swapper;

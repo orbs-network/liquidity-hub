@@ -3,9 +3,9 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
-import {BaseTest, ERC20Mock, IERC20, SignedOrder, Consts, IMulticall3} from "test/base/BaseTest.sol";
+import {BaseTest, ERC20Mock, IERC20, SignedOrder, IMulticall3} from "test/base/BaseTest.sol";
 
-import {PartialOrderReactor, RePermit, BaseReactor} from "src/PartialOrderReactor.sol";
+import {PartialOrderReactor, RePermit, BaseReactor} from "src/reactor/PartialOrderReactor.sol";
 
 contract PartialOrderE2ETest is BaseTest {
     address public taker;
@@ -31,7 +31,7 @@ contract PartialOrderE2ETest is BaseTest {
         usdc.mint(maker, usdcMakerStartBalance);
 
         hoax(taker);
-        weth.approve(Consts.PERMIT2_ADDRESS, type(uint256).max);
+        weth.approve(config.permit2, type(uint256).max);
 
         hoax(maker);
         usdc.approve(address(config.repermit), type(uint256).max);

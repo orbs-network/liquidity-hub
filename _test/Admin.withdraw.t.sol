@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import {BaseTest, IERC20, ERC20Mock} from "test/base/BaseTest.sol";
 
 import {Admin, IMulticall3} from "src/Admin.sol";
-import {IWETH} from "src/IWETH.sol";
+import {IWETH} from "src/interface/IWETH.sol";
 
 contract AdminWithdrawTest is BaseTest {
     address owner;

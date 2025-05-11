@@ -9,7 +9,7 @@ import {IReactorCallback} from "uniswapx/src/interfaces/IReactorCallback.sol";
 import {IValidationCallback} from "uniswapx/src/interfaces/IValidationCallback.sol";
 import {ResolvedOrder, SignedOrder} from "uniswapx/src/base/ReactorStructs.sol";
 
-import {IWETH} from "./IWETH.sol";
+import {IWETH} from "src/interface/IWETH.sol";
 
 /**
  * DeltaExecutor

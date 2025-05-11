@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import {BaseTest} from "test/base/BaseTest.sol";
 
-import {LiquidityHub, IReactor, ResolvedOrder, SignedOrder, IMulticall3} from "src/LiquidityHub.sol";
+import {LiquidityHub, IReactor, ResolvedOrder, SignedOrder, IMulticall3} from "src/executor/LiquidityHub.sol";
 
 contract LiquidityHubAccessTest is BaseTest {
     address public owner;

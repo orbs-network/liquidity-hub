@@ -12,18 +12,17 @@ import {IWETH} from "src/interface/IWETH.sol";
 contract Admin is Ownable {
     using SafeERC20 for IERC20;
 
-    address public immutable multicall;
+    address public multicall;
     IWETH public weth;
     mapping(address => bool) public allowed;
 
-    constructor(address _multicall, address _owner) Ownable() {
-        multicall = _multicall;
+    constructor(address _owner) Ownable() {
         allowed[_owner] = true;
         transferOwnership(_owner);
     }
 
-    function init(address _weth) external onlyOwner {
-        if (address(weth) != address(0)) revert();
+    function init(address _multicall, address _weth) external onlyOwner {
+        multicall = _multicall;
         weth = IWETH(_weth);
     }
 

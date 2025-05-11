@@ -98,9 +98,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     }
 
     function _executeMulticall(IMulticall3.Call[] memory calls) private {
-        Address.functionDelegateCall(
-            Consts.MULTICALL_ADDRESS, abi.encodeWithSelector(IMulticall3.aggregate.selector, calls)
-        );
+        Address.functionDelegateCall(multicall, abi.encodeWithSelector(IMulticall3.aggregate.selector, calls));
     }
 
     function _handleOrderOutputs(ResolvedOrder memory order) private returns (address outToken, uint256 outAmount) {

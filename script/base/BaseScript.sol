@@ -6,11 +6,10 @@ import "forge-std/Script.sol";
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-import {LiquidityHub, IReactor} from "src/LiquidityHub.sol";
-import {Admin, IWETH, Consts, IMulticall3, IERC20} from "src/Admin.sol";
-import {PartialOrderLib, RePermit, RePermitLib, PartialOrderReactor} from "src/PartialOrderReactor.sol";
-import {IEIP712} from "src/RePermit.sol";
-import {Permit2Lib} from "src/Permit2Lib.sol";
+import {LiquidityHub, IReactor} from "src/executor/LiquidityHub.sol";
+import {PartialOrderLib, RePermit, RePermitLib, PartialOrderReactor} from "src/reactor/PartialOrderReactor.sol";
+import {IEIP712} from "src/repermit/RePermit.sol";
+import {Admin, IWETH, IMulticall3, IERC20} from "src/Admin.sol";
 
 struct Config {
     Admin admin;
@@ -19,6 +18,8 @@ struct Config {
     IReactor reactor2;
     PartialOrderReactor reactorPartial;
     RePermit repermit;
+    address permit2;
+    address multicall;
 }
 
 abstract contract BaseScript is Script {
@@ -27,7 +28,7 @@ abstract contract BaseScript is Script {
     function setUp() public virtual {}
 
     function signPermit2(uint256 privateKey, bytes32 orderHash) internal view returns (bytes memory sig) {
-        bytes32 msgHash = ECDSA.toTypedDataHash(IEIP712(Consts.PERMIT2_ADDRESS).DOMAIN_SEPARATOR(), orderHash);
+        bytes32 msgHash = ECDSA.toTypedDataHash(IEIP712(config.permit2).DOMAIN_SEPARATOR(), orderHash);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, msgHash);
         sig = bytes.concat(r, s, bytes1(v));
     }
@@ -41,7 +42,7 @@ abstract contract BaseScript is Script {
             config.repermit.DOMAIN_SEPARATOR(),
             RePermitLib.hashWithWitness(
                 RePermitLib.RePermitTransferFrom(
-                    Permit2Lib.TokenPermissions(address(order.input.token), order.input.amount),
+                    RePermitLib.TokenPermissions(address(order.input.token), order.input.amount),
                     order.info.nonce,
                     order.info.deadline
                 ),

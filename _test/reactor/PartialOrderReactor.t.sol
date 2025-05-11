@@ -5,8 +5,8 @@ import "forge-std/Test.sol";
 
 import {BaseTest, ERC20Mock, IERC20, SignedOrder, IMulticall3} from "test/base/BaseTest.sol";
 
-import {LiquidityHub} from "src/LiquidityHub.sol";
-import {PartialOrderReactor, RePermit} from "src/PartialOrderReactor.sol";
+import {LiquidityHub} from "src/executor/LiquidityHub.sol";
+import {PartialOrderReactor, RePermit} from "src/reactor/PartialOrderReactor.sol";
 
 contract PartialOrderReactorTest is BaseTest {
     address public swapper;

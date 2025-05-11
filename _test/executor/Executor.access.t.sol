@@ -3,16 +3,16 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
-import {BaseTest, IERC20, Consts, Admin} from "test/base/BaseTest.sol";
+import {BaseTest, IERC20, Admin} from "test/base/BaseTest.sol";
 
-import {Executor, IAllowed, SignedOrder, IMulticall3, ResolvedOrder} from "src/Executor.sol";
+import {Executor, IAllowed, SignedOrder, IMulticall3, ResolvedOrder} from "src/executor/Executor.sol";
 
 contract ExecutorAccessTest is BaseTest {
     Executor public executor;
 
     function setUp() public override {
-        IAllowed allowed = IAllowed(payable(new Admin(makeAddr("owner"))));
-        executor = new Executor(Consts.MULTICALL_ADDRESS, config.reactor, allowed);
+        IAllowed allowed = IAllowed(payable(new Admin(config.multicall, makeAddr("owner"))));
+        executor = new Executor(config.multicall, config.reactor, allowed);
     }
 
     function test_revert_execute_onlyAllowed() public {

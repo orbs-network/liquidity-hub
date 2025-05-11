@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.x;
 
+import {RePermit, RePermitLib} from "src/repermit/RePermit.sol";
+
 import {OrderLib} from "./OrderLib.sol";
-import {RePermit, RePermitLib} from "./RePermit.sol";
-import {Permit2Lib} from "./Permit2Lib.sol";
 
 library PartialOrderLib {
     struct PartialFill {
@@ -50,7 +50,7 @@ library PartialOrderLib {
             PARTIAL_INPUT_TYPE,
             PARTIAL_ORDER_TYPE,
             PARTIAL_OUTPUT_TYPE,
-            Permit2Lib.TOKEN_PERMISSIONS_TYPE
+            RePermitLib.TOKEN_PERMISSIONS_TYPE
         )
     );
 
