@@ -14,16 +14,12 @@ import {BaseReactor, IPermit2} from "uniswapx/src/reactors/BaseReactor.sol";
 import {ExclusivityLib} from "uniswapx/src/lib/ExclusivityLib.sol";
 
 import {RePermit, RePermitLib} from "src/repermit/RePermit.sol";
-import {PartialOrderLib} from "src/reactor/PartialOrderLib.sol";
+import {OrderLib} from "src/reactor/OrderLib.sol";
 
-contract PartialOrderReactor is BaseReactor {
-    RePermit public immutable repermit;
-
+contract OrderReactor is BaseReactor {
     error InvalidOrder();
 
-    constructor(RePermit _repermit) BaseReactor(IPermit2(address(0)), address(0)) {
-        repermit = _repermit;
-    }
+    constructor(RePermit _repermit) BaseReactor(IPermit2(address(_repermit)), address(0)) {}
 
     function _resolve(SignedOrder calldata signedOrder)
         internal
@@ -31,10 +27,7 @@ contract PartialOrderReactor is BaseReactor {
         override
         returns (ResolvedOrder memory resolvedOrder)
     {
-        PartialOrderLib.PartialFill memory fill = abi.decode(signedOrder.order, (PartialOrderLib.PartialFill));
-        PartialOrderLib.PartialOrder memory order = fill.order;
-
-        if (order.outputs.length != 1) revert InvalidOrder();
+        OrderLib.Order memory order = abi.decode(signedOrder.order, (OrderLib.Order));
 
         resolvedOrder.info.reactor = IReactor(order.info.reactor);
         resolvedOrder.info.swapper = order.info.swapper;
@@ -42,17 +35,12 @@ contract PartialOrderReactor is BaseReactor {
         resolvedOrder.info.deadline = order.info.deadline;
         resolvedOrder.info.additionalValidationContract = IValidationCallback(order.info.additionalValidationContract);
         resolvedOrder.info.additionalValidationData = order.info.additionalValidationData;
-        resolvedOrder.input = InputToken({
-            token: ERC20(order.input.token),
-            amount: (order.input.amount * fill.outAmount) / order.outputs[0].amount,
-            maxAmount: order.input.amount
-        });
+        resolvedOrder.input = InputToken(ERC20(order.input.token), order.input.amount, order.input.maxAmount);
         resolvedOrder.sig = signedOrder.sig;
-        resolvedOrder.hash = PartialOrderLib.hash(order);
+        resolvedOrder.hash = OrderLib.hash(order);
 
         resolvedOrder.outputs = new OutputToken[](1);
-        resolvedOrder.outputs[0] =
-            OutputToken({token: order.outputs[0].token, amount: fill.outAmount, recipient: order.outputs[0].recipient});
+        resolvedOrder.outputs[0] = OutputToken(order.output.token, order.output.amount, order.output.recipient);
 
         ExclusivityLib.handleExclusiveOverride(
             resolvedOrder, order.exclusiveFiller, order.info.deadline, order.exclusivityOverrideBps
@@ -60,7 +48,7 @@ contract PartialOrderReactor is BaseReactor {
     }
 
     function _transferInputTokens(ResolvedOrder memory order, address to) internal override {
-        repermit.repermitWitnessTransferFrom(
+        RePermit(permit2).repermitWitnessTransferFrom(
             RePermitLib.RePermitTransferFrom(
                 RePermitLib.TokenPermissions(address(order.input.token), order.input.maxAmount),
                 order.info.nonce,
@@ -69,7 +57,7 @@ contract PartialOrderReactor is BaseReactor {
             RePermitLib.TransferRequest(to, order.input.amount),
             order.info.swapper,
             order.hash,
-            PartialOrderLib.WITNESS_TYPE,
+            OrderLib.WITNESS_TYPE,
             order.sig
         );
     }

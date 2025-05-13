@@ -25,7 +25,39 @@
             },
             {
                 "name": "witness",
-                "type": "PartialOrder"
+                "type": "Order"
+            }
+        ],
+        "Input": [
+            {
+                "name": "token",
+                "type": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "Order": [
+            {
+                "name": "info",
+                "type": "OrderInfo"
+            },
+            {
+                "name": "exclusiveFiller",
+                "type": "address"
+            },
+            {
+                "name": "exclusivityOverrideBps",
+                "type": "uint256"
+            },
+            {
+                "name": "input",
+                "type": "Input"
+            },
+            {
+                "name": "outputs",
+                "type": "Output[]"
             }
         ],
         "OrderInfo": [
@@ -54,39 +86,7 @@
                 "type": "bytes"
             }
         ],
-        "PartialInput": [
-            {
-                "name": "token",
-                "type": "address"
-            },
-            {
-                "name": "amount",
-                "type": "uint256"
-            }
-        ],
-        "PartialOrder": [
-            {
-                "name": "info",
-                "type": "OrderInfo"
-            },
-            {
-                "name": "exclusiveFiller",
-                "type": "address"
-            },
-            {
-                "name": "exclusivityOverrideBps",
-                "type": "uint256"
-            },
-            {
-                "name": "input",
-                "type": "PartialInput"
-            },
-            {
-                "name": "outputs",
-                "type": "PartialOutput[]"
-            }
-        ],
-        "PartialOutput": [
+        "Output": [
             {
                 "name": "token",
                 "type": "address"
@@ -114,7 +114,7 @@
     "message": {
         "permitted": {
             "token": "<INTOKEN>",
-            "amount": "<INAMOUNT>"
+            "amount": "<INMAXAMOUNT>"
         },
         "spender": "<REACTOR>",
         "nonce": "<NONCE>",
@@ -128,19 +128,19 @@
                 "additionalValidationContract": "0x0000000000000000000000000000000000000000",
                 "additionalValidationData": "0x"
             },
+            "epoch": "<EPOCHSECONDS>",
             "exclusiveFiller": "<EXECUTOR>",
-            "exclusivityOverrideBps": "0",
+            "exclusivityOverrideBps": "100",
             "input": {
                 "token": "<INTOKEN>",
-                "amount": "<TOTALINAMOUNT>"
+                "amount": "<INAMOUNT>",
+                "maxAmount": "<INMAXAMOUNT>"
             },
-            "outputs": [
-                {
-                    "token": "<OUTTOKEN>",
-                    "amount": "<OUTAMOUNTSWAPPER>",
-                    "recipient": "<SWAPPER>"
-                }
-            ]
+            "outputs": {
+                "token": "<OUTTOKEN>",
+                "amount": "<OUTAMOUNT>",
+                "recipient": "<RECIPIENT>"
+            }
         }
     }
 }
