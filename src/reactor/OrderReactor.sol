@@ -19,7 +19,7 @@ import {OrderLib} from "src/reactor/OrderLib.sol";
 contract OrderReactor is BaseReactor {
     error InvalidOrder();
 
-    constructor(RePermit _repermit) BaseReactor(IPermit2(address(_repermit)), address(0)) {}
+    constructor(address _repermit) BaseReactor(IPermit2(_repermit), address(0)) {}
 
     function _resolve(SignedOrder calldata signedOrder)
         internal
@@ -48,7 +48,7 @@ contract OrderReactor is BaseReactor {
     }
 
     function _transferInputTokens(ResolvedOrder memory order, address to) internal override {
-        RePermit(permit2).repermitWitnessTransferFrom(
+        RePermit(address(permit2)).repermitWitnessTransferFrom(
             RePermitLib.RePermitTransferFrom(
                 RePermitLib.TokenPermissions(address(order.input.token), order.input.maxAmount),
                 order.info.nonce,

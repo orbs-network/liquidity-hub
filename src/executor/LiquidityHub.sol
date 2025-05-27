@@ -39,17 +39,17 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     address public constant INVALID_ADDRESS = address(1);
 
     address public immutable multicall;
-    IReactor public immutable reactor;
-    IAllowed public immutable allowed;
+    address public immutable reactor;
+    address public immutable allowed;
 
-    constructor(address _multicall, IReactor _reactor, IAllowed _allowed) {
+    constructor(address _multicall, address _reactor, address _allowed) {
         multicall = _multicall;
         reactor = _reactor;
         allowed = _allowed;
     }
 
     modifier onlyAllowed() {
-        if (!allowed.allowed(msg.sender)) revert InvalidSender(msg.sender);
+        if (!IAdmin(allowed).allowed(msg.sender)) revert InvalidSender(msg.sender);
         _;
     }
 
@@ -65,7 +65,7 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
         external
         onlyAllowed
     {
-        reactor.executeWithCallback(order, abi.encode(calls, outAmountSwapper));
+        IReactor(reactor).executeWithCallback(order, abi.encode(calls, outAmountSwapper));
 
         ExclusiveDutchOrder memory o = abi.decode(order.order, (ExclusiveDutchOrder));
         (address ref, uint8 share) = abi.decode(o.info.additionalValidationData, (address, uint8));
@@ -164,6 +164,6 @@ contract LiquidityHub is IReactorCallback, IValidationCallback {
     }
 }
 
-interface IAllowed {
+interface IAdmin {
     function allowed(address) external view returns (bool);
 }

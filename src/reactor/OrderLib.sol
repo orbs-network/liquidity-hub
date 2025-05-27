@@ -78,7 +78,7 @@ library OrderLib {
                 order.exclusiveFiller,
                 order.exclusivityOverrideBps,
                 keccak256(abi.encode(INPUT_TYPE_HASH, order.input)),
-                keccak256(abi.encode(OUTPUT_TYPE_HASH, order.output)),
+                keccak256(abi.encode(OUTPUT_TYPE_HASH, order.output))
             )
         );
     }

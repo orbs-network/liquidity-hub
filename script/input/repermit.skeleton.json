@@ -5,6 +5,7 @@
         "chainId": "<CHAINID>",
         "verifyingContract": "<REPERMIT>"
     },
+    "primaryType": "RePermitWitnessTransferFrom",
     "types": {
         "RePermitWitnessTransferFrom": [
             {
@@ -56,8 +57,8 @@
                 "type": "Input"
             },
             {
-                "name": "outputs",
-                "type": "Output[]"
+                "name": "output",
+                "type": "Output"
             }
         ],
         "OrderInfo": [
@@ -125,8 +126,8 @@
                 "swapper": "<SWAPPER>",
                 "nonce": "<NONCE>",
                 "deadline": "<DEADLINE>",
-                "additionalValidationContract": "0x0000000000000000000000000000000000000000",
-                "additionalValidationData": "0x"
+                "additionalValidationContract": "<EXECUTOR>",
+                "additionalValidationData": "<EXECUTORDATA>"
             },
             "epoch": "<EPOCHSECONDS>",
             "exclusiveFiller": "<EXECUTOR>",

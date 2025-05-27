@@ -9,25 +9,25 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 contract Refinery {
     uint256 public constant BPS = 10000;
     address public immutable multicall;
-    IAdmin public immutable admin;
+    address public immutable admin;
 
     error NotAllowed();
 
     modifier onlyAllowed() {
-        if (!admin.allowed(msg.sender)) revert NotAllowed();
+        if (!IAdmin(admin).allowed(msg.sender)) revert NotAllowed();
         _;
     }
 
     constructor(address _multicall, address _admin) {
         multicall = _multicall;
-        admin = IAdmin(_admin);
+        admin = _admin;
     }
 
     function execute(IMulticall3.Call3Value[] calldata calls) external onlyAllowed {
         Address.functionDelegateCall(multicall, abi.encodeWithSelector(IMulticall3.aggregate3Value.selector, calls));
     }
 
-    function transferTo(address token, address recipient, uint256 bps) external onlyAllowed {
+    function transfer(address token, address recipient, uint256 bps) external onlyAllowed {
         if (token == address(0)) {
             uint256 amount = address(this).balance * bps / BPS;
             if (amount > 0) Address.sendValue(payable(recipient), amount);

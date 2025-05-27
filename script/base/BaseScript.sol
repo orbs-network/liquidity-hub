@@ -6,10 +6,8 @@ import "forge-std/Script.sol";
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-import {LiquidityHub, IReactor} from "src/executor/LiquidityHub.sol";
-import {IEIP712} from "src/repermit/RePermit.sol";
-import {OrderLib, RePermit, RePermitLib, OrderReactor} from "src/reactor/OrderReactor.sol";
-import {Admin, IWETH, IMulticall3, IERC20} from "src/Admin.sol";
+import {IEIP712, RePermitLib} from "src/repermit/RePermit.sol";
+import {OrderLib} from "src/reactor/OrderLib.sol";
 
 abstract contract BaseScript is Script {
     function setUp() public virtual {}
@@ -37,8 +35,8 @@ abstract contract BaseScript is Script {
                     order.info.nonce,
                     order.info.deadline
                 ),
-                PartialOrderLib.hash(order),
-                PartialOrderLib.WITNESS_TYPE,
+                OrderLib.hash(order),
+                OrderLib.WITNESS_TYPE,
                 spender
             )
         );

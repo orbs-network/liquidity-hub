@@ -13,25 +13,26 @@ import {IWETH} from "src/interface/IWETH.sol";
 
 /**
  * DeltaExecutor
+ * whitelisted execute callable by ParaswapDelta
+ * which also expects the order output to be transferred directly back to the caller
+ * additionalValidationData = (bool unwrap)
  */
 contract DeltaExecutor is IReactorCallback, IValidationCallback {
     error InvalidSender(address sender);
     error InvalidOrder();
 
-    IReactor public immutable reactor;
-    IWETH public immutable weth;
+    address public immutable reactor;
     mapping(address => bool) public allowed;
 
-    constructor(address _reactor, address _weth, address[] memory _allowed) {
-        reactor = IReactor(_reactor);
-        weth = IWETH(_weth);
+    constructor(address _reactor, address[] memory _allowed) {
+        reactor = _reactor;
         for (uint256 i = 0; i < _allowed.length; ++i) {
             allowed[_allowed[i]] = true;
         }
     }
 
     modifier onlyReactor() {
-        if (msg.sender != address(reactor)) revert InvalidSender(msg.sender);
+        if (msg.sender != reactor) revert InvalidSender(msg.sender);
         _;
     }
 
@@ -41,7 +42,7 @@ contract DeltaExecutor is IReactorCallback, IValidationCallback {
     }
 
     function execute(bytes calldata signedOrder) external onlyAllowed {
-        reactor.executeWithCallback(abi.decode(signedOrder, (SignedOrder)), abi.encode(msg.sender));
+        IReactor(reactor).executeWithCallback(abi.decode(signedOrder, (SignedOrder)), abi.encode(msg.sender));
     }
 
     /**
@@ -57,9 +58,9 @@ contract DeltaExecutor is IReactorCallback, IValidationCallback {
     }
 
     function _handleInput(address token, bytes memory additionalValidationData, address recipient) private {
-        bool shouldUnwrap = abi.decode(additionalValidationData, (bool));
+        bool unwrap = abi.decode(additionalValidationData, (bool));
         uint256 balance = IERC20(token).balanceOf(address(this));
-        if (shouldUnwrap) {
+        if (unwrap) {
             IWETH(address(token)).withdraw(balance);
             Address.sendValue(payable(recipient), balance);
         } else {
@@ -69,9 +70,9 @@ contract DeltaExecutor is IReactorCallback, IValidationCallback {
 
     function _handleOutput(address token, uint256 amount) private {
         if (token == address(0)) {
-            Address.sendValue(payable(address(reactor)), amount);
+            Address.sendValue(payable(reactor), amount);
         } else {
-            SafeERC20.forceApprove(IERC20(token), address(reactor), amount);
+            SafeERC20.forceApprove(IERC20(token), reactor, amount);
         }
     }
 

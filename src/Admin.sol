@@ -10,8 +10,6 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {IWETH} from "src/interface/IWETH.sol";
 
 contract Admin is Ownable {
-    using SafeERC20 for IERC20;
-
     address public multicall;
     IWETH public weth;
     mapping(address => bool) public allowed;
