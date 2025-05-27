@@ -31,7 +31,7 @@ abstract contract BaseScript is Script {
             IEIP712(repermit).DOMAIN_SEPARATOR(),
             RePermitLib.hashWithWitness(
                 RePermitLib.RePermitTransferFrom(
-                    RePermitLib.TokenPermissions(address(order.input.token), order.input.amount),
+                    RePermitLib.TokenPermissions(order.input.token, order.input.amount),
                     order.info.nonce,
                     order.info.deadline
                 ),
