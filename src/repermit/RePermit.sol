@@ -13,7 +13,7 @@ contract RePermit is EIP712, IEIP712 {
     using SafeERC20 for IERC20;
 
     error InvalidSignature();
-    error SignatureExpired();
+    error Expired();
     error Canceled();
     error InsufficientAllowance(uint256 spent);
 
@@ -40,7 +40,7 @@ contract RePermit is EIP712, IEIP712 {
         string calldata witnessTypeString,
         bytes calldata signature
     ) external {
-        if (block.timestamp > permit.deadline) revert SignatureExpired();
+        if (block.timestamp > permit.deadline) revert Expired();
         if (canceled[signer][permit.nonce]) revert Canceled();
 
         bytes32 hash = _hashTypedDataV4(RePermitLib.hashWithWitness(permit, witness, witnessTypeString, msg.sender));

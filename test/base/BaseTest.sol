@@ -3,6 +3,8 @@ pragma solidity 0.8.x;
 
 import "forge-std/Test.sol";
 
+import {IMulticall3} from "forge-std/interfaces/IMulticall3.sol";
+
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
 
 import {PermitSignature} from "uniswapx/test/util/PermitSignature.sol";
@@ -10,7 +12,7 @@ import {PermitSignature} from "uniswapx/test/util/PermitSignature.sol";
 import {BaseScript} from "script/base/BaseScript.sol";
 import {DeployTestInfra} from "./DeployTestInfra.sol";
 
-import {Admin} from "src/Admin.sol";
+import {Admin, IWETH} from "src/Admin.sol";
 import {RePermit} from "src/repermit/RePermit.sol";
 
 abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
@@ -22,6 +24,7 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
     address repermit;
 
     ERC20Mock token;
+    address other;
 
     function setUp() public virtual override {
         super.setUp();
@@ -36,6 +39,8 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
 
         token = new ERC20Mock();
         vm.label(address(token), "token");
+
+        other = makeAddr("other");
     }
 
     // uint256 private nonce;

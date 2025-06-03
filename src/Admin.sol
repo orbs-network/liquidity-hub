@@ -11,7 +11,7 @@ import {IWETH} from "src/interface/IWETH.sol";
 
 contract Admin is Ownable {
     address public multicall;
-    IWETH public weth;
+    address public weth;
     mapping(address => bool) public allowed;
 
     constructor(address _owner) Ownable() {
@@ -21,7 +21,7 @@ contract Admin is Ownable {
 
     function init(address _multicall, address _weth) external onlyOwner {
         multicall = _multicall;
-        weth = IWETH(_weth);
+        weth = _weth;
     }
 
     function allow(address[] calldata addr, bool value) external onlyOwner {
@@ -30,8 +30,8 @@ contract Admin is Ownable {
         }
     }
 
-    function execute(IMulticall3.Call3Value[] calldata calls) external onlyOwner {
-        Address.functionDelegateCall(multicall, abi.encodeWithSelector(IMulticall3.aggregate3Value.selector, calls));
+    function execute(IMulticall3.Call3[] calldata calls) external onlyOwner {
+        Address.functionDelegateCall(multicall, abi.encodeWithSelector(IMulticall3.aggregate3.selector, calls));
     }
 
     function transfer(address token, address recipient) external onlyOwner {

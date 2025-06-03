@@ -34,15 +34,6 @@ library OrderLib {
         bytes additionalValidationData;
     }
 
-    struct Order {
-        OrderInfo info;
-        uint32 epoch;
-        address exclusiveFiller;
-        uint256 exclusivityOverrideBps;
-        Input input;
-        Output output;
-    }
-
     struct Input {
         address token;
         uint256 amount;
@@ -53,6 +44,15 @@ library OrderLib {
         address token;
         uint256 amount;
         address recipient;
+    }
+
+    struct Order {
+        OrderInfo info;
+        uint32 epoch;
+        address exclusiveFiller;
+        uint256 exclusivityOverrideBps;
+        Input input;
+        Output output;
     }
 
     function hash(OrderInfo memory info) internal pure returns (bytes32) {

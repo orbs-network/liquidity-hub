@@ -28,8 +28,7 @@ contract DeployTestInfra is DeployPermit2 {
     }
 
     function _deployWETH() private returns (address weth) {
-        weth = makeAddr("WETH");
-        bytes memory bytecode = type(WETH).creationCode;
-        vm.etch(weth, bytecode);
+        weth = address(new WETH());
+        vm.label(weth, "WETH");
     }
 }
