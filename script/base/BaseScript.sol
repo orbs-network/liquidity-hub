@@ -12,35 +12,22 @@ import {OrderLib} from "src/reactor/OrderLib.sol";
 abstract contract BaseScript is Script {
     function setUp() public virtual {}
 
-    function signPermit2(address permit2, uint256 privateKey, bytes32 orderHash)
-        internal
-        view
-        returns (bytes memory sig)
-    {
-        bytes32 msgHash = ECDSA.toTypedDataHash(IEIP712(permit2).DOMAIN_SEPARATOR(), orderHash);
+    function signEIP712(address permit, uint256 privateKey, bytes32 hash) internal view returns (bytes memory sig) {
+        bytes32 msgHash = ECDSA.toTypedDataHash(IEIP712(permit).DOMAIN_SEPARATOR(), hash);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, msgHash);
         sig = bytes.concat(r, s, bytes1(v));
     }
 
-    function signRePermit(address repermit, uint256 privateKey, OrderLib.Order memory order, address spender)
-        internal
-        view
-        returns (bytes memory sig)
-    {
-        bytes32 msgHash = ECDSA.toTypedDataHash(
-            IEIP712(repermit).DOMAIN_SEPARATOR(),
-            RePermitLib.hashWithWitness(
-                RePermitLib.RePermitTransferFrom(
-                    RePermitLib.TokenPermissions(order.input.token, order.input.amount),
-                    order.info.nonce,
-                    order.info.deadline
-                ),
-                OrderLib.hash(order),
-                OrderLib.WITNESS_TYPE,
-                spender
-            )
+    function hashRePermit(OrderLib.Order memory order, address spender) internal view returns (bytes32) {
+        return RePermitLib.hashWithWitness(
+            RePermitLib.RePermitTransferFrom(
+                RePermitLib.TokenPermissions(order.input.token, order.input.maxAmount),
+                order.info.nonce,
+                order.info.deadline
+            ),
+            OrderLib.hash(order),
+            OrderLib.WITNESS_TYPE,
+            spender
         );
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, msgHash);
-        sig = bytes.concat(r, s, bytes1(v));
     }
 }

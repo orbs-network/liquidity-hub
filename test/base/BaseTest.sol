@@ -24,6 +24,8 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
     address repermit;
 
     ERC20Mock token;
+    address signer;
+    uint256 signerPK;
     address other;
 
     function setUp() public virtual override {
@@ -39,6 +41,8 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
 
         token = new ERC20Mock();
         vm.label(address(token), "token");
+
+        (signer, signerPK) = makeAddrAndKey("signer");
 
         other = makeAddr("other");
     }
