@@ -15,7 +15,7 @@ contract RePermit is EIP712, IEIP712 {
     error InvalidSignature();
     error Expired();
     error Canceled();
-    error InsufficientAllowance(uint256 spent);
+    error InsufficientAllowance();
 
     // signer => hash => spent
     mapping(address => mapping(bytes32 => uint256)) public spent;
@@ -47,7 +47,7 @@ contract RePermit is EIP712, IEIP712 {
         if (!SignatureChecker.isValidSignatureNow(signer, hash, signature)) revert InvalidSignature();
 
         uint256 _spent = (spent[signer][hash] += request.amount); // increment and get
-        if (_spent > permit.permitted.amount) revert InsufficientAllowance(_spent - request.amount);
+        if (_spent > permit.permitted.amount) revert InsufficientAllowance();
 
         IERC20(permit.permitted.token).safeTransferFrom(signer, request.to, request.amount);
     }

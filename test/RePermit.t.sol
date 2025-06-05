@@ -11,7 +11,7 @@ import {RePermit, RePermitLib} from "src/repermit/RePermit.sol";
 contract RePermitTest is BaseTest {
     RePermit uut;
 
-    bytes32 witness = keccak256(abi.encode("witness data verified by spender"));
+    bytes32 witness = keccak256(abi.encode("signed witness data verified by spender"));
     string witnessTypeString = "bytes32 witness)";
 
     RePermitLib.RePermitTransferFrom public permit;
@@ -31,7 +31,7 @@ contract RePermitTest is BaseTest {
 
     function test_revert_expired() public {
         permit.deadline = block.timestamp - 1;
-        bytes memory signature = signRePermit(repermit, signerPK, hashRePermit(order, signer));
+        bytes memory signature = signEIP712(repermit, signerPK, witness);
 
         vm.expectRevert(RePermit.Expired.selector);
         uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
@@ -39,8 +39,7 @@ contract RePermitTest is BaseTest {
 
     function test_revert_invalidSignature() public {
         permit.deadline = block.timestamp;
-
-        bytes memory signature = signRePermit();
+        bytes memory signature = signEIP712(repermit, signerPK, witness);
 
         vm.expectRevert(RePermit.InvalidSignature.selector);
         uut.repermitWitnessTransferFrom(
@@ -50,39 +49,26 @@ contract RePermitTest is BaseTest {
 
     function test_revert_insufficientAllowance() public {
         permit.deadline = block.timestamp;
-        permit.permitted.amount = 1 ether;
         permit.permitted.token = address(token);
+        permit.permitted.amount = 1 ether;
         request.amount = 1.1 ether;
 
-        bytes memory signature = signRePermit();
+        bytes memory signature = signEIP712(
+            repermit,
+            signerPK,
+            hashRePermit(
+                permit.permitted.token,
+                permit.permitted.amount,
+                permit.nonce,
+                permit.deadline,
+                witness,
+                witnessTypeString,
+                address(this)
+            )
+        );
 
-        vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector, 0));
+        vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector));
         uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
-    }
-
-    function test_repermitWitnessTransferFrom_partialFill() public {
-        token.mint(signer, 1 ether);
-        hoax(signer);
-        token.approve(address(uut), 1 ether);
-
-        permit.deadline = block.timestamp;
-        permit.permitted.amount = 1 ether;
-        permit.permitted.token = address(token);
-        request.amount = 0.7 ether;
-        request.to = other;
-
-        bytes memory signature = signRePermit();
-
-        uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
-
-        assertEq(token.balanceOf(signer), 0.3 ether, "signer balance");
-        assertEq(token.balanceOf(other), 0.7 ether, "recipient balance");
-
-        request.amount = 0.1 ether;
-        uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
-
-        assertEq(token.balanceOf(signer), 0.2 ether, "signer balance");
-        assertEq(token.balanceOf(other), 0.8 ether, "recipient balance");
     }
 
     function test_revert_insufficientAllowance_afterSpending() public {
@@ -96,23 +82,84 @@ contract RePermitTest is BaseTest {
         request.amount = 0.7 ether;
         request.to = other;
 
-        bytes memory signature = signRePermit();
+        bytes memory signature = signEIP712(
+            repermit,
+            signerPK,
+            hashRePermit(
+                permit.permitted.token,
+                permit.permitted.amount,
+                permit.nonce,
+                permit.deadline,
+                witness,
+                witnessTypeString,
+                address(this)
+            )
+        );
 
         uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
         assertEq(token.balanceOf(other), 0.7 ether, "recipient balance");
 
-        request.amount = 0.4 ether;
-        vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector, 0.7 ether));
+        request.amount = 0.5 ether;
+        vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector));
         uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
     }
 
     function test_cancel() public {
         permit.deadline = block.timestamp;
-        bytes memory signature = signRePermit();
+
+        bytes memory signature = signEIP712(
+            repermit,
+            signerPK,
+            hashRePermit(
+                permit.permitted.token,
+                permit.permitted.amount,
+                permit.nonce,
+                permit.deadline,
+                witness,
+                witnessTypeString,
+                address(this)
+            )
+        );
         hoax(signer);
         uut.cancel(permit.nonce);
 
         vm.expectRevert(RePermit.Canceled.selector);
         uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
+    }
+
+    function test_fill() public {
+        token.mint(signer, 1 ether);
+        hoax(signer);
+        token.approve(address(uut), 1 ether);
+
+        permit.deadline = block.timestamp;
+        permit.permitted.amount = 1 ether;
+        permit.permitted.token = address(token);
+        request.amount = 0.7 ether;
+        request.to = other;
+
+        bytes memory signature = signEIP712(
+            repermit,
+            signerPK,
+            hashRePermit(
+                permit.permitted.token,
+                permit.permitted.amount,
+                permit.nonce,
+                permit.deadline,
+                witness,
+                witnessTypeString,
+                address(this)
+            )
+        );
+        uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
+
+        assertEq(token.balanceOf(signer), 0.3 ether, "signer balance");
+        assertEq(token.balanceOf(other), 0.7 ether, "recipient balance");
+
+        request.amount = 0.1 ether;
+        uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
+
+        assertEq(token.balanceOf(signer), 0.2 ether, "signer balance");
+        assertEq(token.balanceOf(other), 0.8 ether, "recipient balance");
     }
 }
