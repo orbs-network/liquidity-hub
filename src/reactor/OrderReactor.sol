@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.x;
 
+import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
+
 import {
     IReactor,
     IValidationCallback,
@@ -18,6 +20,7 @@ import {OrderLib} from "src/reactor/OrderLib.sol";
 
 contract OrderReactor is BaseReactor {
     error InvalidOrder();
+    error InvalidCosignature();
 
     constructor(address _repermit) BaseReactor(IPermit2(_repermit), address(0)) {}
 
@@ -29,18 +32,17 @@ contract OrderReactor is BaseReactor {
     {
         OrderLib.Order memory order = abi.decode(signedOrder.order, (OrderLib.Order));
 
-        resolvedOrder.info.reactor = IReactor(order.info.reactor);
-        resolvedOrder.info.swapper = order.info.swapper;
-        resolvedOrder.info.nonce = order.info.nonce;
-        resolvedOrder.info.deadline = order.info.deadline;
-        resolvedOrder.info.additionalValidationContract = IValidationCallback(order.info.additionalValidationContract);
-        resolvedOrder.info.additionalValidationData = order.info.additionalValidationData;
-        resolvedOrder.input = InputToken(ERC20(order.input.token), order.input.amount, order.input.maxAmount);
-        resolvedOrder.sig = signedOrder.sig;
-        resolvedOrder.hash = OrderLib.hash(order);
+        // hash the order _before_ overriding amounts, as this is the hash the user would have signed
+        bytes32 orderHash = OrderLib.hash(order);
 
+        _validateCosignature(orderHash, order);
+        // _updateWithCosignerAmounts(order);
+
+        resolvedOrder.input = InputToken(ERC20(order.input.token), order.input.amount, order.input.maxAmount);
         resolvedOrder.outputs = new OutputToken[](1);
         resolvedOrder.outputs[0] = OutputToken(order.output.token, order.output.amount, order.output.recipient);
+        resolvedOrder.sig = signedOrder.sig;
+        resolvedOrder.hash = orderHash;
 
         ExclusivityLib.handleExclusiveOverride(
             resolvedOrder, order.exclusiveFiller, order.info.deadline, order.exclusivityOverrideBps
@@ -60,5 +62,11 @@ contract OrderReactor is BaseReactor {
             OrderLib.WITNESS_TYPE,
             order.sig
         );
+    }
+
+    function _validateCosignature(bytes32 orderHash, OrderLib.Order memory order) internal pure {
+        // cosigner signs over (orderHash || cosignerData)
+        // bytes32 hash = keccak256(abi.encodePacked(orderHash, abi.encode(order.cosignerData)));
+        // if (!SignatureChecker.isValidSignatureNow(order.cosigner, hash, order.cosignature)) revert InvalidCosignature();
     }
 }
