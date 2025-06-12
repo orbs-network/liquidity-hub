@@ -11,11 +11,7 @@ contract DeployTestInfra is DeployPermit2 {
     function deployTestInfra() public returns (address permit2, address multicall, address weth) {
         permit2 = PERMIT2_ADDRESS;
         vm.label(permit2, "Permit2");
-        if (permit2.code.length == 0) {
-            vm.chainId(137); // needed for permit2 TODO ?
-            deployPermit2();
-        }
-
+        deployPermit2();
         multicall = _deployMulticall3();
         weth = _deployWETH();
     }

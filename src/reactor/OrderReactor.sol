@@ -21,6 +21,7 @@ import {OrderLib} from "src/reactor/OrderLib.sol";
 contract OrderReactor is BaseReactor {
     error InvalidOrder();
     error InvalidCosignature();
+    error InvalidCosignerData();
 
     constructor(address _repermit) BaseReactor(IPermit2(_repermit), address(0)) {}
 
@@ -36,7 +37,7 @@ contract OrderReactor is BaseReactor {
         bytes32 orderHash = OrderLib.hash(order);
 
         _validateCosignature(orderHash, order);
-        // _updateWithCosignerAmounts(order);
+        _updateWithCosignerAmounts(order);
 
         resolvedOrder.input = InputToken(ERC20(order.input.token), order.input.amount, order.input.maxAmount);
         resolvedOrder.outputs = new OutputToken[](1);
@@ -68,5 +69,21 @@ contract OrderReactor is BaseReactor {
         // cosigner signs over (orderHash || cosignerData)
         // bytes32 hash = keccak256(abi.encodePacked(orderHash, abi.encode(order.cosignerData)));
         // if (!SignatureChecker.isValidSignatureNow(order.cosigner, hash, order.cosignature)) revert InvalidCosignature();
+    }
+
+    function _updateWithCosignerAmounts(OrderLib.Order memory order) internal pure {
+        // if (order.cosignerData.inputAmount != 0) {
+        //     if (order.cosignerData.inputAmount > order.baseInput.startAmount) {
+        //         revert InvalidCosignerData();
+        //     }
+        //     order.baseInput.startAmount = order.cosignerData.inputAmount;
+        // }
+        //
+        // if (order.cosignerData.outputAmount != 0) {
+        //     if (order.cosignerData.outputAmount < order.baseOutput.startAmount) {
+        //         revert InvalidCosignerData();
+        //     }
+        //     order.baseOutput.startAmount = order.cosignerData.outputAmount;
+        // }
     }
 }
