@@ -9,6 +9,8 @@ import {Uni3Lens} from "src/Uni3Lens.sol";
 
 contract DeployLens is BaseScript {
     function run() public returns (address lens) {
+        if (block.chainid != 56) revert("DeployLens: Unsupported chain");
+
         uint24[] memory fees = new uint24[](4);
         fees[0] = 100;
         fees[1] = 500;
