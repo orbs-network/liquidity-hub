@@ -52,7 +52,7 @@ contract DeployLens is BaseScript {
 
         vm.startBroadcast();
         lens = address(
-            new Lens{salt: 0x62c56bdac0353f27009566a1a24bf383d63a9a9c0e321e71b254434f7784335b}(
+            new Lens{salt: 0x70fc1be7252afad20fc764099d85a7113d717c570721ba3c68d974574f2cfd5f}(
                 0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73,
                 0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865,
                 fees,

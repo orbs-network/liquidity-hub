@@ -11,7 +11,8 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 contract Lens {
     using Math for uint256;
 
-    uint256 public constant TVL_THRESHOLD = 1000 ether; // $1000
+    uint256 public constant VERSION = 1;
+    uint256 public constant TVL_THRESHOLD = 1000 ether;
 
     address public factory2;
     address public factory3;
@@ -68,19 +69,15 @@ contract Lens {
             uint8 decimalsBase = IERC20Metadata(base).decimals();
 
             // Check Uniswap V2 pools
-            result = observePool2(token, base, decimalsToken, decimalsBase, usd);
+            Observation memory o = observePool2(token, base, decimalsToken, decimalsBase, usd);
+            if (o.tvl > result.tvl) result = o;
 
             // Check Uniswap V3 pools
             for (uint256 j = 0; j < fees.length; j++) {
                 uint24 fee = fees[j];
 
-                Observation memory o = observePool3(token, base, decimalsToken, decimalsBase, fee, usd);
-
-                if (o.tvl > result.tvl) {
-                    result.price = o.price;
-                    result.tvl = o.tvl;
-                    result.pool = o.pool;
-                }
+                o = observePool3(token, base, decimalsToken, decimalsBase, fee, usd);
+                if (o.tvl > result.tvl) result = o;
             }
         }
 
