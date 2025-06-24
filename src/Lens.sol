@@ -4,16 +4,17 @@ pragma solidity 0.8.x;
 import "forge-std/Script.sol";
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
-contract Uni3Lens {
+contract Lens {
     using Math for uint256;
 
     uint256 public constant TVL_THRESHOLD = 1000 ether; // $1000
 
-    address public immutable factory;
+    address public factory2;
+    address public factory3;
     uint24[] public fees;
     address[] public bases;
     address[] public oracles;
@@ -26,12 +27,19 @@ contract Uni3Lens {
         address pool;
     }
 
-    constructor(address _factory, uint24[] memory _fees, address[] memory _bases, address[] memory _oracles) {
-        factory = _factory;
+    constructor(
+        address _factory2,
+        address _factory3,
+        uint24[] memory _fees,
+        address[] memory _bases,
+        address[] memory _oracles
+    ) {
+        if (_bases.length == 0 || _bases.length != _oracles.length) revert InvalidInputs();
+        factory2 = _factory2;
+        factory3 = _factory3;
         fees = _fees;
         bases = _bases;
         oracles = _oracles;
-        if (bases.length == 0 || bases.length != oracles.length) revert InvalidInputs();
     }
 
     function observe(address[] memory tokens) external view returns (Observation[] memory results) {
@@ -59,17 +67,25 @@ contract Uni3Lens {
 
             uint8 decimalsBase = IERC20Metadata(base).decimals();
 
+            // Check Uniswap V2 pools
+            result = observePool2(token, base, decimalsToken, decimalsBase, usd);
+
+            // Check Uniswap V3 pools
             for (uint256 j = 0; j < fees.length; j++) {
                 uint24 fee = fees[j];
 
-                Observation memory o = observePool(token, base, decimalsToken, decimalsBase, fee, usd);
+                Observation memory o = observePool3(token, base, decimalsToken, decimalsBase, fee, usd);
 
-                if (o.tvl > result.tvl && o.tvl >= TVL_THRESHOLD) {
+                if (o.tvl > result.tvl) {
                     result.price = o.price;
                     result.tvl = o.tvl;
                     result.pool = o.pool;
                 }
             }
+        }
+
+        if (result.tvl < TVL_THRESHOLD) {
+            delete result;
         }
     }
 
@@ -81,12 +97,12 @@ contract Uni3Lens {
         usd = uint256(answer) * 10 ** (18 - decimals);
     }
 
-    function observePool(address token, address base, uint8 decimalsToken, uint8 decimalsBase, uint24 fee, uint256 usd)
+    function observePool3(address token, address base, uint8 decimalsToken, uint8 decimalsBase, uint24 fee, uint256 usd)
         public
         view
         returns (Observation memory result)
     {
-        result.pool = IFactory(factory).getPool(token, base, fee);
+        result.pool = IFactory3(factory3).getPool(token, base, fee);
         if (result.pool == address(0)) return result;
 
         uint128 liquidity = IUniswapV3Pool(result.pool).liquidity();
@@ -99,6 +115,28 @@ contract Uni3Lens {
 
         result.tvl = Math.mulDiv(IERC20(token).balanceOf(result.pool), result.price, 10 ** decimalsToken)
             + Math.mulDiv(IERC20(base).balanceOf(result.pool), usd, 10 ** decimalsBase);
+    }
+
+    function observePool2(address token, address base, uint8 decimalsToken, uint8 decimalsBase, uint256 usd)
+        public
+        view
+        returns (Observation memory result)
+    {
+        result.pool = IFactory2(factory2).getPair(token, base);
+        if (result.pool == address(0)) return result;
+
+        (uint112 r0, uint112 r1,) = IUniswapV2Pool(result.pool).getReserves();
+        address t0 = IUniswapV2Pool(result.pool).token0();
+        uint256 rT = token == t0 ? r0 : r1;
+        uint256 rB = token == t0 ? r1 : r0;
+
+        uint256 priceBase = (decimalsToken >= decimalsBase)
+            ? Math.mulDiv(rB * 10 ** (decimalsToken - decimalsBase), 1 ether, rT)
+            : Math.mulDiv(rB, 1 ether, rT * 10 ** (decimalsBase - decimalsToken));
+
+        result.price = Math.mulDiv(priceBase, usd, 1 ether);
+
+        result.tvl = Math.mulDiv(rT, result.price, 10 ** decimalsToken) + Math.mulDiv(rB, usd, 10 ** decimalsBase);
     }
 
     function getQuoteFromSqrtRatioX96(uint160 sqrtRatioX96, address token, address base, uint8 tokenDecimals)
@@ -118,7 +156,17 @@ contract Uni3Lens {
     }
 }
 
-interface IFactory {
+interface IFactory2 {
+    function getPair(address token0, address token1) external view returns (address);
+}
+
+interface IUniswapV2Pool {
+    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
+    function token0() external view returns (address);
+    function token1() external view returns (address);
+}
+
+interface IFactory3 {
     function getPool(address token0, address token1, uint24 fee) external view returns (address);
 }
 

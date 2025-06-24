@@ -5,11 +5,10 @@ import "forge-std/Script.sol";
 
 import {BaseScript} from "script/base/BaseScript.sol";
 
-import {Uni2Lens} from "src/Uni2Lens.sol";
-import {Uni3Lens} from "src/Uni3Lens.sol";
+import {Lens} from "src/Lens.sol";
 
 contract DeployLens is BaseScript {
-    function run() public returns (address uni2Lens, address uni3Lens) {
+    function run() public returns (address lens) {
         if (block.chainid != 56) revert("DeployLens: Unsupported chain");
 
         uint24[] memory fees = new uint24[](4);
@@ -37,8 +36,15 @@ contract DeployLens is BaseScript {
         oracles[4] = 0x264990fbd0A4796A3E3d8E37C4d5F87a3aCa5Ebf;
 
         vm.startBroadcast();
-        uni3Lens = address(new Uni3Lens(0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865, fees, bases, oracles));
-        uni2Lens = address(new Uni2Lens(0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73, bases, oracles));
+        lens = address(
+            new Lens(
+                0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73,
+                0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865,
+                fees,
+                bases,
+                oracles
+            )
+        );
         vm.stopBroadcast();
     }
 }
