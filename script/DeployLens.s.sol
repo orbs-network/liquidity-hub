@@ -35,9 +35,24 @@ contract DeployLens is BaseScript {
         bases[4] = 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c;
         oracles[4] = 0x264990fbd0A4796A3E3d8E37C4d5F87a3aCa5Ebf;
 
+        // print init code hash
+        bytes32 initCodeHash = keccak256(
+            abi.encodePacked(
+                type(Lens).creationCode,
+                abi.encode(
+                    0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73,
+                    0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865,
+                    fees,
+                    bases,
+                    oracles
+                )
+            )
+        );
+        console.logBytes32(initCodeHash);
+
         vm.startBroadcast();
         lens = address(
-            new Lens(
+            new Lens{salt: 0x62c56bdac0353f27009566a1a24bf383d63a9a9c0e321e71b254434f7784335b}(
                 0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73,
                 0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865,
                 fees,
