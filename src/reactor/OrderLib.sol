@@ -55,6 +55,11 @@ library OrderLib {
         Output output;
     }
 
+    struct Cosignature {
+        uint256 outputAmount;
+        uint256 timestamp;
+    }
+
     function hash(OrderInfo memory info) internal pure returns (bytes32) {
         return keccak256(
             abi.encode(
@@ -82,4 +87,6 @@ library OrderLib {
             )
         );
     }
+
+    function hashCosignature() internal pure returns (bytes32) {}
 }

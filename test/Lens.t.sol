@@ -49,6 +49,12 @@ contract LensTest is BaseTest {
         assertTrue(result.pool == uut.oracles(0), "Pool should be oracle address");
     }
 
+    function test_observe_4() public {
+        address token = 0x991ceE7f782AbaefC9e1aA93B70b4f6Fc6C8326E;
+        Lens.Observation memory result = uut.observe(token);
+        assertGt(result.price, 0, "Price should be greater than 0");
+    }
+
     function _chainBNB() private {
         string[] memory cmds = new string[](4);
         cmds[0] = "getchain";

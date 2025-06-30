@@ -19,11 +19,15 @@ import {RePermit, RePermitLib} from "src/repermit/RePermit.sol";
 import {OrderLib} from "src/reactor/OrderLib.sol";
 
 contract OrderReactor is BaseReactor {
+    address public immutable cosigner;
+
     error InvalidOrder();
     error InvalidCosignature();
     error InvalidCosignerData();
 
-    constructor(address _repermit) BaseReactor(IPermit2(_repermit), address(0)) {}
+    constructor(address _repermit, address _cosigner) BaseReactor(IPermit2(_repermit), address(0)) {
+        cosigner = _cosigner;
+    }
 
     function _resolve(SignedOrder calldata signedOrder)
         internal
@@ -66,9 +70,9 @@ contract OrderReactor is BaseReactor {
     }
 
     function _validateCosignature(bytes32 orderHash, OrderLib.Order memory order) internal pure {
-        // cosigner signs over (orderHash || cosignerData)
         // bytes32 hash = keccak256(abi.encodePacked(orderHash, abi.encode(order.cosignerData)));
-        // if (!SignatureChecker.isValidSignatureNow(order.cosigner, hash, order.cosignature)) revert InvalidCosignature();
+        // bytes32 hash = 0; //
+        // if (!SignatureChecker.isValidSignatureNow(cosigner, hash, order.cosignature)) revert InvalidCosignature();
     }
 
     function _updateWithCosignerAmounts(OrderLib.Order memory order) internal pure {

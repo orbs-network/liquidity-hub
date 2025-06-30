@@ -137,7 +137,7 @@
                 "amount": "<INAMOUNT>",
                 "maxAmount": "<INMAXAMOUNT>"
             },
-            "outputs": {
+            "output": {
                 "token": "<OUTTOKEN>",
                 "amount": "<OUTAMOUNT>",
                 "recipient": "<RECIPIENT>"

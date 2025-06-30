@@ -10,6 +10,7 @@ import {OrderReactor} from "src/reactor/OrderReactor.sol";
 contract DeployReactor is BaseScript {
     function run() public returns (address reactor) {
         address repermit = vm.envAddress("REPERMIT");
+        address cosigner = vm.envAddress("COSIGNER");
 
         bytes32 hash = hashInitCode(type(OrderReactor).creationCode, abi.encode(repermit));
         console.logBytes32(hash);
@@ -19,7 +20,7 @@ contract DeployReactor is BaseScript {
 
         if (reactor.code.length == 0) {
             vm.broadcast();
-            OrderReactor deployed = new OrderReactor{salt: salt}(repermit);
+            OrderReactor deployed = new OrderReactor{salt: salt}(repermit, cosigner);
             require(reactor == address(deployed), "reactor mismatched address");
         } else {
             console.log("reactor already deployed");
