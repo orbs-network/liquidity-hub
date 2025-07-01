@@ -5,22 +5,22 @@ import "forge-std/Test.sol";
 
 import {BaseTest} from "test/base/BaseTest.sol";
 
-import {DeployLens} from "script/DeployLens.s.sol";
+import {DeployOracle} from "script/DeployOracle.s.sol";
 
-import {Lens, IERC20Metadata} from "src/Lens.sol";
+import {Oracle, IERC20Metadata} from "src/Oracle.sol";
 
-contract LensTest is BaseTest {
-    Lens public uut;
+contract OracleTest is BaseTest {
+    Oracle public uut;
 
     function setUp() public override {
         // super.setUp();
         _chainBNB();
-        uut = Lens(new DeployLens().run());
+        uut = Oracle(new DeployOracle().run());
     }
 
     function test_observe() public {
         address token = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82; // cake on bnb
-        Lens.Observation memory result = uut.observe(token);
+        Oracle.Observation memory result = uut.observe(token);
         assertGt(result.price, 0, "Price should be greater than 0");
         assertGt(result.tvl, 0, "TVL should be greater than 0");
         assertTrue(result.pool != address(0), "Pool should not be zero address");
@@ -29,29 +29,41 @@ contract LensTest is BaseTest {
     function test_observe_decimals() public {
         address token = 0x76A797A59Ba2C17726896976B7B3747BfD1d220f; // ton on bnb with 9 decimals
         assertEq(IERC20Metadata(token).decimals(), 9, "Token should have 9 decimals");
-        Lens.Observation memory result = uut.observe(token);
+        Oracle.Observation memory result = uut.observe(token);
         assertLt(result.price, 100 ether, "Price should make sense for 9 decimals");
     }
 
     function test_observe_base() public {
-        address token = uut.bases(0);
-        Lens.Observation memory result = uut.observe(token);
+        address token = uut.bases(2);
+        Oracle.Observation memory result = uut.observe(token);
         assertGt(result.price, 0, "Price should be greater than 0");
         assertEq(result.tvl, type(uint256).max, "TVL max because direct from oracle");
-        assertTrue(result.pool == uut.oracles(0), "Pool should be oracle address");
+        assertTrue(result.pool == uut.oracles(2), "Pool should be oracle address");
     }
 
     function test_observe_native() public {
         address token = address(0);
-        Lens.Observation memory result = uut.observe(token);
+        Oracle.Observation memory result = uut.observe(token);
         assertGt(result.price, 0, "Price should be greater than 0");
         assertEq(result.tvl, type(uint256).max, "TVL max because direct from oracle");
         assertTrue(result.pool == uut.oracles(0), "Pool should be oracle address");
     }
 
+    function test_observe_safe() public {
+        // this token reverts due to on empty pool reserve
+        address token = 0x7918201208BBc5D3b0C84689aFd46aB391c1D1ce;
+
+        address[] memory tokens = new address[](2);
+        tokens[0] = token;
+        tokens[1] = address(0);
+        Oracle.Observation[] memory result = uut.observe(tokens);
+        assertEq(result[0].price, 0, "Price should be 0 for token with empty pool reserve");
+        assertGt(result[1].price, 0, "Price should be greater than 0");
+    }
+
     function test_observe_4() public {
         address token = 0x991ceE7f782AbaefC9e1aA93B70b4f6Fc6C8326E;
-        Lens.Observation memory result = uut.observe(token);
+        Oracle.Observation memory result = uut.observe(token);
         assertGt(result.price, 0, "Price should be greater than 0");
     }
 

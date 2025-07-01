@@ -8,7 +8,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
-contract Lens {
+contract Oracle {
     using Math for uint256;
 
     uint256 public constant VERSION = 1;
@@ -19,11 +19,7 @@ contract Lens {
 
     address public immutable factory2;
     address public immutable factory3;
-    address public immutable factory4;
     uint24[] public fees3;
-    uint24[] public fees4;
-    address[] public hooks4;
-    uint24[] public tickspacings4;
 
     error InvalidInputs();
 
@@ -38,22 +34,14 @@ contract Lens {
         address[] memory _oracles,
         address _factory2,
         address _factory3,
-        address _factory4,
-        uint24[] memory _fees3,
-        uint24[] memory _fees4,
-        address[] memory _hooks4,
-        uint24[] memory _tickspacings4
+        uint24[] memory _fees3
     ) {
         if (_bases.length == 0 || _bases.length != _oracles.length) revert InvalidInputs();
         bases = _bases;
         oracles = _oracles;
         factory2 = _factory2;
         factory3 = _factory3;
-        factory4 = _factory4;
         fees3 = _fees3;
-        fees4 = _fees4;
-        hooks4 = _hooks4;
-        tickspacings4 = _tickspacings4;
     }
 
     function observe(address[] memory tokens) external view returns (Observation[] memory results) {
@@ -64,6 +52,14 @@ contract Lens {
     }
 
     function observe(address token) public view returns (Observation memory result) {
+        try this.tryObserve(token) returns (Observation memory o) {
+            return o;
+        } catch {
+            return result; // return empty observation on error
+        }
+    }
+
+    function tryObserve(address token) public view returns (Observation memory result) {
         if (token == address(0)) token = bases[0];
 
         uint8 decimalsToken = IERC20Metadata(token).decimals();
@@ -86,24 +82,11 @@ contract Lens {
             if (o.tvl > result.tvl) result = o;
 
             // Check Uniswap V3 pools
-            // for (uint256 j = 0; j < fees3.length; j++) {
-            //     uint24 fee = fees3[j];
-            //
-            //     o = observePool3(token, base, decimalsToken, decimalsBase, fee, usd);
-            //     if (o.tvl > result.tvl) result = o;
-            // }
-            // Check Uniswap V4 pools
+            for (uint256 j = 0; j < fees3.length; j++) {
+                uint24 fee = fees3[j];
 
-            for (uint256 j = 0; j < fees4.length; j++) {
-                for (uint256 k = 0; k < hooks4.length; k++) {
-                    for (uint256 l = 0; l < tickspacings4.length; l++) {
-                        o = observePool4(
-                            token, base, decimalsToken, decimalsBase, fees4[j], tickspacings4[l], hooks4[k], usd
-                        );
-
-                        if (o.tvl > result.tvl) result = o;
-                    }
-                }
+                o = observePool3(token, base, decimalsToken, decimalsBase, fee, usd);
+                if (o.tvl > result.tvl) result = o;
             }
         }
 
@@ -118,29 +101,6 @@ contract Lens {
 
         uint8 decimals = IERC20Metadata(oracles[index]).decimals();
         usd = uint256(answer) * 10 ** (18 - decimals);
-    }
-
-    function observePool4(
-        address token,
-        address base,
-        uint8 decimalsToken,
-        uint8 decimalsBase,
-        uint24 fee,
-        uint24 tickspacing,
-        address hook,
-        uint256 usd
-    ) public view returns (Observation memory result) {
-        address token0 = token < base ? token : base;
-        address token1 = token < base ? base : token;
-        bytes32 id = keccak256(abi.encode(token0, token1, hook, factory4, fee, bytes32(uint256(tickspacing))));
-
-        (uint160 sqrtPriceX96,,,) = IFactory4(factory4).getSlot0(id);
-
-        // uint256 priceBase = getQuoteFromSqrtRatioX96(sqrtPriceX96, token, base, decimalsToken);
-        // result.price = Math.mulDiv(priceBase, usd, 1 ether);
-        //
-        // result.tvl = Math.mulDiv(IERC20(token).balanceOf(result.pool), result.price, 10 ** decimalsToken)
-        //     + Math.mulDiv(IERC20(base).balanceOf(result.pool), usd, 10 ** decimalsBase);
     }
 
     function observePool3(address token, address base, uint8 decimalsToken, uint8 decimalsBase, uint24 fee, uint256 usd)

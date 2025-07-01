@@ -5,11 +5,11 @@ import "forge-std/Script.sol";
 
 import {BaseScript} from "script/base/BaseScript.sol";
 
-import {Lens} from "src/Lens.sol";
+import {Oracle} from "src/Oracle.sol";
 
-contract DeployLens is BaseScript {
-    function run() public returns (address lens) {
-        if (block.chainid != 56) revert("DeployLens: Unsupported chain");
+contract DeployOracle is BaseScript {
+    function run() public returns (address oracle) {
+        if (block.chainid != 56) revert("DeployOracle: Unsupported chain");
 
         address[] memory bases = new address[](5);
         address[] memory oracles = new address[](5);
@@ -31,7 +31,7 @@ contract DeployLens is BaseScript {
 
         address factory2 = 0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73;
         address factory3 = 0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865;
-        address factory4 = 0xa0FfB9c1CE1Fe56963B0321B32E7A0302114058b;
+        // address factory4 = 0xa0FfB9c1CE1Fe56963B0321B32E7A0302114058b;
 
         uint24[] memory fees3 = new uint24[](4);
         fees3[0] = 100;
@@ -47,30 +47,26 @@ contract DeployLens is BaseScript {
         fees4[4] = 10000;
         fees4[5] = 0x800000; // hook fee
 
-        address[] memory hooks4 = new address[](3);
-        hooks4[0] = address(0);
-        hooks4[1] = 0x32C59D556B16DB81DFc32525eFb3CB257f7e493d;
+        // address[] memory hooks4 = new address[](3);
+        // hooks4[0] = address(0);
+        // hooks4[1] = 0x32C59D556B16DB81DFc32525eFb3CB257f7e493d;
 
-        uint24[] memory tickspacings4 = new uint24[](5);
-        tickspacings4[0] = 1;
-        tickspacings4[1] = 10;
-        tickspacings4[2] = 60;
-        tickspacings4[3] = 200;
-        tickspacings4[4] = 500;
+        // uint24[] memory tickspacings4 = new uint24[](5);
+        // tickspacings4[0] = 1;
+        // tickspacings4[1] = 10;
+        // tickspacings4[2] = 60;
+        // tickspacings4[3] = 200;
+        // tickspacings4[4] = 500;
 
-        // print init code hash
         bytes32 initCodeHash = keccak256(
-            abi.encodePacked(
-                type(Lens).creationCode,
-                abi.encode(bases, oracles, factory2, factory3, factory4, fees3, fees4, hooks4, tickspacings4)
-            )
+            abi.encodePacked(type(Oracle).creationCode, abi.encode(bases, oracles, factory2, factory3, fees3))
         );
         console.logBytes32(initCodeHash);
 
         vm.startBroadcast();
-        lens = address(
-            new Lens{salt: 0x70fc1be7252afad20fc764099d85a7113d717c570721ba3c68d974574f2cfd5f}(
-                bases, oracles, factory2, factory3, factory4, fees3, fees4, hooks4, tickspacings4
+        oracle = address(
+            new Oracle{salt: 0x70fc1be7252afad20fc764099d85a7113d717c570721ba3c68d974574f2cfd5f}(
+                bases, oracles, factory2, factory3, fees3
             )
         );
         vm.stopBroadcast();
