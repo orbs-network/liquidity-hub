@@ -28,6 +28,9 @@
         "fee08_salt": "0xbc0ce419f2f25de9bc0871256ac7523dc985effa37641ce0ed58a2cfe6d1e551",
         "fee09_salt": "0x6c774c0fc4766e5f5c56d1d61a9a20ab543080024e5b7116c0e206f93aed2577"
     },
+    "56": {
+        "oracle": "0xCEE0000f4b4b3106EA81662a23Df6623aCB59c01"
+    },
     "42161": {
         "executorPCSX_reactor": "0x35db01D1425685789dCc9228d47C7A5C049388d8",
         "executorPCSX_salt": "0xa7e61fa158c57ec093db9ec16608fed6232787132d7dc855e783a0ca4bef9b9c",
