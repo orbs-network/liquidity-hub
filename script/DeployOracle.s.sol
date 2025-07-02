@@ -65,7 +65,7 @@ contract DeployOracle is BaseScript {
 
         vm.startBroadcast();
         oracle = address(
-            new Oracle{salt: 0xf3e2b2d2af4a0b002cfa1b7db0f549679b84fbb2116cfd0168f6724caff261a7}(
+            new Oracle{salt: 0xb16ee6fd430071cea75a694186527021a7c959fbf50035d766710b17cd54e7d6}(
                 bases, oracles, factory2, factory3, fees3
             )
         );

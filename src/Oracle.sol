@@ -11,7 +11,6 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 contract Oracle {
     using Math for uint256;
 
-    uint256 public constant VERSION = 1;
     uint256 public constant TVL_THRESHOLD = 1000 ether;
 
     address[] public bases;
@@ -94,7 +93,7 @@ contract Oracle {
 
         result.tokenDecimals = decimalsToken;
         if (result.tvl < TVL_THRESHOLD) {
-            delete result;
+            delete result.price;
         }
     }
 

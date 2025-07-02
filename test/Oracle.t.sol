@@ -61,10 +61,28 @@ contract OracleTest is BaseTest {
         assertGt(result[1].price, 0, "Price should be greater than 0");
     }
 
-    function test_observe_4() public {
+    function test_observe_v4() public {
         address token = 0x991ceE7f782AbaefC9e1aA93B70b4f6Fc6C8326E;
         Oracle.Observation memory result = uut.observe(token);
         assertGt(result.price, 0, "Price should be greater than 0");
+    }
+
+    function test_observe_catch() public {
+        address token = makeAddr("invalid_token");
+        vm.mockCall(token, abi.encodeWithSelector(IERC20Metadata.decimals.selector), abi.encode(-1));
+        Oracle.Observation memory result = uut.observe(token);
+        assertEq(result.price, 0, "Price should be 0");
+    }
+
+    function test_observe_catch2() public {
+        address token = makeAddr("invalid_token");
+        vm.mockCall(token, abi.encodeWithSelector(IERC20Metadata.decimals.selector), abi.encode(9));
+
+        vm.mockCall(token, abi.encodeWithSignature("getPool(address,address)"), abi.encode(makeAddr("invalid_pool")));
+
+        Oracle.Observation memory result = uut.observe(token);
+        assertEq(result.price, 0, "Price should be 0");
+        assertEq(result.tokenDecimals, 9, "Token decimals should still be set");
     }
 
     function _chainBNB() private {
