@@ -62,36 +62,36 @@ contract Oracle {
     function tryObserve(address token) public view returns (Observation memory result) {
         if (token == address(0)) token = bases[0];
 
-        uint8 decimalsToken = IERC20Metadata(token).decimals();
+        uint8 tokenDecimals = IERC20Metadata(token).decimals();
 
         for (uint256 i = 0; i < bases.length; i++) {
             address base = bases[i];
             uint256 usd = getUSD(i);
 
             if (token == base) {
-                result.price = Math.mulDiv(usd, (10 ** decimalsToken), 1 ether);
+                result.price = Math.mulDiv(usd, (10 ** tokenDecimals), 1 ether);
                 result.tvl = type(uint256).max; // direct from oracle
                 result.pool = oracles[i];
-                result.tokenDecimals = decimalsToken;
+                result.tokenDecimals = tokenDecimals;
                 return result;
             }
 
-            uint8 decimalsBase = IERC20Metadata(base).decimals();
+            uint8 baseDecimals = IERC20Metadata(base).decimals();
 
             // Check Uniswap V2 pools
-            Observation memory o = observePool2(token, base, decimalsToken, decimalsBase, usd);
+            Observation memory o = observePool2(token, base, tokenDecimals, baseDecimals, usd);
             if (o.tvl > result.tvl) result = o;
 
             // Check Uniswap V3 pools
             for (uint256 j = 0; j < fees3.length; j++) {
                 uint24 fee = fees3[j];
 
-                o = observePool3(token, base, decimalsToken, decimalsBase, fee, usd);
+                o = observePool3(token, base, tokenDecimals, baseDecimals, fee, usd);
                 if (o.tvl > result.tvl) result = o;
             }
         }
 
-        result.tokenDecimals = decimalsToken;
+        result.tokenDecimals = tokenDecimals;
         if (result.tvl < TVL_THRESHOLD) {
             delete result.price;
         }
@@ -117,8 +117,11 @@ contract Oracle {
         if (liquidity == 0) return result;
 
         (uint160 sqrtPriceX96,,,,,,) = IUniswapV3Pool(result.pool).slot0();
+        if (sqrtPriceX96 == 0) return result;
 
         uint256 priceBase = getQuoteFromSqrtRatioX96(sqrtPriceX96, token, base, decimalsToken);
+        if (priceBase == 0) return result;
+
         result.price = Math.mulDiv(priceBase, usd, 1 ether);
 
         result.tvl = Math.mulDiv(IERC20(token).balanceOf(result.pool), result.price, 10 ** decimalsToken)
@@ -134,6 +137,8 @@ contract Oracle {
         if (result.pool == address(0)) return result;
 
         (uint112 r0, uint112 r1,) = IUniswapV2Pool(result.pool).getReserves();
+        if (r0 == 0 || r1 == 0) return result;
+
         address t0 = IUniswapV2Pool(result.pool).token0();
         uint256 rT = token == t0 ? r0 : r1;
         uint256 rB = token == t0 ? r1 : r0;
@@ -141,6 +146,7 @@ contract Oracle {
         uint256 priceBase = (decimalsToken >= decimalsBase)
             ? Math.mulDiv(rB * 10 ** (decimalsToken - decimalsBase), 1 ether, rT)
             : Math.mulDiv(rB, 1 ether, rT * 10 ** (decimalsBase - decimalsToken));
+        if (priceBase == 0) return result;
 
         result.price = Math.mulDiv(priceBase, usd, 1 ether);
 
