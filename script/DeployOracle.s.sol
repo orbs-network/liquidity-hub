@@ -11,8 +11,8 @@ contract DeployOracle is BaseScript {
     function run() public returns (address oracle) {
         if (block.chainid != 56) revert("DeployOracle: Unsupported chain");
 
-        address[] memory bases = new address[](5);
-        address[] memory oracles = new address[](5);
+        address[] memory bases = new address[](7);
+        address[] memory oracles = new address[](7);
         // wbnb
         bases[0] = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
         oracles[0] = 0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE;
@@ -28,6 +28,12 @@ contract DeployOracle is BaseScript {
         // btc
         bases[4] = 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c;
         oracles[4] = 0x264990fbd0A4796A3E3d8E37C4d5F87a3aCa5Ebf;
+        // usd1
+        bases[5] = 0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d;
+        oracles[5] = 0xaD8b4e59A7f25B68945fAf0f3a3EAF027832FFB0;
+        // cake
+        bases[6] = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
+        oracles[6] = 0xB6064eD41d4f67e353768aA239cA86f4F73665a1;
 
         address factory2 = 0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73;
         address factory3 = 0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865;
@@ -39,13 +45,13 @@ contract DeployOracle is BaseScript {
         fees3[2] = 2500;
         fees3[3] = 10000;
 
-        uint24[] memory fees4 = new uint24[](6);
-        fees4[0] = 25;
-        fees4[1] = 100;
-        fees4[2] = 500;
-        fees4[3] = 2500;
-        fees4[4] = 10000;
-        fees4[5] = 0x800000; // hook fee
+        // uint24[] memory fees4 = new uint24[](6);
+        // fees4[0] = 25;
+        // fees4[1] = 100;
+        // fees4[2] = 500;
+        // fees4[3] = 2500;
+        // fees4[4] = 10000;
+        // fees4[5] = 0x800000; // hook fee
 
         // address[] memory hooks4 = new address[](3);
         // hooks4[0] = address(0);
@@ -65,7 +71,7 @@ contract DeployOracle is BaseScript {
 
         vm.startBroadcast();
         oracle = address(
-            new Oracle{salt: 0x48437e2da50e07f3d9990193c6969589a5a8165b5eeaa5af5102a53cc3cf798f}(
+            new Oracle{salt: 0xe07802d09b559e29661dc0cfc5c6da268858541643028fe44118fac09cff8cde}(
                 bases, oracles, factory2, factory3, fees3
             )
         );
