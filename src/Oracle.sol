@@ -27,6 +27,7 @@ contract Oracle {
         uint256 price;
         uint256 tvl;
         address pool;
+        uint8 tokenDecimals;
     }
 
     constructor(
@@ -72,6 +73,7 @@ contract Oracle {
                 result.price = Math.mulDiv(usd, (10 ** decimalsToken), 1 ether);
                 result.tvl = type(uint256).max; // direct from oracle
                 result.pool = oracles[i];
+                result.tokenDecimals = decimalsToken;
                 return result;
             }
 
@@ -90,6 +92,7 @@ contract Oracle {
             }
         }
 
+        result.tokenDecimals = decimalsToken;
         if (result.tvl < TVL_THRESHOLD) {
             delete result;
         }
