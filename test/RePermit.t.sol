@@ -106,6 +106,7 @@ contract RePermitTest is BaseTest {
 
     function test_cancel() public {
         permit.deadline = block.timestamp;
+        permit.nonce = 1234;
 
         bytes memory signature = signEIP712(
             repermit,
@@ -120,6 +121,9 @@ contract RePermitTest is BaseTest {
                 address(this)
             )
         );
+        vm.expectEmit(address(uut));
+        emit RePermitLib.Cancel(signer, permit.nonce);
+
         hoax(signer);
         uut.cancel(permit.nonce);
 

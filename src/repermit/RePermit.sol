@@ -30,6 +30,7 @@ contract RePermit is EIP712, IEIP712 {
 
     function cancel(uint256 nonce) external {
         canceled[msg.sender][nonce] = true;
+        emit RePermitLib.Cancel(msg.sender, nonce);
     }
 
     function repermitWitnessTransferFrom(

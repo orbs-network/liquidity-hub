@@ -18,6 +18,8 @@ library RePermitLib {
         uint256 amount;
     }
 
+    event Cancel(address indexed signer, uint256 nonce);
+
     string internal constant TOKEN_PERMISSIONS_TYPE = "TokenPermissions(address token,uint256 amount)";
     bytes32 internal constant TOKEN_PERMISSIONS_TYPE_HASH = keccak256(bytes(TOKEN_PERMISSIONS_TYPE));
     string internal constant REPERMIT_WITNESS_TRANSFER_FROM_TYPE_PREFIX =
