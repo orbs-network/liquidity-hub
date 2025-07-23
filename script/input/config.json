@@ -16,6 +16,12 @@
         "fee07": "0xfEe070067c7102F99DB9d8ef4e5EeDDF9bf7614A",
         "fee08": "0xFeE08002ED58dCDf718562F286280edb1E4D681f",
         "fee09": "0xFEE090082E5223E55ce74f3A246F49F67aB00a1D",
+        "fee10": "0xFEe1000548b92db644AB2027608b51909A749E3F",
+        "fee11": "0xFEE11007108eb21A4f1C1aa4c4d42c7b3CD7F1D8",
+        "fee12": "0xFeE12000c30375Bc51240bdbBb58bbE4F26db0fd",
+        "fee13": "0xFee130030Fb271D6BB2cc272216c6FF2835B96DC",
+        "fee14": "0xFeE1400602d81fBd2f979A41d52582b75509566F",
+        "fee15": "0xFEe15009e060aD9F0034EFF3445a3E8217884660",
         "reactor2_salt": "0x0000000000000000000000000000000000000000000000000000000000000001",
         "fee00_salt": "0x55669ad6a3db66a4a3bbfe640c9faa64095a75a5228cf52464f4a449257ee6c5",
         "fee01_salt": "0xab1462bd378a47c5676f45ed8b1f1de08ddf212e2525b6c82e7c2c11c41590d2",
@@ -26,9 +32,14 @@
         "fee06_salt": "0x050ba0d409ebce0148e460ca7b2d9dbe1eb216a6bd4023a81c42f85195d17dc4",
         "fee07_salt": "0x48be6857f4921ae65bfd0b86ca3b14c688dcf70377e52b677f39f59c82276872",
         "fee08_salt": "0xbc0ce419f2f25de9bc0871256ac7523dc985effa37641ce0ed58a2cfe6d1e551",
-        "fee09_salt": "0x6c774c0fc4766e5f5c56d1d61a9a20ab543080024e5b7116c0e206f93aed2577"
+        "fee09_salt": "0x6c774c0fc4766e5f5c56d1d61a9a20ab543080024e5b7116c0e206f93aed2577",
+        "fee10_salt": "0x076e42b7e0105369586e4f19b01a2a6171c79f145cae2603e6b19c5a21a99bbd",
+        "fee11_salt": "0x45c702857e633937d3d744b35bd4d79bb663cb4545153081318a04bbee2f2643",
+        "fee12_salt": "0xea0d1725f6c0998d926fa2bbcdbc93c3495780959a2791afc591c864e06ccabc",
+        "fee13_salt": "0x2e64e125f2b5173f7989782b19fe41c27074f6f2b161833eeb1b1a20a7ad8ed7",
+        "fee14_salt": "0x2492eeffc844ecfe3aee4e704d1867f67ecec8b39cc5271d47b59d98a52db69c",
+        "fee15_salt": "0x2941f61b011f6f95192f57d99f0a6e43500aa7ed913fb9c489c710d2140162df"
     },
-    "56": {},
     "42161": {
         "executorPCSX_reactor": "0x35db01D1425685789dCc9228d47C7A5C049388d8",
         "executorPCSX_salt": "0xa7e61fa158c57ec093db9ec16608fed6232787132d7dc855e783a0ca4bef9b9c",
@@ -44,6 +55,9 @@
     },
     "324": {
         "admin": "0x689eE3373F7DFFE83E5E6E1b9818F0138b0f2313"
+    },
+    "747474": {
+        "admin": "0x74747410a44c59A4366f6a89972A4B7203b604d8"
     },
     "chains": [
         "eth",
