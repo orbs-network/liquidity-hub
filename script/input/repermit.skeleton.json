@@ -129,9 +129,11 @@
                 "additionalValidationContract": "<EXECUTOR>",
                 "additionalValidationData": "<EXECUTORDATA>"
             },
-            "epoch": "<EPOCHSECONDS>",
             "exclusiveFiller": "<EXECUTOR>",
             "exclusivityOverrideBps": "100",
+            "epoch": "<EPOCHSECONDS>",
+            "slippage": "<SLIPPAGE>",
+            "trigger": "<OUTAMOUNT>",
             "input": {
                 "token": "<INTOKEN>",
                 "amount": "<INAMOUNT>",

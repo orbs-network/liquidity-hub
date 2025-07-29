@@ -43,34 +43,42 @@ library OrderLib {
 
     struct Input {
         address token;
-        uint256 amount;
-        uint256 maxAmount;
+        uint256 amount; // chunk
+        uint256 maxAmount; // total
     }
 
     struct Output {
         address token;
-        uint256 amount;
+        uint256 amount; // limit
+        uint256 maxAmount; // trigger
         address recipient;
-    }
-
-    struct Order {
-        OrderInfo info;
-        uint32 epoch;
-        address exclusiveFiller;
-        uint256 exclusivityOverrideBps;
-        Input input;
-        Output output;
     }
 
     struct CosignedValue {
         address token;
-        uint256 amount;
+        uint256 usd;
     }
 
     struct Cosignature {
         uint256 timestamp;
         CosignedValue input;
         CosignedValue output;
+    }
+
+    struct Order {
+        address exclusiveFiller;
+        uint256 exclusivityOverrideBps;
+        OrderInfo info;
+        uint32 epoch;
+        uint32 slippage;
+        Input input;
+        Output output;
+    }
+
+    struct CosignedOrder {
+        Order order;
+        Cosignature cosignatureData;
+        bytes cosignature;
     }
 
     function hash(OrderInfo memory info) internal pure returns (bytes32) {
