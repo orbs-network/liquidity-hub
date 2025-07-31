@@ -37,6 +37,10 @@
             {
                 "name": "amount",
                 "type": "uint256"
+            },
+            {
+                "name": "maxAmount",
+                "type": "uint256"
             }
         ],
         "Order": [
@@ -50,6 +54,14 @@
             },
             {
                 "name": "exclusivityOverrideBps",
+                "type": "uint256"
+            },
+            {
+                "name": "epoch",
+                "type": "uint256"
+            },
+            {
+                "name": "slippage",
                 "type": "uint256"
             },
             {
@@ -97,6 +109,10 @@
                 "type": "uint256"
             },
             {
+                "name": "maxAmount",
+                "type": "uint256"
+            },
+            {
                 "name": "recipient",
                 "type": "address"
             }
@@ -115,7 +131,7 @@
     "message": {
         "permitted": {
             "token": "<INTOKEN>",
-            "amount": "<INMAXAMOUNT>"
+            "amount": "<INTOTALAMOUNT>"
         },
         "spender": "<REACTOR>",
         "nonce": "<NONCE>",
@@ -133,15 +149,15 @@
             "exclusivityOverrideBps": "100",
             "epoch": "<EPOCHSECONDS>",
             "slippage": "<SLIPPAGE>",
-            "trigger": "<OUTAMOUNT>",
             "input": {
                 "token": "<INTOKEN>",
-                "amount": "<INAMOUNT>",
-                "maxAmount": "<INMAXAMOUNT>"
+                "amount": "<INCHUNKAMOUNT>",
+                "maxAmount": "<INTOTALAMOUNT>"
             },
             "output": {
                 "token": "<OUTTOKEN>",
-                "amount": "<OUTAMOUNT>",
+                "amount": "<OUTAMOUNTMIN>",
+                "maxAmount": "<OUTAMOUNTTRIGGER>",
                 "recipient": "<RECIPIENT>"
             }
         }

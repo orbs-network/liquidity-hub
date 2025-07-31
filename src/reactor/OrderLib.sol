@@ -11,11 +11,11 @@ library OrderLib {
     string internal constant INPUT_TYPE = "Input(address token,uint256 amount,uint256 maxAmount)";
     bytes32 internal constant INPUT_TYPE_HASH = keccak256(bytes(INPUT_TYPE));
 
-    string internal constant OUTPUT_TYPE = "Output(address token,uint256 amount,address recipient)";
+    string internal constant OUTPUT_TYPE = "Output(address token,uint256 amount,uint256 maxAmount,address recipient)";
     bytes32 internal constant OUTPUT_TYPE_HASH = keccak256(bytes(OUTPUT_TYPE));
 
     string internal constant ORDER_TYPE =
-        "Order(OrderInfo info,uint32 epoch,address exclusiveFiller,uint256 exclusivityOverrideBps,Input input,Output output)";
+        "Order(OrderInfo info,address exclusiveFiller,uint256 exclusivityOverrideBps,uint32 epoch,uint32 slippage,Input input,Output output)";
     bytes32 internal constant ORDER_TYPE_HASH =
         keccak256(abi.encodePacked(ORDER_TYPE, INPUT_TYPE, ORDER_INFO_TYPE, OUTPUT_TYPE));
 
@@ -25,7 +25,7 @@ library OrderLib {
         )
     );
 
-    string internal constant COSIGNED_VALUE_TYPE = "CosignedValue(address token,uint256 amount)";
+    string internal constant COSIGNED_VALUE_TYPE = "CosignedValue(address token,uint256 usd)";
     bytes32 internal constant COSIGNED_VALUE_TYPE_HASH = keccak256(bytes(COSIGNED_VALUE_TYPE));
 
     string internal constant COSIGNATURE_TYPE =
@@ -54,6 +54,16 @@ library OrderLib {
         address recipient;
     }
 
+    struct Order {
+        OrderInfo info;
+        address exclusiveFiller;
+        uint256 exclusivityOverrideBps;
+        uint256 epoch;
+        uint256 slippage;
+        Input input;
+        Output output;
+    }
+
     struct CosignedValue {
         address token;
         uint256 usd;
@@ -63,16 +73,6 @@ library OrderLib {
         uint256 timestamp;
         CosignedValue input;
         CosignedValue output;
-    }
-
-    struct Order {
-        address exclusiveFiller;
-        uint256 exclusivityOverrideBps;
-        OrderInfo info;
-        uint32 epoch;
-        uint32 slippage;
-        Input input;
-        Output output;
     }
 
     struct CosignedOrder {
@@ -100,9 +100,10 @@ library OrderLib {
             abi.encode(
                 ORDER_TYPE_HASH,
                 hash(order.info),
-                order.epoch,
                 order.exclusiveFiller,
                 order.exclusivityOverrideBps,
+                order.epoch,
+                order.slippage,
                 keccak256(abi.encode(INPUT_TYPE_HASH, order.input)),
                 keccak256(abi.encode(OUTPUT_TYPE_HASH, order.output))
             )
