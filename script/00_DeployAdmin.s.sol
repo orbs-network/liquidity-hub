@@ -13,7 +13,8 @@ contract DeployAdmin is BaseScript {
         address weth = vm.envAddress("WETH");
         address multicall = vm.envAddress("MULTICALL");
 
-        bytes32 salt = vm.envOr("SALT", bytes32(0));
+        bytes32 salt = vm.envOr("SALT", bytes32(0x080b95e146dbb5f16d4d60081a7d9f2a36caee0fc7a03c6b37978ad0c80166b3));
+
         bytes32 hash = hashInitCode(type(Admin).creationCode, abi.encode(owner));
         console.logBytes32(hash);
 
