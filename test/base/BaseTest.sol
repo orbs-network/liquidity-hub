@@ -12,28 +12,27 @@ import {PermitSignature} from "uniswapx/test/util/PermitSignature.sol";
 import {BaseScript} from "script/base/BaseScript.sol";
 import {DeployTestInfra} from "./DeployTestInfra.sol";
 
-import {Admin, IWETH} from "src/Admin.sol";
+import {Admin} from "src/Admin.sol";
 import {RePermit} from "src/repermit/RePermit.sol";
 
 abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
-    address multicall;
-    address weth;
-    address permit2;
+    address public multicall;
+    address public weth;
+    address public permit2;
 
-    address admin;
-    address repermit;
+    address public admin;
+    address public repermit;
 
-    ERC20Mock token;
-    address signer;
-    uint256 signerPK;
-    address other;
+    ERC20Mock public token;
+    address public signer;
+    uint256 public signerPK;
+    address public other;
 
     function setUp() public virtual override {
         super.setUp();
         (permit2, multicall, weth) = deployTestInfra();
 
         admin = address(new Admin(address(this)));
-        Admin(payable(admin)).init(multicall, weth);
         vm.label(admin, "admin");
 
         repermit = address(new RePermit());

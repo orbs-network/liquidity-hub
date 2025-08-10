@@ -1,50 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.x;
 
-import {IMulticall3} from "forge-std/interfaces/IMulticall3.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-import {IWETH} from "src/interface/IWETH.sol";
-
-contract Admin is Ownable {
-    address public multicall;
-    address public weth;
+contract Admin is Ownable2Step {
     mapping(address => bool) public allowed;
 
-    constructor(address _owner) Ownable() {
+    constructor(address _owner) Ownable2Step() {
         allowed[_owner] = true;
-        transferOwnership(_owner);
+        _transferOwnership(_owner);
     }
 
-    function init(address _multicall, address _weth) external onlyOwner {
-        multicall = _multicall;
-        weth = _weth;
-    }
-
-    function allow(address[] calldata addr, bool value) external onlyOwner {
+    function set(address[] calldata addr, bool _allowed) external onlyOwner {
         for (uint256 i = 0; i < addr.length; i++) {
-            allowed[addr[i]] = value;
+            allowed[addr[i]] = _allowed;
         }
-    }
-
-    function execute(IMulticall3.Call3[] calldata calls) external onlyOwner {
-        Address.functionDelegateCall(multicall, abi.encodeWithSelector(IMulticall3.aggregate3.selector, calls));
-    }
-
-    function transfer(address token, address recipient) external onlyOwner {
-        if (token == address(0)) {
-            uint256 amount = address(this).balance;
-            if (amount > 0) Address.sendValue(payable(recipient), amount);
-        } else {
-            uint256 amount = IERC20(token).balanceOf(address(this));
-            if (amount > 0) SafeERC20.safeTransfer(IERC20(token), recipient, amount);
-        }
-    }
-
-    receive() external payable {
-        // accept ETH
     }
 }

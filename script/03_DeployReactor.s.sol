@@ -12,7 +12,7 @@ contract DeployReactor is BaseScript {
         address repermit = vm.envAddress("REPERMIT");
         address cosigner = vm.envAddress("COSIGNER");
 
-        bytes32 hash = hashInitCode(type(OrderReactor).creationCode, abi.encode(repermit));
+        bytes32 hash = hashInitCode(type(OrderReactor).creationCode, abi.encode(repermit, cosigner));
         console.logBytes32(hash);
 
         bytes32 salt = vm.envOr("SALT", bytes32(uint256(0)));

@@ -10,26 +10,20 @@ import {Admin} from "src/Admin.sol";
 contract DeployAdmin is BaseScript {
     function run() public returns (address admin) {
         address owner = vm.envAddress("OWNER");
-        address weth = vm.envAddress("WETH");
-        address multicall = vm.envAddress("MULTICALL");
-
-        bytes32 salt = vm.envOr("SALT", bytes32(0x080b95e146dbb5f16d4d60081a7d9f2a36caee0fc7a03c6b37978ad0c80166b3));
 
         bytes32 hash = hashInitCode(type(Admin).creationCode, abi.encode(owner));
         console.logBytes32(hash);
 
+        bytes32 salt = vm.envOr("SALT", bytes32(0));
         admin = computeCreate2Address(salt, hash);
 
         if (admin.code.length == 0) {
             vm.broadcast();
             Admin deployed = new Admin{salt: salt}(owner);
             admin = address(deployed);
-
-            vm.broadcast();
-            deployed.init(multicall, weth);
         } else {
-            require(address(Admin(payable(admin)).weth()) != address(0), "not initialized");
             require(Admin(payable(admin)).owner() == owner, "admin mismatched owner");
+            require(Admin(payable(admin)).allowed(owner), "owner not allowed");
             console.log("admin already deployed");
         }
     }
