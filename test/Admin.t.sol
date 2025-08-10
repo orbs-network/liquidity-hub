@@ -10,6 +10,9 @@ import {Admin} from "src/Admin.sol";
 contract AdminTest is BaseTest {
     Admin public uut;
 
+    // Duplicate event signature for expectEmit matching
+    event AllowedSet(address indexed addr, bool allowed);
+
     function setUp() public override {
         super.setUp();
         uut = Admin(payable(admin));
@@ -37,6 +40,24 @@ contract AdminTest is BaseTest {
         assertEq(uut.allowed(other), true);
     }
 
+    function test_emit_allowed_set_allow_and_revoke() public {
+        address a = makeAddr("a");
+        address[] memory addrs = new address[](1);
+        addrs[0] = a;
+
+        // expect allow
+        vm.expectEmit(address(uut));
+        emit AllowedSet(a, true);
+        uut.set(addrs, true);
+        assertEq(uut.allowed(a), true);
+
+        // expect revoke
+        vm.expectEmit(address(uut));
+        emit AllowedSet(a, false);
+        uut.set(addrs, false);
+        assertEq(uut.allowed(a), false);
+    }
+
     function test_set_multiple_addresses() public {
         address a = makeAddr("a");
         address b = makeAddr("b");
@@ -46,6 +67,14 @@ contract AdminTest is BaseTest {
         addrs[0] = a;
         addrs[1] = b;
         addrs[2] = c;
+
+        // expect three events in order
+        vm.expectEmit(address(uut));
+        emit AllowedSet(a, true);
+        vm.expectEmit(address(uut));
+        emit AllowedSet(b, true);
+        vm.expectEmit(address(uut));
+        emit AllowedSet(c, true);
 
         uut.set(addrs, true);
 
