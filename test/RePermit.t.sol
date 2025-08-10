@@ -166,4 +166,123 @@ contract RePermitTest is BaseTest {
         assertEq(token.balanceOf(signer), 0.2 ether, "signer balance");
         assertEq(token.balanceOf(other), 0.8 ether, "recipient balance");
     }
+
+    function test_spender_binding_signature_replay_fails_for_other_spender() public {
+        token.mint(signer, 1 ether);
+        hoax(signer);
+        token.approve(address(uut), 1 ether);
+
+        permit.deadline = block.timestamp;
+        permit.permitted.amount = 1 ether;
+        permit.permitted.token = address(token);
+        request.amount = 0.1 ether;
+        request.to = other;
+
+        // Sign for this contract as spender
+        bytes memory signature = signEIP712(
+            repermit,
+            signerPK,
+            hashRePermit(
+                permit.permitted.token,
+                permit.permitted.amount,
+                permit.nonce,
+                permit.deadline,
+                witness,
+                witnessTypeString,
+                address(this)
+            )
+        );
+
+        // Call from a different spender
+        address attacker = makeAddr("attacker");
+        vm.startPrank(attacker);
+        vm.expectRevert(RePermit.InvalidSignature.selector);
+        uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
+        vm.stopPrank();
+    }
+
+    function test_exact_allowance_exhaustion_then_reject_next_wei() public {
+        token.mint(signer, 1 ether);
+        hoax(signer);
+        token.approve(address(uut), 1 ether);
+
+        permit.deadline = block.timestamp;
+        permit.permitted.amount = 1 ether;
+        permit.permitted.token = address(token);
+        request.to = other;
+
+        bytes memory signature = signEIP712(
+            repermit,
+            signerPK,
+            hashRePermit(
+                permit.permitted.token,
+                permit.permitted.amount,
+                permit.nonce,
+                permit.deadline,
+                witness,
+                witnessTypeString,
+                address(this)
+            )
+        );
+
+        // Spend in two chunks that sum to exactly the allowance
+        request.amount = 0.6 ether;
+        uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
+        request.amount = 0.4 ether;
+        uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
+
+        // Next wei should revert
+        request.amount = 1;
+        vm.expectRevert(abi.encodeWithSelector(RePermit.InsufficientAllowance.selector));
+        uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
+    }
+
+    function test_new_permit_hash_independent_spent_tracking() public {
+        token.mint(signer, 3 ether);
+        hoax(signer);
+        token.approve(address(uut), 3 ether);
+
+        permit.deadline = block.timestamp;
+        permit.permitted.token = address(token);
+        request.to = other;
+
+        // First permit with amount 1 ether
+        permit.permitted.amount = 1 ether;
+        bytes memory sig1 = signEIP712(
+            repermit,
+            signerPK,
+            hashRePermit(
+                permit.permitted.token,
+                permit.permitted.amount,
+                permit.nonce,
+                permit.deadline,
+                witness,
+                witnessTypeString,
+                address(this)
+            )
+        );
+        request.amount = 0.7 ether;
+        uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, sig1);
+
+        // Second permit with different amount (different hash)
+        permit.permitted.amount = 2 ether;
+        bytes memory sig2 = signEIP712(
+            repermit,
+            signerPK,
+            hashRePermit(
+                permit.permitted.token,
+                permit.permitted.amount,
+                permit.nonce,
+                permit.deadline,
+                witness,
+                witnessTypeString,
+                address(this)
+            )
+        );
+        request.amount = 1.5 ether;
+        uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, sig2);
+
+        // Both should succeed since spent maps to different hashes
+        assertEq(token.balanceOf(other), 0.7 ether + 1.5 ether);
+    }
 }

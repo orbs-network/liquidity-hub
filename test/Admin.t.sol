@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.x;
 
+import {Vm} from "forge-std/Vm.sol";
+
 import "forge-std/Test.sol";
 
 import {BaseTest, IMulticall3, ERC20Mock} from "test/base/BaseTest.sol";
@@ -104,6 +106,15 @@ contract AdminTest is BaseTest {
         assertEq(uut.allowed(uut.owner()), true);
     }
 
+    function test_set_no_events_on_empty_array() public {
+        // Record logs and ensure calling set with empty array emits no events
+        vm.recordLogs();
+        address[] memory none = new address[](0);
+        uut.set(none, true);
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries.length, 0);
+    }
+
     function test_transferOwnership_two_step_flow() public {
         address pending = makeAddr("pendingOwner");
 
@@ -136,5 +147,29 @@ contract AdminTest is BaseTest {
         // No address can accept; ensure revert from current owner
         vm.expectRevert("Ownable2Step: caller is not the new owner");
         uut.acceptOwnership();
+    }
+
+    function test_set_with_duplicate_addresses_emits_twice_and_idempotent() public {
+        address a = makeAddr("dup");
+        address[] memory addrs = new address[](2);
+        addrs[0] = a;
+        addrs[1] = a; // duplicate
+
+        // Expect two events for the same address since loop emits per entry
+        vm.expectEmit(address(uut));
+        emit AllowedSet(a, true);
+        vm.expectEmit(address(uut));
+        emit AllowedSet(a, true);
+
+        uut.set(addrs, true);
+        assertEq(uut.allowed(a), true);
+
+        // Now revoke twice as well
+        vm.expectEmit(address(uut));
+        emit AllowedSet(a, false);
+        vm.expectEmit(address(uut));
+        emit AllowedSet(a, false);
+        uut.set(addrs, false);
+        assertEq(uut.allowed(a), false);
     }
 }
