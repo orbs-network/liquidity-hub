@@ -24,13 +24,13 @@ abstract contract BaseScript is Script {
         uint256 nonce,
         uint256 deadline,
         bytes32 witness,
-        string memory witnessTypeString,
+        string memory witnessTypeSuffix,
         address spender
     ) internal pure returns (bytes32) {
         return RePermitLib.hashWithWitness(
             RePermitLib.RePermitTransferFrom(RePermitLib.TokenPermissions(token, amount), nonce, deadline),
             witness,
-            witnessTypeString,
+            witnessTypeSuffix,
             spender
         );
     }
@@ -42,7 +42,7 @@ abstract contract BaseScript is Script {
             order.info.nonce,
             order.info.deadline,
             OrderLib.hash(order),
-            OrderLib.WITNESS_TYPE,
+            OrderLib.WITNESS_TYPE_SUFFIX,
             spender
         );
     }

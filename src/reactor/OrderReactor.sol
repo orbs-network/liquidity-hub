@@ -64,7 +64,7 @@ contract OrderReactor is BaseReactor {
             RePermitLib.TransferRequest(to, order.input.amount),
             order.info.swapper,
             order.hash,
-            OrderLib.WITNESS_TYPE,
+            OrderLib.WITNESS_TYPE_SUFFIX,
             order.sig
         );
     }

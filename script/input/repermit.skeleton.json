@@ -146,7 +146,7 @@
                 "additionalValidationData": "<EXECUTORDATA>"
             },
             "exclusiveFiller": "<EXECUTOR>",
-            "exclusivityOverrideBps": "100",
+            "exclusivityOverrideBps": "<EXCLUSIVITYBPS>",
             "epoch": "<EPOCHSECONDS>",
             "slippage": "<SLIPPAGE>",
             "input": {

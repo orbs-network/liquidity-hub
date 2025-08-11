@@ -143,7 +143,7 @@ contract RefineryTest is BaseTest {
     }
 
     function test_receive() public {
-        (bool success, ) = address(refinery).call{value: 1 ether}("");
+        (bool success,) = address(refinery).call{value: 1 ether}("");
         assertTrue(success);
         assertEq(address(refinery).balance, 1 ether);
     }
