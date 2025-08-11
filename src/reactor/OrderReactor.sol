@@ -35,12 +35,13 @@ contract OrderReactor is BaseReactor {
         override
         returns (ResolvedOrder memory resolvedOrder)
     {
-        OrderLib.Order memory order = abi.decode(signedOrder.order, (OrderLib.Order));
+        OrderLib.CosignedOrder memory cosigned = abi.decode(signedOrder.order, (OrderLib.CosignedOrder));
+        OrderLib.Order memory order = cosigned.order;
 
-        // hash the order _before_ overriding amounts, as this is the hash the user would have signed
+        // hash the order _before_ overriding amounts, as this is the hash the swapper would have signed
         bytes32 orderHash = OrderLib.hash(order);
 
-        _validateCosignature(orderHash, order);
+        _validateCosignature(cosigned);
         _updateWithCosignerAmounts(order);
 
         resolvedOrder.input = InputToken(ERC20(order.input.token), order.input.amount, order.input.maxAmount);
@@ -69,10 +70,9 @@ contract OrderReactor is BaseReactor {
         );
     }
 
-    function _validateCosignature(bytes32 orderHash, OrderLib.Order memory order) internal pure {
-        // bytes32 hash = keccak256(abi.encodePacked(orderHash, abi.encode(order.cosignerData)));
-        // bytes32 hash = 0; //
-        // if (!SignatureChecker.isValidSignatureNow(cosigner, hash, order.cosignature)) revert InvalidCosignature();
+    function _validateCosignature(OrderLib.CosignedOrder memory order) internal view {
+        bytes32 digest = RePermit(address(permit2)).hashTypedData(OrderLib.hash(order.cosignatureData));
+        if (!SignatureChecker.isValidSignatureNow(cosigner, digest, order.cosignature)) revert InvalidCosignature();
     }
 
     function _updateWithCosignerAmounts(OrderLib.Order memory order) internal pure {

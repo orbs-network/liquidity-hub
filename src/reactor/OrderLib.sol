@@ -55,7 +55,7 @@ library OrderLib {
         address exclusiveFiller; // executor
         uint256 exclusivityOverrideBps;
         uint256 epoch; // seconds per chunk
-        uint256 slippage;
+        uint256 slippage; // bps
         Input input;
         Output output;
     }
@@ -64,6 +64,12 @@ library OrderLib {
         uint256 timestamp;
         uint256 inputValue;
         uint256 outputValue;
+    }
+
+    struct CosignedOrder {
+        Order order;
+        Cosignature cosignatureData;
+        bytes cosignature;
     }
 
     function hash(OrderInfo memory info) internal pure returns (bytes32) {

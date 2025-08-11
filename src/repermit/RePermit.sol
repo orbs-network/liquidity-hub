@@ -28,6 +28,10 @@ contract RePermit is EIP712, IEIP712 {
         return _domainSeparatorV4();
     }
 
+    function hashTypedData(bytes32 structHash) external view returns (bytes32 digest) {
+        return _hashTypedDataV4(structHash);
+    }
+
     function cancel(uint256 nonce) external {
         canceled[msg.sender][nonce] = true;
         emit RePermitLib.Cancel(msg.sender, nonce);
