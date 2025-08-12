@@ -1,0 +1,165 @@
+{
+    "domain": {
+        "name": "RePermit",
+        "version": "1",
+        "chainId": "<CHAINID>",
+        "verifyingContract": "<REPERMIT>"
+    },
+    "primaryType": "Cosignature",
+    "types": {
+        "Cosignature": [
+            {
+                "name": "permitted",
+                "type": "TokenPermissions"
+            },
+            {
+                "name": "spender",
+                "type": "address"
+            },
+            {
+                "name": "nonce",
+                "type": "uint256"
+            },
+            {
+                "name": "deadline",
+                "type": "uint256"
+            },
+            {
+                "name": "witness",
+                "type": "Order"
+            }
+        ],
+        "Input": [
+            {
+                "name": "token",
+                "type": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "name": "maxAmount",
+                "type": "uint256"
+            }
+        ],
+        "Order": [
+            {
+                "name": "info",
+                "type": "OrderInfo"
+            },
+            {
+                "name": "exclusiveFiller",
+                "type": "address"
+            },
+            {
+                "name": "exclusivityOverrideBps",
+                "type": "uint256"
+            },
+            {
+                "name": "epoch",
+                "type": "uint256"
+            },
+            {
+                "name": "slippage",
+                "type": "uint256"
+            },
+            {
+                "name": "input",
+                "type": "Input"
+            },
+            {
+                "name": "output",
+                "type": "Output"
+            }
+        ],
+        "OrderInfo": [
+            {
+                "name": "reactor",
+                "type": "address"
+            },
+            {
+                "name": "swapper",
+                "type": "address"
+            },
+            {
+                "name": "nonce",
+                "type": "uint256"
+            },
+            {
+                "name": "deadline",
+                "type": "uint256"
+            },
+            {
+                "name": "additionalValidationContract",
+                "type": "address"
+            },
+            {
+                "name": "additionalValidationData",
+                "type": "bytes"
+            }
+        ],
+        "Output": [
+            {
+                "name": "token",
+                "type": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256"
+            },
+            {
+                "name": "maxAmount",
+                "type": "uint256"
+            },
+            {
+                "name": "recipient",
+                "type": "address"
+            }
+        ],
+        "TokenPermissions": [
+            {
+                "name": "token",
+                "type": "address"
+            },
+            {
+                "name": "amount",
+                "type": "uint256"
+            }
+        ]
+    },
+    "message": {
+        "permitted": {
+            "token": "<INTOKEN>",
+            "amount": "<INTOTALAMOUNT>"
+        },
+        "spender": "<REACTOR>",
+        "nonce": "<NONCE>",
+        "deadline": "<DEADLINE>",
+        "witness": {
+            "info": {
+                "reactor": "<REACTOR>",
+                "swapper": "<SWAPPER>",
+                "nonce": "<NONCE>",
+                "deadline": "<DEADLINE>",
+                "additionalValidationContract": "<EXECUTOR>",
+                "additionalValidationData": "<EXECUTORDATA>"
+            },
+            "exclusiveFiller": "<EXECUTOR>",
+            "exclusivityOverrideBps": "<EXCLUSIVITYBPS>",
+            "epoch": "<EPOCHSECONDS>",
+            "slippage": "<SLIPPAGE>",
+            "input": {
+                "token": "<INTOKEN>",
+                "amount": "<INCHUNKAMOUNT>",
+                "maxAmount": "<INTOTALAMOUNT>"
+            },
+            "output": {
+                "token": "<OUTTOKEN>",
+                "amount": "<OUTAMOUNTMIN>",
+                "maxAmount": "<OUTAMOUNTTRIGGER>",
+                "recipient": "<RECIPIENT>"
+            }
+        }
+    }
+}

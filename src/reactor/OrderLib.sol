@@ -25,8 +25,12 @@ library OrderLib {
         )
     );
 
-    string internal constant COSIGNATURE_TYPE = "Cosignature(uint256 timestamp,uint256 inputValue,uint256 outputValue)";
-    bytes32 internal constant COSIGNATURE_TYPE_HASH = keccak256(abi.encodePacked(COSIGNATURE_TYPE));
+    string internal constant COSIGNED_VALUE_TYPE = "CosignedValue(address token,uint256 value,uint8 decimals)";
+    bytes32 internal constant COSIGNED_VALUE_TYPE_HASH = keccak256(bytes(COSIGNED_VALUE_TYPE));
+
+    string internal constant COSIGNATURE_TYPE =
+        "Cosignature(uint256 timestamp,CosignedValue input,CosignedValue output)";
+    bytes32 internal constant COSIGNATURE_TYPE_HASH = keccak256(abi.encodePacked(COSIGNATURE_TYPE, COSIGNED_VALUE_TYPE));
 
     struct OrderInfo {
         address reactor;
@@ -60,14 +64,21 @@ library OrderLib {
         Output output;
     }
 
+    struct CosignedValue {
+        address token;
+        uint256 value; // in token decimals
+        uint8 decimals;
+    }
+
     struct Cosignature {
         uint256 timestamp;
-        uint256 inputValue;
-        uint256 outputValue;
+        CosignedValue input;
+        CosignedValue output;
     }
 
     struct CosignedOrder {
         Order order;
+        bytes signature;
         Cosignature cosignatureData;
         bytes cosignature;
     }
@@ -102,6 +113,13 @@ library OrderLib {
     }
 
     function hash(Cosignature memory cosignature) internal pure returns (bytes32) {
-        return keccak256(abi.encode(COSIGNATURE_TYPE_HASH, cosignature));
+        return keccak256(
+            abi.encode(
+                COSIGNATURE_TYPE_HASH,
+                cosignature.timestamp,
+                keccak256(abi.encode(COSIGNATURE_TYPE_HASH, cosignature.input)),
+                keccak256(abi.encode(COSIGNATURE_TYPE_HASH, cosignature.output))
+            )
+        );
     }
 }
