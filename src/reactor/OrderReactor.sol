@@ -3,7 +3,6 @@ pragma solidity 0.8.x;
 
 import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 import {
     IReactor,
@@ -29,10 +28,14 @@ contract OrderReactor is BaseReactor {
 
     address public immutable cosigner;
 
+    // order hash => next epoch
+    mapping(bytes32 => uint256) public epochs;
+
     error InvalidOrder();
     error InvalidCosignature();
     error StaleCosignature();
     error CosignedMaxAmount();
+    error InvalidEpoch();
 
     constructor(address _repermit, address _cosigner) BaseReactor(IPermit2(_repermit), address(0)) {
         cosigner = _cosigner;
@@ -40,16 +43,17 @@ contract OrderReactor is BaseReactor {
 
     function _resolve(SignedOrder calldata signedOrder)
         internal
-        view
         override
         returns (ResolvedOrder memory resolvedOrder)
     {
         OrderLib.CosignedOrder memory cosigned = abi.decode(signedOrder.order, (OrderLib.CosignedOrder));
+        bytes32 orderHash = OrderLib.hash(cosigned.order);
 
         _validate(cosigned);
-        _validateCosignature(cosigned);
+        _validateCosignature(cosigned, orderHash);
         uint256 outAmount = _resolveOutAmount(cosigned);
-        resolvedOrder = _resolveStruct(cosigned, outAmount);
+        resolvedOrder = _resolveStruct(cosigned, outAmount, orderHash);
+        _validateEpoch(resolvedOrder.hash, cosigned.order.epoch);
 
         ExclusivityLib.handleExclusiveOverride(
             resolvedOrder,
@@ -78,14 +82,17 @@ contract OrderReactor is BaseReactor {
         if (cosigned.order.input.amount == 0) revert InvalidOrder();
         if (cosigned.order.input.amount > cosigned.order.input.maxAmount) revert InvalidOrder();
         if (cosigned.order.output.amount > cosigned.order.output.maxAmount) revert InvalidOrder();
+        if (cosigned.order.slippage >= BPS / 2) revert InvalidOrder();
         if (cosigned.order.input.token == address(0)) revert InvalidOrder();
-        if (cosigned.order.slippage >= BPS) revert InvalidOrder();
+        if (cosigned.order.input.token != cosigned.cosignatureData.input.token) revert InvalidOrder();
+        if (cosigned.order.output.token != cosigned.cosignatureData.output.token) revert InvalidOrder();
         if (cosigned.cosignatureData.input.value == 0) revert InvalidOrder();
         if (cosigned.cosignatureData.output.value == 0) revert InvalidOrder();
     }
 
-    function _validateCosignature(OrderLib.CosignedOrder memory cosigned) private view {
+    function _validateCosignature(OrderLib.CosignedOrder memory cosigned, bytes32 orderHash) private view {
         if (cosigned.cosignatureData.timestamp + COSIGNATURE_FRESHNESS < block.timestamp) revert StaleCosignature();
+        if (cosigned.cosignatureData.nonce != orderHash) revert InvalidCosignature();
 
         bytes32 digest = RePermit(address(permit2)).hashTypedData(OrderLib.hash(cosigned.cosignatureData));
         if (!SignatureChecker.isValidSignatureNow(cosigner, digest, cosigned.cosignature)) revert InvalidCosignature();
@@ -101,7 +108,7 @@ contract OrderReactor is BaseReactor {
         outAmount = minOut.max(cosigned.order.output.amount);
     }
 
-    function _resolveStruct(OrderLib.CosignedOrder memory cosigned, uint256 outAmount)
+    function _resolveStruct(OrderLib.CosignedOrder memory cosigned, uint256 outAmount, bytes32 orderHash)
         private
         pure
         returns (ResolvedOrder memory resolvedOrder)
@@ -119,6 +126,12 @@ contract OrderReactor is BaseReactor {
         resolvedOrder.outputs = new OutputToken[](1);
         resolvedOrder.outputs[0] = OutputToken(cosigned.order.output.token, outAmount, cosigned.order.output.recipient);
         resolvedOrder.sig = cosigned.signature;
-        resolvedOrder.hash = OrderLib.hash(cosigned.order);
+        resolvedOrder.hash = orderHash;
+    }
+
+    function _validateEpoch(bytes32 hash, uint256 epoch) private {
+        uint256 current = epoch == 0 ? 0 : block.timestamp / epoch;
+        if (current < epochs[hash]) revert InvalidEpoch();
+        epochs[hash] = current + 1;
     }
 }
