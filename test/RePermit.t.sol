@@ -4,6 +4,7 @@ pragma solidity 0.8.x;
 import "forge-std/Test.sol";
 
 import {BaseTest, ERC20Mock} from "test/base/BaseTest.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import {LiquidityHub, SignedOrder, IMulticall3} from "src/executor/LiquidityHub.sol";
 import {RePermit, RePermitLib} from "src/repermit/RePermit.sol";
@@ -284,5 +285,73 @@ contract RePermitTest is BaseTest {
 
         // Both should succeed since spent maps to different hashes
         assertEq(token.balanceOf(other), 0.7 ether + 1.5 ether);
+    }
+
+    function test_hashTypedData_digest_matches_ECDSA() public {
+        bytes32 structHash = keccak256("example-struct-hash");
+        bytes32 expected = ECDSA.toTypedDataHash(uut.DOMAIN_SEPARATOR(), structHash);
+        assertEq(uut.hashTypedData(structHash), expected, "digest");
+    }
+
+    function test_zero_amount_noop_does_not_increment_spent() public {
+        token.mint(signer, 1 ether);
+        hoax(signer);
+        token.approve(address(uut), 1 ether);
+
+        permit.deadline = block.timestamp;
+        permit.permitted.amount = 1 ether;
+        permit.permitted.token = address(token);
+        request.to = other;
+        request.amount = 0;
+
+        bytes32 structHash = hashRePermit(
+            permit.permitted.token,
+            permit.permitted.amount,
+            permit.nonce,
+            permit.deadline,
+            witness,
+            witnessTypeString,
+            address(this)
+        );
+        bytes memory signature = signEIP712(repermit, signerPK, structHash);
+        bytes32 digest = uut.hashTypedData(structHash);
+
+        uint256 beforeSpent = uut.spent(signer, digest);
+        uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
+        assertEq(uut.spent(signer, digest), beforeSpent, "spent unchanged for zero amount");
+        assertEq(token.balanceOf(signer), 1 ether, "signer unchanged");
+        assertEq(token.balanceOf(other), 0, "recipient unchanged");
+
+        request.amount = 0.5 ether;
+        uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
+        assertEq(uut.spent(signer, digest), beforeSpent + 0.5 ether, "spent increments");
+        assertEq(token.balanceOf(signer), 0.5 ether, "signer debited");
+        assertEq(token.balanceOf(other), 0.5 ether, "recipient credited");
+    }
+
+    function test_revert_invalidSignature_when_witnessType_suffix_mismatch() public {
+        permit.deadline = block.timestamp;
+        permit.permitted.token = address(token);
+        permit.permitted.amount = 1 ether;
+        request.amount = 0.1 ether;
+        request.to = other;
+
+        bytes memory signature = signEIP712(
+            repermit,
+            signerPK,
+            hashRePermit(
+                permit.permitted.token,
+                permit.permitted.amount,
+                permit.nonce,
+                permit.deadline,
+                witness,
+                witnessTypeString,
+                address(this)
+            )
+        );
+
+        string memory otherSuffix = "bytes32 other)";
+        vm.expectRevert(RePermit.InvalidSignature.selector);
+        uut.repermitWitnessTransferFrom(permit, request, signer, witness, otherSuffix, signature);
     }
 }
