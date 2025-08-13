@@ -50,7 +50,7 @@ library OrderLib {
     struct Output {
         address token;
         uint256 amount; // limit
-        uint256 maxAmount; // trigger
+        uint256 maxAmount; // trigger; max uint256 = no trigger
         address recipient;
     }
 
@@ -58,7 +58,7 @@ library OrderLib {
         OrderInfo info;
         address exclusiveFiller; // executor
         uint256 exclusivityOverrideBps;
-        uint256 epoch; // seconds per chunk
+        uint256 epoch; // seconds per chunk; 0 = single-use
         uint256 slippage; // bps
         Input input;
         Output output;
