@@ -4,11 +4,6 @@ pragma solidity 0.8.20;
 import {RePermitLib} from "src/repermit/RePermit.sol";
 
 library OrderLib {
-    error InvalidOrderInputAmountZero();
-    error InvalidOrderInputAmountGtMax();
-    error InvalidOrderOutputAmountGtMax();
-    error InvalidOrderSlippageTooHigh();
-    error InvalidOrderInputTokenZero();
 
     string internal constant ORDER_INFO_TYPE =
         "OrderInfo(address reactor,address swapper,uint256 nonce,uint256 deadline,address additionalValidationContract,bytes additionalValidationData)";

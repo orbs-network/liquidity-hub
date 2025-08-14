@@ -19,10 +19,7 @@ import {ExclusivityLib} from "uniswapx/src/lib/ExclusivityLib.sol";
 
 import {RePermit, RePermitLib} from "src/repermit/RePermit.sol";
 import {OrderLib} from "src/reactor/OrderLib.sol";
-import {OrderValidationLib} from "src/reactor/OrderValidationLib.sol";
-import {CosignatureValidationLib} from "src/reactor/CosignatureValidationLib.sol";
-import {ResolutionLib} from "src/reactor/ResolutionLib.sol";
-import {EpochLib} from "src/reactor/EpochLib.sol";
+import {ReactorLib} from "src/reactor/ReactorLib.sol";
 
 contract OrderReactor is BaseReactor {
     using Math for uint256;
@@ -44,12 +41,12 @@ contract OrderReactor is BaseReactor {
         OrderLib.CosignedOrder memory cosigned = abi.decode(signedOrder.order, (OrderLib.CosignedOrder));
         bytes32 orderHash = OrderLib.hash(cosigned.order);
 
-        OrderValidationLib.validateOrder(cosigned.order);
-        CosignatureValidationLib.validateCosignature(cosigned, orderHash, cosigner, address(permit2));
+        ReactorLib.validateOrder(cosigned.order);
+        ReactorLib.validateCosignature(cosigned, orderHash, cosigner, address(permit2));
 
-        EpochLib.validateAndUpdate(epochs, orderHash, cosigned.order.epoch);
+        ReactorLib.validateAndUpdate(epochs, orderHash, cosigned.order.epoch);
 
-        uint256 outAmount = ResolutionLib.resolveOutAmount(cosigned);
+        uint256 outAmount = ReactorLib.resolveOutAmount(cosigned);
         resolvedOrder = _resolveStruct(cosigned, outAmount, orderHash);
 
         ExclusivityLib.handleExclusiveOverride(
