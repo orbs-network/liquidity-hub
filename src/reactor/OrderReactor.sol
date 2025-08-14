@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.x;
+pragma solidity 0.8.20;
 
 import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
@@ -19,23 +19,18 @@ import {ExclusivityLib} from "uniswapx/src/lib/ExclusivityLib.sol";
 
 import {RePermit, RePermitLib} from "src/repermit/RePermit.sol";
 import {OrderLib} from "src/reactor/OrderLib.sol";
+import {OrderValidationLib} from "src/reactor/OrderValidationLib.sol";
+import {CosignatureValidationLib} from "src/reactor/CosignatureValidationLib.sol";
+import {ResolutionLib} from "src/reactor/ResolutionLib.sol";
+import {EpochLib} from "src/reactor/EpochLib.sol";
 
 contract OrderReactor is BaseReactor {
     using Math for uint256;
-
-    uint256 public constant COSIGNATURE_FRESHNESS = 1 minutes;
-    uint256 public constant BPS = 10_000;
 
     address public immutable cosigner;
 
     // order hash => next epoch
     mapping(bytes32 => uint256) public epochs;
-
-    error InvalidOrder();
-    error InvalidCosignature();
-    error StaleCosignature();
-    error CosignedMaxAmount();
-    error InvalidEpoch();
 
     constructor(address _repermit, address _cosigner) BaseReactor(IPermit2(_repermit), address(0)) {
         cosigner = _cosigner;
@@ -49,11 +44,13 @@ contract OrderReactor is BaseReactor {
         OrderLib.CosignedOrder memory cosigned = abi.decode(signedOrder.order, (OrderLib.CosignedOrder));
         bytes32 orderHash = OrderLib.hash(cosigned.order);
 
-        _validate(cosigned);
-        _validateCosignature(cosigned, orderHash);
-        uint256 outAmount = _resolveOutAmount(cosigned);
+        OrderValidationLib.validateOrder(cosigned.order);
+        CosignatureValidationLib.validateCosignature(cosigned, orderHash, cosigner, address(permit2));
+
+        EpochLib.validateAndUpdate(epochs, orderHash, cosigned.order.epoch);
+
+        uint256 outAmount = ResolutionLib.resolveOutAmount(cosigned);
         resolvedOrder = _resolveStruct(cosigned, outAmount, orderHash);
-        _validateEpoch(resolvedOrder.hash, cosigned.order.epoch);
 
         ExclusivityLib.handleExclusiveOverride(
             resolvedOrder,
@@ -78,36 +75,6 @@ contract OrderReactor is BaseReactor {
         );
     }
 
-    function _validate(OrderLib.CosignedOrder memory cosigned) private pure {
-        if (cosigned.order.input.amount == 0) revert InvalidOrder();
-        if (cosigned.order.input.amount > cosigned.order.input.maxAmount) revert InvalidOrder();
-        if (cosigned.order.output.amount > cosigned.order.output.maxAmount) revert InvalidOrder();
-        if (cosigned.order.slippage >= BPS / 2) revert InvalidOrder();
-        if (cosigned.order.input.token == address(0)) revert InvalidOrder();
-        if (cosigned.order.input.token != cosigned.cosignatureData.input.token) revert InvalidOrder();
-        if (cosigned.order.output.token != cosigned.cosignatureData.output.token) revert InvalidOrder();
-        if (cosigned.cosignatureData.input.value == 0) revert InvalidOrder();
-        if (cosigned.cosignatureData.output.value == 0) revert InvalidOrder();
-    }
-
-    function _validateCosignature(OrderLib.CosignedOrder memory cosigned, bytes32 orderHash) private view {
-        if (cosigned.cosignatureData.timestamp + COSIGNATURE_FRESHNESS < block.timestamp) revert StaleCosignature();
-        if (cosigned.cosignatureData.nonce != orderHash) revert InvalidCosignature();
-
-        bytes32 digest = RePermit(address(permit2)).hashTypedData(OrderLib.hash(cosigned.cosignatureData));
-        if (!SignatureChecker.isValidSignatureNow(cosigner, digest, cosigned.cosignature)) revert InvalidCosignature();
-    }
-
-    function _resolveOutAmount(OrderLib.CosignedOrder memory cosigned) private pure returns (uint256 outAmount) {
-        uint256 cosignedOutput = cosigned.order.input.amount.mulDiv(
-            cosigned.cosignatureData.output.value, cosigned.cosignatureData.input.value
-        );
-        if (cosignedOutput > cosigned.order.output.maxAmount) revert CosignedMaxAmount();
-
-        uint256 minOut = cosignedOutput.mulDiv(BPS - cosigned.order.slippage, BPS);
-        outAmount = minOut.max(cosigned.order.output.amount);
-    }
-
     function _resolveStruct(OrderLib.CosignedOrder memory cosigned, uint256 outAmount, bytes32 orderHash)
         private
         pure
@@ -127,11 +94,5 @@ contract OrderReactor is BaseReactor {
         resolvedOrder.outputs[0] = OutputToken(cosigned.order.output.token, outAmount, cosigned.order.output.recipient);
         resolvedOrder.sig = cosigned.signature;
         resolvedOrder.hash = orderHash;
-    }
-
-    function _validateEpoch(bytes32 hash, uint256 epoch) private {
-        uint256 current = epoch == 0 ? 0 : block.timestamp / epoch;
-        if (current < epochs[hash]) revert InvalidEpoch();
-        epochs[hash] = current + 1;
     }
 }
