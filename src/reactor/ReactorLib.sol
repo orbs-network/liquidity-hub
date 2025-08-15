@@ -10,12 +10,10 @@ import {OrderLib} from "src/reactor/OrderLib.sol";
 library ReactorLib {
     using Math for uint256;
 
-    // Shared constants (exported)
     uint256 public constant BPS = 10_000;
     uint256 public constant MAX_SLIPPAGE = BPS / 2;
     uint256 public constant COSIGNATURE_FRESHNESS = 1 minutes;
 
-    // Errors (exported)
     error InvalidEpoch();
     error InvalidCosignature();
     error InvalidCosignatureNonce();

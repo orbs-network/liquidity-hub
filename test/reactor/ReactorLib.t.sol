@@ -36,11 +36,10 @@ contract ReactorLibTest is Test {
         ReactorLib.validateAndUpdate(epochs, h, interval);
     }
 
-    function callValidateCosignature(
-        OrderLib.CosignedOrder memory co,
-        bytes32 orderHash,
-        address cosigner
-    ) external view {
+    function callValidateCosignature(OrderLib.CosignedOrder memory co, bytes32 orderHash, address cosigner)
+        external
+        view
+    {
         ReactorLib.validateCosignature(co, orderHash, cosigner, address(rp));
     }
 

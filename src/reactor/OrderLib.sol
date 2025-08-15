@@ -4,7 +4,6 @@ pragma solidity 0.8.20;
 import {RePermitLib} from "src/repermit/RePermit.sol";
 
 library OrderLib {
-
     string internal constant ORDER_INFO_TYPE =
         "OrderInfo(address reactor,address swapper,uint256 nonce,uint256 deadline,address additionalValidationContract,bytes additionalValidationData)";
     bytes32 internal constant ORDER_INFO_TYPE_HASH = keccak256(bytes(ORDER_INFO_TYPE));
