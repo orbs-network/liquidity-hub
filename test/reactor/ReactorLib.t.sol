@@ -53,6 +53,7 @@ contract ReactorLibTest is Test {
         o.output.token = makeAddr("tokenOut");
         o.output.amount = 50;
         o.output.maxAmount = 100;
+        o.output.recipient = other;
         o.slippage = 100; // 1%
     }
 
@@ -87,6 +88,11 @@ contract ReactorLibTest is Test {
         o = _baseOrder();
         o.input.token = address(0);
         vm.expectRevert(ReactorLib.InvalidOrderInputTokenZero.selector);
+        this.callValidateOrder(o);
+
+        o = _baseOrder();
+        o.output.recipient = address(0);
+        vm.expectRevert(ReactorLib.InvalidOrderOutputRecipientZero.selector);
         this.callValidateOrder(o);
     }
 

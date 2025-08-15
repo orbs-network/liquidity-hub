@@ -25,8 +25,14 @@ contract Refinery {
         admin = _admin;
     }
 
-    function execute(IMulticall3.Call3[] calldata calls) external onlyAllowed {
-        Address.functionDelegateCall(multicall, abi.encodeWithSelector(IMulticall3.aggregate3.selector, calls));
+    function execute(IMulticall3.Call3[] calldata calls)
+        external
+        onlyAllowed
+        returns (bytes memory)
+    {
+        return Address.functionDelegateCall(
+            multicall, abi.encodeWithSelector(IMulticall3.aggregate3.selector, calls)
+        );
     }
 
     function transfer(address token, address recipient, uint256 bps) external onlyAllowed {

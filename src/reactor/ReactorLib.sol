@@ -30,6 +30,7 @@ library ReactorLib {
     error InvalidOrderOutputAmountGtMax();
     error InvalidOrderSlippageTooHigh();
     error InvalidOrderInputTokenZero();
+    error InvalidOrderOutputRecipientZero();
 
     // Epoch validation and update
     function validateAndUpdate(mapping(bytes32 => uint256) storage epochs, bytes32 hash, uint256 epochSeconds)
@@ -47,6 +48,7 @@ library ReactorLib {
         if (order.output.amount > order.output.maxAmount) revert InvalidOrderOutputAmountGtMax();
         if (order.slippage >= MAX_SLIPPAGE) revert InvalidOrderSlippageTooHigh();
         if (order.input.token == address(0)) revert InvalidOrderInputTokenZero();
+        if (order.output.recipient == address(0)) revert InvalidOrderOutputRecipientZero();
     }
 
     // Cosignature validation
