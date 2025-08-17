@@ -29,35 +29,43 @@ contract OrderValidationLibTest is Test {
         this.callValidate(o);
     }
 
-    function test_validate_reverts() public {
-        OrderLib.Order memory o;
-
-        o = _baseOrder();
+    function test_validate_reverts_inputAmountZero() public {
+        OrderLib.Order memory o = _baseOrder();
         o.input.amount = 0;
         vm.expectRevert(OrderValidationLib.InvalidOrderInputAmountZero.selector);
         this.callValidate(o);
+    }
 
-        o = _baseOrder();
+    function test_validate_reverts_inputAmountGtMax() public {
+        OrderLib.Order memory o = _baseOrder();
         o.input.amount = o.input.maxAmount + 1;
         vm.expectRevert(OrderValidationLib.InvalidOrderInputAmountGtMax.selector);
         this.callValidate(o);
+    }
 
-        o = _baseOrder();
+    function test_validate_reverts_outputAmountGtMax() public {
+        OrderLib.Order memory o = _baseOrder();
         o.output.amount = o.output.maxAmount + 1;
         vm.expectRevert(OrderValidationLib.InvalidOrderOutputAmountGtMax.selector);
         this.callValidate(o);
+    }
 
-        o = _baseOrder();
+    function test_validate_reverts_slippageTooHigh() public {
+        OrderLib.Order memory o = _baseOrder();
         o.slippage = ReactorConstants.MAX_SLIPPAGE; // >= MAX_SLIPPAGE
         vm.expectRevert(OrderValidationLib.InvalidOrderSlippageTooHigh.selector);
         this.callValidate(o);
+    }
 
-        o = _baseOrder();
+    function test_validate_reverts_inputTokenZero() public {
+        OrderLib.Order memory o = _baseOrder();
         o.input.token = address(0);
         vm.expectRevert(OrderValidationLib.InvalidOrderInputTokenZero.selector);
         this.callValidate(o);
+    }
 
-        o = _baseOrder();
+    function test_validate_reverts_outputRecipientZero() public {
+        OrderLib.Order memory o = _baseOrder();
         o.output.recipient = address(0);
         vm.expectRevert(OrderValidationLib.InvalidOrderOutputRecipientZero.selector);
         this.callValidate(o);
