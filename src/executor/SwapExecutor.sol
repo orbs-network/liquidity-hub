@@ -13,9 +13,9 @@ import {ResolvedOrder, SignedOrder} from "uniswapx/src/base/ReactorStructs.sol";
 import {ExclusiveDutchOrder} from "uniswapx/src/lib/ExclusiveDutchOrderLib.sol";
 
 /**
- * LiquidityHub Executor
+ * SwapExecutor
  */
-contract LiquidityHub is IReactorCallback, IValidationCallback {
+contract SwapExecutor is IReactorCallback, IValidationCallback {
     using SafeERC20 for IERC20;
 
     error InvalidSender(address sender);
