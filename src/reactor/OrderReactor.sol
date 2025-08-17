@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-
 import {
     IReactor,
     IValidationCallback,
@@ -19,11 +16,12 @@ import {ExclusivityLib} from "uniswapx/src/lib/ExclusivityLib.sol";
 
 import {RePermit, RePermitLib} from "src/repermit/RePermit.sol";
 import {OrderLib} from "src/reactor/OrderLib.sol";
-import {ReactorLib} from "src/reactor/ReactorLib.sol";
+import {OrderValidationLib} from "src/reactor/OrderValidationLib.sol";
+import {CosignatureLib} from "src/reactor/CosignatureLib.sol";
+import {EpochLib} from "src/reactor/EpochLib.sol";
+import {ResolutionLib} from "src/reactor/ResolutionLib.sol";
 
 contract OrderReactor is BaseReactor {
-    using Math for uint256;
-
     address public immutable cosigner;
 
     // order hash => next epoch
@@ -41,12 +39,12 @@ contract OrderReactor is BaseReactor {
         OrderLib.CosignedOrder memory cosigned = abi.decode(signedOrder.order, (OrderLib.CosignedOrder));
         bytes32 orderHash = OrderLib.hash(cosigned.order);
 
-        ReactorLib.validateOrder(cosigned.order);
-        ReactorLib.validateCosignature(cosigned, orderHash, cosigner, address(permit2));
+        OrderValidationLib.validate(cosigned.order);
+        CosignatureLib.validate(cosigned, orderHash, cosigner, address(permit2));
 
-        ReactorLib.validateAndUpdate(epochs, orderHash, cosigned.order.epoch);
+        EpochLib.update(epochs, orderHash, cosigned.order.epoch);
 
-        uint256 outAmount = ReactorLib.resolveOutAmount(cosigned);
+        uint256 outAmount = ResolutionLib.resolveOutAmount(cosigned);
         resolvedOrder = _resolveStruct(cosigned, outAmount, orderHash);
 
         ExclusivityLib.handleExclusiveOverride(
