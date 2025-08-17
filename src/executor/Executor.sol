@@ -49,22 +49,11 @@ contract Executor is IReactorCallback, IValidationCallback {
 
         _executeMulticall(calls);
 
-        _handleOrderOutputs(order);
+        _outputReactor(order.outputs[0].token, order.outputs[0].amount);
     }
 
     function _executeMulticall(IMulticall3.Call[] memory calls) private {
         Address.functionDelegateCall(multicall, abi.encodeWithSelector(IMulticall3.aggregate.selector, calls));
-    }
-
-    function _handleOrderOutputs(ResolvedOrder memory order) private {
-        for (uint256 i = 0; i < order.outputs.length; i++) {
-            uint256 amount = order.outputs[i].amount;
-
-            if (amount > 0) {
-                address token = address(order.outputs[i].token);
-                _outputReactor(token, amount);
-            }
-        }
     }
 
     function _outputReactor(address token, uint256 amount) private {
