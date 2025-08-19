@@ -57,19 +57,6 @@ Integration Checklist
 - Whitelist your executors via WM; plug in your venue logic via multicall.
 - Submit orders to the reactor using UniswapX’s executeWithCallback path.
 
-Deploy Scripts (Foundry)
-
-- 00_DeployWM.s.sol: create allowlist admin.
-- 01_UpdateWMWhitelist.s.sol: batch allow/revoke executors.
-- 02_DeployRepermit.s.sol: deploy RePermit (EIP-712 domain).
-- 03_DeployReactor.s.sol: deploy OrderReactor with RePermit + cosigner.
-- 04_DeployExecutor.s.sol: deploy generic Executor (or wire your own).
-
-Run Locally
-
-- Build/tests: `forge build`, `forge test -vvv`
-- Gas: `forge snapshot` (see `.gas-snapshot`)
-
 Safety & Controls
 
 - CosignatureFreshness: 1 minute window for signed prices.
