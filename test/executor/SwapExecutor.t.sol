@@ -180,11 +180,7 @@ contract SwapExecutorTest is BaseTest {
         assertEq(out.balanceOf(signer), before + 100);
     }
 
-    function _dummyResolvedOrder(address outToken, uint256 outAmount)
-        internal
-        view
-        returns (ResolvedOrder memory ro)
-    {
+    function _dummyResolvedOrder(address outToken, uint256 outAmount) internal view returns (ResolvedOrder memory ro) {
         OrderInfo memory info = OrderInfo({
             reactor: IReactor(address(reactor)),
             swapper: signer,

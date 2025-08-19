@@ -19,7 +19,14 @@ contract RePermitTest is BaseTest {
     RePermitLib.TransferRequest public request;
 
     // Duplicate event for expectEmit
-    event Spend(address indexed signer, bytes32 indexed permitHash, address indexed token, address to, uint256 amount, uint256 totalSpent);
+    event Spend(
+        address indexed signer,
+        bytes32 indexed permitHash,
+        address indexed token,
+        address to,
+        uint256 amount,
+        uint256 totalSpent
+    );
 
     function setUp() public override {
         super.setUp();

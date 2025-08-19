@@ -21,10 +21,8 @@ contract MockReactor is IReactor {
             recipient: abi.decode(order.order, (ExclusiveDutchOrder)).info.swapper
         });
 
-        (address r, ) = abi.decode(
-            abi.decode(order.order, (ExclusiveDutchOrder)).info.additionalValidationData,
-            (address, uint8)
-        );
+        (address r,) =
+            abi.decode(abi.decode(order.order, (ExclusiveDutchOrder)).info.additionalValidationData, (address, uint8));
 
         ros[0] = ResolvedOrder({
             info: OrderInfo({
@@ -41,8 +39,7 @@ contract MockReactor is IReactor {
                 maxAmount: 100
             }),
             outputs: outs,
-            sig: bytes("")
-            ,
+            sig: bytes(""),
             hash: bytes32(uint256(123))
         });
 
@@ -55,4 +52,3 @@ contract MockReactor is IReactor {
 
     receive() external payable {}
 }
-

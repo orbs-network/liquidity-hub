@@ -41,7 +41,7 @@ contract ExecutorTest is BaseTest {
         exec.execute(so, data);
 
         assertEq(reactor.lastSender(), address(exec));
-        (bytes memory lastOrderBytes, ) = reactor.lastOrder();
+        (bytes memory lastOrderBytes,) = reactor.lastOrder();
         assertEq(keccak256(lastOrderBytes), keccak256(so.order));
         assertEq(keccak256(reactor.lastCallbackData()), keccak256(data));
     }

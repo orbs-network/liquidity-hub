@@ -11,6 +11,7 @@ contract ResolutionLibFuzzTest is Test {
     function callResolve(OrderLib.CosignedOrder memory co) external pure returns (uint256) {
         return ResolutionLib.resolveOutAmount(co);
     }
+
     function testFuzz_resolveOutAmount_bounds(
         uint256 inAmount,
         uint256 limit,
