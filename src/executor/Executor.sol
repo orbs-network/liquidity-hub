@@ -11,9 +11,6 @@ import {IReactorCallback} from "uniswapx/src/interfaces/IReactorCallback.sol";
 import {IValidationCallback} from "uniswapx/src/interfaces/IValidationCallback.sol";
 import {ResolvedOrder, SignedOrder} from "uniswapx/src/base/ReactorStructs.sol";
 
-/**
- * Executor
- */
 contract Executor is IReactorCallback, IValidationCallback {
     address public immutable multicall;
     address public immutable reactor;
