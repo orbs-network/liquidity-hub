@@ -1,76 +1,88 @@
-Limit, TWAP, StopLoss Orders
+Spot — Limit, TWAP, Stop-Loss
 
 Who It’s For
 
 - 🧭 Product: ship price-target, time-sliced, and protective orders.
 - 🤝 Biz dev: onboard MMs/venues with clear rev-share and attribution.
-- 🧩 Integrators: drop-in contracts, EIP-712, and simple scripts.
+- 🧩 Integrators: EIP-712 orders, cosigned prices, drop-in executors.
 
 What It Does
 
 - 🎯 Limit: execute at or above a target output amount.
-- ⏱️ TWAP: slice a total amount into fixed “chunks” per epoch.
-- 🛡️ Stop: block execution when a signed-price exceeds a trigger.
+- ⏱️ TWAP: slice a total size into fixed “chunks” per epoch.
+- 🛡️ Stop: block execution when a signed-price breaches a trigger.
 
 Why It Wins
 
-- ✅ Non-custodial: user approvals scoped per order via RePermit.
-- 🔒 Safety: signed price oracle (cosigner), slippage bounds, deadlines.
-- ⚙️ Pluggable: works with UniswapX reactors and custom executors.
-- 📈 Revenue-ready: referral share + surplus handling supported.
+- ✅ Non-custodial: per-order allowances via RePermit (witness-bound).
+- 🔒 Safety: cosigned price, slippage caps, deadlines, epoch gating.
+- ⚙️ Pluggable: inlined reactor + custom executors.
+- 📈 Revenue: referral share + surplus distribution built in.
 
-How It Works (Plain English)
+Architecture (At a Glance)
 
-- Users sign one EIP-712 order with: input chunk, total size, limit, stop, slippage, deadline.
-- A price cosigner attests to current price (fresh within 1 minute).
-- A whitelisted executor runs a strategy (multicall), fills, and reports back.
-- The reactor checks signatures, TWAP epoch timing, slippage, limit/stop, then settles via UniswapX.
+- 🧠 Reactor (`OrderReactor`): validates order, checks epoch, computes min-out from cosigned price, settles via inlined implementation.
+- ✍️ RePermit (`RePermit`): Permit2-style EIP-712 with witness tying spend to the exact order hash.
+- 🧾 Cosigner: signs current input/output price; freshness enforced (1 min).
+- 🛠️ Executors (`SwapExecutor`/`Executor`): whitelisted fillers run venue logic via Multicall, return outputs, handle surplus.
+- 🔐 WM (`WM`): allowlist gate for executors/admin functions.
+- 🏭 Refinery (`Refinery`): ops utility to batch and sweep balances by bps.
+
+Flow (Plain English)
+
+1) User signs one EIP-712 order (chunk, total, limit, stop, slippage, epoch, deadline).
+2) Cosigner attests to price (input/output, decimals, timestamp, nonce=order hash).
+3) Allowed executor runs a Multicall strategy and calls the reactor.
+4) Reactor checks signatures, epoch window, slippage, limit/stop, then settles.
+5) Outputs and surplus are distributed (swapper + optional ref share).
 
 Order Model (Key Fields)
 
 - Input.amount: per-fill “chunk”.
 - Input.maxAmount: total size across fills (TWAP budget).
-- Epoch: seconds between fills (0 = single use).
+- Epoch: seconds between fills (0 = single-use).
 - Output.amount: limit (minimum acceptable out after slippage).
-- Output.maxAmount: stop trigger (revert if exceeded; MaxUint = off).
-- Slippage: bps applied to signed price to compute min-out.
-- ExclusiveFiller: optional designated executor; override bps allows opt-out.
+- Output.maxAmount: stop trigger (revert if above; MaxUint = off).
+- Slippage: bps applied to cosigned price to compute min-out.
+- ExclusiveFiller + OverrideBps: optionally lock to one executor, with time-bounded override.
 
-Main Components
+Supported Strategies
 
-- OrderReactor: validates orders, enforces epochs, computes out via signed price, and calls UniswapX.
-- SwapExecutor / Executor: whitelisted fillers that run a multicall strategy and handle outputs/surplus.
-- RePermit: compact EIP-712 permit with “witness” binding the order hash to spending.
-- WM: simple allowlist to gate who can execute/admin.
-- Refinery: ops tool to batch calls and sweep balances by bps to recipients.
-
-Supported Flows
-
-- Single-shot limit: set Epoch=0, Input.amount=total, Output.amount=limit.
-- TWAP: set Epoch>0, choose Input.amount chunk, Input.maxAmount total.
-- Stop-loss/take-profit: set Output.maxAmount to your trigger boundary.
+- Single-shot limit: `epoch=0`, `input.amount=total`, `output.amount=limit`.
+- TWAP: `epoch>0`, choose `input.amount` chunk, `input.maxAmount` total.
+- Stop-loss / take-profit: set `output.maxAmount` as trigger boundary.
 
 Integration Checklist
 
-- Define order fields in your backend or signer service.
-- Run a cosigner that produces fresh price EIP-712 payloads.
-- Whitelist your executors via WM; plug in your venue logic via multicall.
-- Submit orders to the reactor using UniswapX’s executeWithCallback path.
+- Define the order in backend (EIP-712 struct per `OrderLib`).
+- Run a cosigner service that emits fresh EIP-712 price payloads.
+- Allowlist executors in `WM`; wire venue logic via Multicall calls.
+- Submit to reactor using `executeWithCallback`.
 
-Safety & Controls
+Security Model
 
-- CosignatureFreshness: 1 minute window for signed prices.
-- Slippage cap: rejects orders with extreme slippage settings.
-- Epoch enforcement: prevents early/duplicate fills within a window.
-- Allowlist: only approved executors/admins can act.
+- ⏳ Freshness: cosignatures expire after 1 minute.
+- 📉 Slippage cap: orders with extreme slippage are rejected.
+- ⏱️ Epoch: prevents early/duplicate fills within a window.
+- 🔐 Allowlist: only approved executors/admins can act.
+
+Limits & Defaults
+
+- Max slippage: 50% (in bps).
+- Cosign freshness: 60 seconds.
+- Epoch=0 means single execution.
+
+Repo Map
+
+- `src/reactor`: Order validation, epoch/slippage/price resolution.
+- `src/repermit`: Witnessed Permit2-style spending (EIP-712).
+- `src/executor`: Multicall-based swap executors and callbacks.
+- `src`: `WM.sol` (allowlist), `Refinery.sol` (ops tools).
 
 Glossary
 
-- Reactor: verifies orders and settles via UniswapX.
-- Executor: address that runs the swap strategy and returns outputs.
-- Cosigner: signs current price used to compute min-out.
+- Reactor: verifies orders and settles internally.
+- Executor: runs swap strategy, returns outputs, manages surplus/refshare.
+- Cosigner: price attester used to derive min-out.
 - Epoch: time bucket controlling TWAP cadence.
 
-Questions / Next Steps
-
-- Want a venue/MM added, or branded executors and dashboards? Open an issue or reach out with target chains, venues, and referral terms.
