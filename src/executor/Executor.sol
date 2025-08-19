@@ -26,7 +26,7 @@ contract Executor is IReactorCallback, IValidationCallback {
     }
 
     modifier onlyAllowed() {
-        if (!IAllowed(allowed).allowed(msg.sender)) revert InvalidSender(msg.sender);
+        if (!IWM(allowed).allowed(msg.sender)) revert InvalidSender(msg.sender);
         _;
     }
 
@@ -81,5 +81,8 @@ contract Executor is IReactorCallback, IValidationCallback {
 }
 
 interface IAllowed {
+    function allowed(address) external view returns (bool);
+}
+interface IWM {
     function allowed(address) external view returns (bool);
 }

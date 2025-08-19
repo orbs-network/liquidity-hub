@@ -3,7 +3,7 @@ pragma solidity 0.8.20;
 
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
-contract Admin is Ownable2Step {
+contract WM is Ownable2Step {
     mapping(address => bool) public allowed;
 
     event AllowedSet(address indexed addr, bool allowed);

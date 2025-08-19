@@ -9,20 +9,20 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 contract Refinery {
     uint256 public constant BPS = 10_000;
     address public immutable multicall;
-    address public immutable admin;
+    address public immutable wm;
 
     error NotAllowed();
 
     event Refined(address indexed token, address indexed recipient, uint256 amount);
 
     modifier onlyAllowed() {
-        if (!IAdmin(admin).allowed(msg.sender)) revert NotAllowed();
+        if (!IWM(wm).allowed(msg.sender)) revert NotAllowed();
         _;
     }
 
-    constructor(address _multicall, address _admin) {
+    constructor(address _multicall, address _wm) {
         multicall = _multicall;
-        admin = _admin;
+        wm = _wm;
     }
 
     function execute(IMulticall3.Call3[] calldata calls) external onlyAllowed returns (bytes memory) {
@@ -50,6 +50,6 @@ contract Refinery {
     }
 }
 
-interface IAdmin {
+interface IWM {
     function allowed(address) external view returns (bool);
 }

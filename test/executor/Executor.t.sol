@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import {BaseTest} from "test/base/BaseTest.sol";
 
 import {Executor} from "src/executor/Executor.sol";
-import {Admin} from "src/Admin.sol";
+import {WM} from "src/WM.sol";
 
 import {IMulticall3} from "forge-std/interfaces/IMulticall3.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -26,12 +26,12 @@ contract ExecutorTest is BaseTest {
         super.setUp();
 
         reactor = new MockReactor();
-        exec = new Executor(multicall, address(reactor), admin);
+        exec = new Executor(multicall, address(reactor), wm);
 
         // allow this test as caller
         address[] memory addrs = new address[](1);
         addrs[0] = address(this);
-        Admin(admin).set(addrs, true);
+        WM(wm).set(addrs, true);
     }
 
     function test_execute_forwards_to_reactor_with_callback() public {
@@ -49,7 +49,7 @@ contract ExecutorTest is BaseTest {
     function test_execute_reverts_when_not_allowed() public {
         address[] memory addrs = new address[](1);
         addrs[0] = address(this);
-        Admin(admin).set(addrs, false);
+        WM(wm).set(addrs, false);
 
         SignedOrder memory so = _dummySignedOrder();
         bytes memory data = bytes("");

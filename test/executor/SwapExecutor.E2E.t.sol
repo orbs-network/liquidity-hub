@@ -27,7 +27,7 @@ contract SwapExecutorE2ETest is BaseTest {
     function setUp() public override {
         super.setUp();
         reactor = new MockReactor();
-        hub = new SwapExecutor(multicall, address(reactor), admin);
+        hub = new SwapExecutor(multicall, address(reactor), wm);
         tokenOut = new ERC20Mock();
         ref = makeAddr("ref");
     }

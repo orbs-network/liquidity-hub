@@ -12,7 +12,7 @@ import {PermitSignature} from "uniswapx/test/util/PermitSignature.sol";
 import {BaseScript} from "script/base/BaseScript.sol";
 import {DeployTestInfra} from "./DeployTestInfra.sol";
 
-import {Admin} from "src/Admin.sol";
+import {WM} from "src/WM.sol";
 import {RePermit} from "src/repermit/RePermit.sol";
 
 abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
@@ -20,7 +20,7 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
     address public weth;
     address public permit2;
 
-    address public admin;
+    address public wm;
     address public repermit;
 
     ERC20Mock public token;
@@ -32,8 +32,8 @@ abstract contract BaseTest is BaseScript, PermitSignature, DeployTestInfra {
         super.setUp();
         (permit2, multicall, weth) = deployTestInfra();
 
-        admin = address(new Admin(address(this)));
-        vm.label(admin, "admin");
+        wm = address(new WM(address(this)));
+        vm.label(wm, "wm");
 
         repermit = address(new RePermit());
         vm.label(repermit, "repermit");

@@ -1,0 +1,37 @@
+{
+  "domain": {
+    "name": "RePermit",
+    "version": "1",
+    "chainId": "<CHAINID>",
+    "verifyingContract": "<REPERMIT>"
+  },
+  "primaryType": "Cosignature",
+  "types": {
+    "CosignedValue": [
+      { "name": "token", "type": "address" },
+      { "name": "value", "type": "uint256" },
+      { "name": "decimals", "type": "uint8" }
+    ],
+    "Cosignature": [
+      { "name": "timestamp", "type": "uint256" },
+      { "name": "nonce", "type": "bytes32" },
+      { "name": "input", "type": "CosignedValue" },
+      { "name": "output", "type": "CosignedValue" }
+    ]
+  },
+  "message": {
+    "timestamp": "<TIMESTAMP>",
+    "nonce": "<ORDERHASH>",
+    "input": {
+      "token": "<INTOKEN>",
+      "value": "<INVALUE>",
+      "decimals": "<INDECIMALS>"
+    },
+    "output": {
+      "token": "<OUTTOKEN>",
+      "value": "<OUTVALUE>",
+      "decimals": "<OUTDECIMALS>"
+    }
+  }
+}
+

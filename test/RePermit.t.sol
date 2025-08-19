@@ -18,6 +18,9 @@ contract RePermitTest is BaseTest {
     RePermitLib.RePermitTransferFrom public permit;
     RePermitLib.TransferRequest public request;
 
+    // Duplicate event for expectEmit
+    event Spend(address indexed signer, bytes32 indexed permitHash, address indexed token, address to, uint256 amount, uint256 totalSpent);
+
     function setUp() public override {
         super.setUp();
         uut = RePermit(address(repermit));
@@ -166,6 +169,35 @@ contract RePermitTest is BaseTest {
 
         assertEq(token.balanceOf(signer), 0.2 ether, "signer balance");
         assertEq(token.balanceOf(other), 0.8 ether, "recipient balance");
+    }
+
+    function test_spend_event_emitted() public {
+        token.mint(signer, 1 ether);
+        hoax(signer);
+        token.approve(address(uut), 1 ether);
+
+        permit.deadline = block.timestamp;
+        permit.permitted.amount = 1 ether;
+        permit.permitted.token = address(token);
+        request.amount = 0.25 ether;
+        request.to = other;
+
+        bytes32 structHash = hashRePermit(
+            permit.permitted.token,
+            permit.permitted.amount,
+            permit.nonce,
+            permit.deadline,
+            witness,
+            witnessTypeString,
+            address(this)
+        );
+        bytes memory signature = signEIP712(repermit, signerPK, structHash);
+        bytes32 digest = uut.hashTypedData(structHash);
+
+        vm.expectEmit(address(uut));
+        emit Spend(signer, digest, address(token), other, 0.25 ether, 0.25 ether);
+
+        uut.repermitWitnessTransferFrom(permit, request, signer, witness, witnessTypeString, signature);
     }
 
     function test_spender_binding_signature_replay_fails_for_other_spender() public {

@@ -7,17 +7,17 @@ import "forge-std/Test.sol";
 
 import {BaseTest, IMulticall3, ERC20Mock} from "test/base/BaseTest.sol";
 
-import {Admin} from "src/Admin.sol";
+import {WM} from "src/WM.sol";
 
-contract AdminTest is BaseTest {
-    Admin public uut;
+contract WMTest is BaseTest {
+    WM public uut;
 
     // Duplicate event signature for expectEmit matching
     event AllowedSet(address indexed addr, bool allowed);
 
     function setUp() public override {
         super.setUp();
-        uut = Admin(payable(admin));
+        uut = WM(payable(wm));
     }
 
     function test_owned() public {

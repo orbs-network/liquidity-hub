@@ -4,9 +4,9 @@ pragma solidity 0.8.20;
 import {Vm} from "forge-std/Vm.sol";
 
 import {BaseTest} from "./base/BaseTest.sol";
-import {Refinery, IAdmin} from "../src/Refinery.sol";
+import {Refinery, IWM} from "../src/Refinery.sol";
 import {IMulticall3} from "forge-std/interfaces/IMulticall3.sol";
-import {Admin} from "../src/Admin.sol";
+import {WM} from "../src/WM.sol";
 
 contract RefineryTest is BaseTest {
     Refinery internal refinery;
@@ -16,19 +16,19 @@ contract RefineryTest is BaseTest {
 
     function setUp() public virtual override {
         super.setUp();
-        refinery = new Refinery(multicall, admin);
+        refinery = new Refinery(multicall, wm);
     }
 
     function _allowMe() private {
         address[] memory addrs = new address[](1);
         addrs[0] = address(this);
-        Admin(admin).set(addrs, true);
+        WM(wm).set(addrs, true);
     }
 
     function test_cant_execute_if_not_allowed() public {
         address[] memory addrs = new address[](1);
         addrs[0] = address(this);
-        Admin(admin).set(addrs, false);
+        WM(wm).set(addrs, false);
         IMulticall3.Call3[] memory calls = new IMulticall3.Call3[](0);
         vm.expectRevert(Refinery.NotAllowed.selector);
         refinery.execute(calls);
@@ -37,7 +37,7 @@ contract RefineryTest is BaseTest {
     function test_cant_transfer_if_not_allowed() public {
         address[] memory addrs = new address[](1);
         addrs[0] = address(this);
-        Admin(admin).set(addrs, false);
+        WM(wm).set(addrs, false);
         vm.expectRevert(Refinery.NotAllowed.selector);
         refinery.transfer(address(token), bob, 100);
     }

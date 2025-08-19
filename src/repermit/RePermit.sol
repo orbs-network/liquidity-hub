@@ -22,6 +22,15 @@ contract RePermit is EIP712, IEIP712 {
     // signer => nonce => canceled
     mapping(address => mapping(uint256 => bool)) public canceled;
 
+    event Spend(
+        address indexed signer,
+        bytes32 indexed permitHash,
+        address indexed token,
+        address to,
+        uint256 amount,
+        uint256 totalSpent
+    );
+
     constructor() EIP712("RePermit", "1") {}
 
     function DOMAIN_SEPARATOR() public view override returns (bytes32) {
@@ -55,5 +64,7 @@ contract RePermit is EIP712, IEIP712 {
         if (_spent > permit.permitted.amount) revert InsufficientAllowance();
 
         IERC20(permit.permitted.token).safeTransferFrom(signer, request.to, request.amount);
+
+        emit Spend(signer, hash, permit.permitted.token, request.to, request.amount, _spent);
     }
 }

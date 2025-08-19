@@ -5,16 +5,16 @@ import "forge-std/Script.sol";
 
 import {BaseScript} from "script/base/BaseScript.sol";
 
-import {Admin} from "src/Admin.sol";
+import {WM} from "src/WM.sol";
 
-contract UpdateWhitelist is BaseScript {
+contract UpdateWMWhitelist is BaseScript {
     uint256 public constant BATCH_SIZE = 300;
 
     function run() public {
-        Admin admin = Admin(payable(vm.envAddress("ADMIN")));
+        WM admin = WM(payable(vm.envAddress("WM")));
 
         if (address(admin).code.length == 0) {
-            console.log("admin not deployed");
+            console.log("wm not deployed");
             return;
         }
 
@@ -23,7 +23,7 @@ contract UpdateWhitelist is BaseScript {
         );
 
         if (admin.allowed(list[0]) && admin.allowed(list[list.length - 1])) {
-            console.log("whitelist already updated");
+            console.log("wm whitelist already updated");
             return;
         }
 

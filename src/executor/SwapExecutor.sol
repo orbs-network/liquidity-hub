@@ -49,7 +49,7 @@ contract SwapExecutor is IReactorCallback, IValidationCallback {
     }
 
     modifier onlyAllowed() {
-        if (!IAdmin(allowed).allowed(msg.sender)) revert InvalidSender(msg.sender);
+        if (!IWM(allowed).allowed(msg.sender)) revert InvalidSender(msg.sender);
         _;
     }
 
@@ -164,6 +164,6 @@ contract SwapExecutor is IReactorCallback, IValidationCallback {
     }
 }
 
-interface IAdmin {
+interface IWM {
     function allowed(address) external view returns (bool);
 }

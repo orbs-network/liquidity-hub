@@ -15,7 +15,7 @@ import {ERC20} from "solmate/src/tokens/ERC20.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
-import {Admin} from "src/Admin.sol";
+import {WM} from "src/WM.sol";
 import {USDTMock} from "test/mocks/USDTMock.sol";
 import {MockReactor} from "test/mocks/MockReactor.sol";
 
@@ -28,7 +28,7 @@ contract SwapExecutorTest is BaseTest {
     function setUp() public override {
         super.setUp();
         reactor = new MockReactor();
-        hub = new SwapExecutor(multicall, address(reactor), admin);
+        hub = new SwapExecutor(multicall, address(reactor), wm);
     }
 
     function test_validate_allows_only_self_as_filler() public view {
@@ -43,7 +43,7 @@ contract SwapExecutorTest is BaseTest {
     function test_execute_reverts_when_not_allowed() public {
         address[] memory addrs = new address[](1);
         addrs[0] = address(this);
-        Admin(admin).set(addrs, false);
+        WM(wm).set(addrs, false);
 
         ExclusiveDutchOrder memory ex;
         ex.info = OrderInfo({
