@@ -1,4 +1,4 @@
-Liquidity Hub — Limit, TWAP, Stop Orders on UniswapX
+Limit, TWAP, StopLoss Orders
 
 Who It’s For
 
