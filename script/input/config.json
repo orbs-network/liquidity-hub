@@ -69,6 +69,9 @@
     "747474": {
         "admin": "0x74747410a44c59A4366f6a89972A4B7203b604d8"
     },
+    "143": {
+        "executor": "0x47AF45696Da54C1172EcbB168773FE37eAD9Fe5F"
+    },
     "chains": [
         "eth",
         "arb",
@@ -85,6 +88,7 @@
         "sonic",
         "zircuit",
         "scroll",
-        "flare"
+        "flare",
+        "monad"
     ]
 }
