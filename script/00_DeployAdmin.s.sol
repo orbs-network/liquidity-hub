@@ -7,7 +7,7 @@ import {BaseScript, Admin} from "script/base/BaseScript.sol";
 
 contract DeployAdmin is BaseScript {
     function run() public returns (address admin) {
-        address owner = vm.envAddress("OWNER");
+        address owner = vm.envAddress("ETH_FROM");
         address weth = vm.envAddress("WETH");
         bytes32 salt = vm.envOr("SALT", bytes32(uint256(0x9563)));
         console.logBytes32(hashInitCode(type(Admin).creationCode, abi.encode(owner)));
